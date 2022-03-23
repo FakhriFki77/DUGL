@@ -1,0 +1,209 @@
+/*	Dust Ultimate Game Library (DUGL)
+    Copyright (C) 2022	Fakhri Feki
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+    contact: libdugl@hotmail.com    */
+
+#ifndef DCORE_H_INCLUDED
+#define DCORE_H_INCLUDED
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define DUGL_VERSION_MAJOR		1
+#define DUGL_VERSION_MINOR		0
+#define DUGL_VERSION_TYPE		a // a alpha, b beta, r release
+#define DUGL_VERSION_PATCH		1
+
+
+//  DUGL Main Structures
+typedef struct
+{	int	vlfb;
+	int	rlfb;
+	int	ResH, ResV;
+	int	MaxX, MaxY, MinX, MinY;
+	int	Mask, OrgY, OrgX;
+	int	SizeSurf;
+	int	ScanLine;
+	int	OffVMem;
+	int	RMaxX, RMaxY, RMinX, RMinY;
+	int	BitsPixel;
+	int NegScanLine;
+	int Resv2;
+	int Resv3;
+	int Resv4;
+	int Resv5;
+} DgSurf;
+
+typedef struct
+{	int	OrgX, OrgY;
+	int	MaxX, MaxY, MinX, MinY;
+} DgView;
+
+//** FONT Structure ****************************
+typedef struct {
+	int  		FntPtr;
+	unsigned char	FntHaut,FntDistLgn;
+	char		FntLowPos, FntHighPos,FntSens;
+	unsigned char	FntTab,Fntrevb[2];
+	int		FntX, FntY, FntCol,FntBCol,FntDresv;
+} FONT;
+
+// DUGL Main global variables
+
+extern DgSurf   RendSurf; // main destination render
+extern DgSurf	RendFrontSurf; // currently displayed
+extern DgSurf   CurSurf; // The Surf that graphic functions will render to as DgClear16, Line16, Poly16 ...
+extern DgSurf   SrcSurf; // The source Surf used by graphic functions as Poly16, PutSurf16, ResizeViewSurf16 ..
+extern unsigned char DgWindowFocused;
+extern unsigned char DgWindowFocusLost;
+
+// init all ressources required to run DUGL
+// return 1 if success 0 if fail
+int DgInit();
+
+// free all ressources allocated to run DUGL
+void DgQuit();
+
+// Init Main DUGL window
+// for BitPixels only is 16 bpp
+// return 1 if success 0 if fail
+int DgInitMainWindow(const char *title, int ResHz, int ResVt, char BitsPixel);
+// extended parameters
+int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, int PosX, int PosY, bool FullScreen, bool Borderless, bool ResizeWin);
+// update window with contents of RendSurf, and swap RendFrontSurf and RendSurf
+void DgUpdateWindow();
+// toggle full screen
+void DgToggleFullScreen(bool fullScreen);
+// Full screen Enabled
+bool DgIsFullScreen();
+// Check events
+void DgCheckEvents();
+
+// DGSurf handling ========================
+
+// Set Current DgSurf for rendering
+void DgSetCurSurf(DgSurf *S);
+// Get copy of CurSurf
+void DgGetCurSurf(DgSurf *S);
+// Set Source DgSurf
+void DgSetSrcSurf(DgSurf *S);
+// Gets Max Height in pixels for a DgSurf used with SetCurSurf
+int  GetMaxResVSetSurf();
+// Set Origin of DgSurf
+void SetOrgSurf(DgSurf *S,int newOrgX,int newOrgY);
+// Create a DgSurf by allocating its buffer and initializing DgSurf, user is reponsible of allocating S
+int CreateSurf(DgSurf *S, int ResHz, int ResVt, char BitsPixel);
+// Destroy DgSurf created with CreateSurf
+void DestroySurf(DgSurf *S);
+// Create DgSurf from buffer
+// user is responsible of allocating S and Buff
+// return 1 if success 0 if fail
+int CreateSurfBuff(DgSurf *S, int ResHz, int ResVt, char BitsPixel, void *Buff);
+// brute copy pixels data from DgSurf src to dst without any verification of BitsPixel or size
+void SurfCopy(DgSurf *Sdst,DgSurf *Ssrc);
+void SurfMaskCopy16(DgSurf *Sdst,DgSurf *Ssrc);
+void SurfCopyBlnd16(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
+void SurfMaskCopyBlnd16(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
+void SurfCopyTrans16(DgSurf *S16Dst, DgSurf *S16Src,int trans);
+void SurfMaskCopyTrans16(DgSurf *S16Dst, DgSurf *S16Src,int trans);
+// resize SSrcSurf into CurSurf taking account of source and destination Views
+// call to those functions will change SrcSurf, SSrcSurf could be null if there is a valid SrcSurf
+void ResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt); // fast resize source view => into dest view
+void MaskResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt); // use SrcSurf::Mask to mask pixels
+void TransResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int transparency); // transparency 0->31 (31 completely opaq)
+void MaskTransResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int transparency); // Mask pixels with value Mask, transparency 0->31 (31 completely opaq)
+void BlndResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int colBlnd); // ColBnd =  color16 | (blend << 24),  blend 0->31 (31 color16)
+void MaskBlndResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int colBlnd); // ColBnd =  color16 | (blend << 24),  blend 0->31 (31 color16)
+// render functions =======================
+
+void DgClear16(int col); // clear all the CurSurf
+void ClearSurf16(int clrcol); // clear only current view port of CurSurf use InBar16
+// PutPixel
+void DgPutPixel16(int x, int y, int col);
+// View port clipped PutPixel
+void DgCPutPixel16(int x, int y, int col);
+// Clipped lines
+void line16(int X1,int Y1,int X2,int Y2,int LgCol);
+void linemap16(int X1,int Y1,int X2,int Y2,int LgCol,unsigned int Map);
+void lineblnd16(int X1,int Y1,int X2,int Y2,int LgCol);
+void linemapblnd16(int X1,int Y1,int X2,int Y2,int LgCol,unsigned int Map);
+void Line16(void *Point1,void *Point2,int col);
+void LineMap16(void *Point1,void *Point2,int col,unsigned int Map);
+void LineBlnd16(void *Point1,void *Point2,int col);
+void LineMapBlnd16(void *Point1,void *Point2,int col,unsigned int Map);
+
+// *ListPt FORMAT : [int CountVertices]|[Ptr * Point1] .. [Ptr * Point(CountVertices)]
+// Point FORMAT [int ScreenX][int ScreenY][int Z reserved][int U texture coordinate][int V texture coordinate]
+// all TEXTURE Functions uses a simple affine texture interpolation mapping (not perspective corrected)
+#define POLY16_SOLID			0
+#define POLY16_TEXT				1
+#define POLY16_MASK_TEXT		2
+#define POLY16_TEXT_TRANS		10
+#define POLY16_MASK_TEXT_TRANS	11
+#define POLY16_RGB				12
+#define POLY16_SOLID_BLND		13
+#define POLY16_TEXT_BLND		14
+#define POLY16_MASK_TEXT_BLND	15
+#define POLY16_MAX_TYPE			15
+#define POLY16_FLAG_DBL_SIDED	0x80000000
+void Poly16(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
+
+// fast filled rectangle that with coordinate inside the current View (no checking or clipping)
+void InBar16(int minX,int minY,int maxX,int maxY,int rectCcol);
+void Bar16(void *Pt1,void *Pt2,int bcol);  // use Poly16
+void bar16(int x1,int y1,int x2,int y2,int bcol);  // use Poly16
+void BarBlnd16(void *Pt1,void *Pt2,int bcol);  // use Poly16
+void barblnd16(int x1,int y1,int x2,int y2,int bcol);  // use Poly16
+// draw empty rectangle
+void rect16(int x1,int y1,int x2,int y2,int rcol);
+void rectmap16(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
+void rectblnd16(int x1,int y1,int x2,int y2,int rcol);
+void rectmapblnd16(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
+
+// 16bpp Surf blitting functions
+#define PUTSURF_NORM	0 // as it
+#define PUTSURF_INV_HZ  1 // reversed horizontally
+#define PUTSURF_INV_VT 	2 // reversed vertically
+
+// Blit the Source DgSurf into current DgSurf taking care of current views
+void PutSurf16(DgSurf *S,int X,int Y,int PType);
+void PutMaskSurf16(DgSurf *S,int X,int Y,int PType);
+void PutSurfBlnd16(DgSurf *S,int X,int Y,int PType,int colBlnd);
+void PutMaskSurfBlnd16(DgSurf *S,int X,int Y,int PType,int colBlnd);
+void PutSurfTrans16(DgSurf *S,int X,int Y,int PType,int trans);
+void PutMaskSurfTrans16(DgSurf *S,int X,int Y,int PType,int trans);
+
+// View or (clipped area) handling ===========
+
+// sets Real View port relatively DgSurf size limit ignoring DgSurf Origin
+void SetSurfView(DgSurf *S, DgView *V);
+// sets View port relatively to DgSurf size limit and current Origin
+void SetSurfRView(DgSurf *S, DgView *V);
+// sets View port clipped inside current DgSurf view port
+void SetSurfInView(DgSurf *S, DgView *V);
+// sets Real View port clipped inside current DgSurf real view port
+void SetSurfInRView(DgSurf *S, DgView *V);
+void GetSurfView(DgSurf *S, DgView *V);
+void GetSurfRView(DgSurf *S, DgView *V);;
+
+#ifdef __cplusplus
+		}  // extern "C" {
+#endif
+
+
+#endif // DCORE_H_INCLUDED
+

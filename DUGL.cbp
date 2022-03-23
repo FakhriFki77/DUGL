@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="DUGL" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/DUGL" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="" />
+				<Option object_output="obj/Debug/" />
+				<Option type="2" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Compiler>
+					<Add option="-march=corei7" />
+					<Add option="-Wall" />
+					<Add option="-m32" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add option="-static-libstdc++" />
+					<Add option="-static-libgcc" />
+					<Add option="-static" />
+					<Add option="-m32" />
+					<Add library="SDL2main" />
+					<Add library="SDL2.dll" />
+					<Add library="user32" />
+					<Add library="gdi32" />
+					<Add library="winmm" />
+					<Add library="dxguid" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/DUGL" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="" />
+				<Option object_output="obj/Release/" />
+				<Option type="2" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Compiler>
+					<Add option="-march=corei7" />
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-O3" />
+					<Add option="-Wall" />
+					<Add option="-m32" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add option="-static-libstdc++" />
+					<Add option="-static-libgcc" />
+					<Add option="-static" />
+					<Add option="-m32" />
+					<Add library="SDL2main" />
+					<Add library="SDL2.dll" />
+					<Add library="user32" />
+					<Add library="gdi32" />
+					<Add library="winmm" />
+					<Add library="dxguid" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-march=pentium-m" />
+		</Compiler>
+		<Unit filename="DCONTAIN.h" />
+		<Unit filename="DCONV.h" />
+		<Unit filename="DCORE.h" />
+		<Unit filename="DFONT.h" />
+		<Unit filename="DGUTILS.asm">
+			<Option compile="0" />
+			<Option link="0" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="DIMAGE.h" />
+		<Unit filename="DKEYB.h" />
+		<Unit filename="DMATH3D.h" />
+		<Unit filename="DMOUSE.h" />
+		<Unit filename="DTIMER.h" />
+		<Unit filename="DUGL.h" />
+		<Unit filename="DWORKER.h" />
+		<Unit filename="PARAM.asm">
+			<Option compile="0" />
+			<Option link="0" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="Poly.asm">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="containc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="controlc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="conv.asm" />
+		<Unit filename="fasthzline16.asm">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="fill16.asm">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="graph.asm" />
+		<Unit filename="hzline16.asm">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="image.asm" />
+		<Unit filename="imagec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="intrndugl.h" />
+		<Unit filename="jpgimagec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="keyboard.asm" />
+		<Unit filename="line16.asm">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="math3d.asm" />
+		<Unit filename="math3dc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="mouse.asm" />
+		<Unit filename="pngimagec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="poly16.asm">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="pts16.asm">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="worker.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Extensions>
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
