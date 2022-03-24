@@ -92,7 +92,7 @@ bool DestroyDWorkers() {
 
 static int WorkerThreadFunction(void *ptr) {
 	unsigned int myIdx = *(unsigned int*)(ptr);
-	if (myIdx == 0 || myIdx > MaxDWorkersCount)
+	if (MaxDWorkersCount == 0 || myIdx == 0 || myIdx > MaxDWorkersCount)
 		return 0;
 	myIdx --;
 	for(;;) {
@@ -103,8 +103,8 @@ static int WorkerThreadFunction(void *ptr) {
 		if (funcsDWorker[myIdx] != NULL) {
 			funcsDWorker[myIdx](paramsDWorker[myIdx], *(int*)ptr);
 		}
-		conditionsDWorker[myIdx] = false;
 		SDL_UnlockMutex(locksDworker[myIdx]);
+		conditionsDWorker[myIdx] = false;
 	}
 
 	return 0;
@@ -131,7 +131,7 @@ void SetDWorkerDataPtr(unsigned int dworkerID, void *dataPtr) {
 }
 
 void SetDWorkerFunction(unsigned int dworkerID, dworkerFunctionPointer workerFunction) {
-	if (dworkerID == 0 || dworkerID > MaxDWorkersCount)
+	if (MaxDWorkersCount == 0 || dworkerID == 0 || dworkerID > MaxDWorkersCount)
 		return;
 	unsigned int idx = dworkerID - 1;
 	if (threadsDWorker[idx] == NULL)
@@ -174,7 +174,7 @@ unsigned int CreateDWorker(dworkerFunctionPointer workerFunction, void *workerDa
 }
 
 void RunDWorker(unsigned int dworkerID, bool WaitIfBusy) {
-	if (dworkerID == 0 || dworkerID > MaxDWorkersCount)
+	if (MaxDWorkersCount == 0 || dworkerID == 0 || dworkerID > MaxDWorkersCount)
 		return;
 	unsigned int idx = dworkerID - 1;
 	if (threadsDWorker[idx] == NULL)
@@ -191,16 +191,16 @@ void RunDWorker(unsigned int dworkerID, bool WaitIfBusy) {
 }
 
 bool IsBusyDWorker(unsigned int dworkerID) {
-	if (dworkerID == 0 || dworkerID > MaxDWorkersCount)
-		return;
+	if (MaxDWorkersCount == 0 || dworkerID == 0 || dworkerID > MaxDWorkersCount)
+		return false;
 	unsigned int idx = dworkerID - 1;
 	if (threadsDWorker[idx] == NULL)
-		return;
+		return false;
 	return conditionsDWorker[idx];
 }
 
 void WaitDWorker(unsigned int dworkerID) {
-	if (dworkerID == 0 || dworkerID > MaxDWorkersCount)
+	if (MaxDWorkersCount == 0 || dworkerID == 0 || dworkerID > MaxDWorkersCount)
 		return;
 	unsigned int idx = dworkerID - 1;
 	if (threadsDWorker[idx] == NULL)
@@ -209,7 +209,7 @@ void WaitDWorker(unsigned int dworkerID) {
 }
 
 void DestroyDWorker(unsigned int dworkerID) {
-	if (dworkerID == 0 || dworkerID > MaxDWorkersCount)
+	if (MaxDWorkersCount == 0 || dworkerID == 0 || dworkerID > MaxDWorkersCount)
 		return;
 	unsigned int idx = dworkerID - 1;
 	if (threadsDWorker[idx] != NULL) {

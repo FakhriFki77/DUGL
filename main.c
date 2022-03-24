@@ -71,6 +71,7 @@ void DgQuit()
             mutexEvents = NULL;
         }
     }
+    DestroyDWorkers();
     SDL_Quit();
 }
 
@@ -277,7 +278,7 @@ int CreateSurfBuff(DgSurf *S, int ResHz, int ResVt, char BitsPixel, void *Buff)
 
 // View or (clipped area) handling
 
-// sets View port relatively to DgSurf size limit and current Origin
+// sets DgSurf real View
 void SetSurfView(DgSurf *S, DgView *V)
 {
     int pixelsize = GetPixelSize(S->BitsPixel);
@@ -300,7 +301,7 @@ void SetSurfView(DgSurf *S, DgView *V)
         S->vlfb= S->rlfb+S->OrgX-(S->OrgY-(S->ResV-1))*S->ResH;
 }
 
-// sets Real View port relatively DgSurf size limit ignoring DgSurf Origin
+// sets DgSurf relative View
 void SetSurfRView(DgSurf *S, DgView *V)
 {
     int pixelsize = GetPixelSize(S->BitsPixel);
