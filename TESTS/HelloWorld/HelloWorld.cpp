@@ -21,6 +21,7 @@ int ScrResH=800,ScrResV=600;
 FONT F1;
 // display parameters
 bool SynchScreen=false;
+bool pauseHello=false;
 // synch buffers
 char EventsLoopSynchBuff[SIZE_SYNCH_BUFF];
 char RenderSynchBuff[SIZE_SYNCH_BUFF];
@@ -32,7 +33,6 @@ float avgFps, lastFps;
 float accTime = 0.0f;
 // Hello World DATA
 const char *sHelloWorld = "Hello World!";
-float TimeFullView = 3.0f;
 DgSurf HelloWorldSurf16;
 DgView RendSurfOrgView, HelloWorldView, RendSurfCurView;
 bool directionGrowth = true;
@@ -129,7 +129,10 @@ int main (int argc, char ** argv)
 		GetKey(&keyCode, &keyFLAG);
 		switch (keyCode) {
 			case KB_KEY_F5: // F5 vertical synch e/d
-				SynchScreen=(SynchScreen)?false:true;
+				SynchScreen=!SynchScreen;
+				break;
+			case KB_KEY_SPACE: // Space to pause
+				pauseHello=!pauseHello;
 				break;
 			case KB_KEY_F6: // F6 Todo
 				break;
@@ -203,37 +206,39 @@ void RenderWorkerFunc(void *, int ) {
 	OutText16Mode(text,AJ_RIGHT);
 
 	ClearText();
-	sprintf(text,"Esc Exit\nF5  Vertical Synch: %s\n", (SynchScreen)?"ON":"OFF");
+	sprintf(text,"Esc    Exit\nF5     Vertical Synch: %s\nSpace  Pause: %s", (SynchScreen)?"ON":"OFF", (pauseHello)?"ON":"OFF");
 	OutText16Mode(text,AJ_LEFT);
 
 	// update Hello world Resize View
-	if (directionGrowth) {
-		// detect overlap and reverse
-		if (RendSurfCurView.MaxX == RendSurfOrgView.MaxX ||
-			RendSurfCurView.MinX == RendSurfOrgView.MinX ||
-			RendSurfCurView.MaxY == RendSurfOrgView.MaxY ||
-			RendSurfCurView.MinY == RendSurfOrgView.MinY) {
+	if (!pauseHello) {
+		if (directionGrowth) {
+			// detect overlap and reverse
+			if (RendSurfCurView.MaxX == RendSurfOrgView.MaxX ||
+				RendSurfCurView.MinX == RendSurfOrgView.MinX ||
+				RendSurfCurView.MaxY == RendSurfOrgView.MaxY ||
+				RendSurfCurView.MinY == RendSurfOrgView.MinY) {
 
-			directionGrowth = false;
+				directionGrowth = false;
+			} else {
+				RendSurfCurView.MaxX++;
+				RendSurfCurView.MinX--;
+				RendSurfCurView.MaxY++;
+				RendSurfCurView.MinY--;
+			}
 		} else {
-			RendSurfCurView.MaxX++;
-			RendSurfCurView.MinX--;
-			RendSurfCurView.MaxY++;
-			RendSurfCurView.MinY--;
-		}
-	} else {
-		// detect overlap and reverse
-		if (RendSurfCurView.MaxX == HelloWorldSurf16.MaxX ||
-			RendSurfCurView.MinX == HelloWorldSurf16.MinX ||
-			RendSurfCurView.MaxY == HelloWorldSurf16.MaxY ||
-			RendSurfCurView.MinY == HelloWorldSurf16.MinY) {
+			// detect overlap and reverse
+			if (RendSurfCurView.MaxX == HelloWorldSurf16.MaxX ||
+				RendSurfCurView.MinX == HelloWorldSurf16.MinX ||
+				RendSurfCurView.MaxY == HelloWorldSurf16.MaxY ||
+				RendSurfCurView.MinY == HelloWorldSurf16.MinY) {
 
-			directionGrowth = true;
-		} else {
-			RendSurfCurView.MaxX--;
-			RendSurfCurView.MinX++;
-			RendSurfCurView.MaxY--;
-			RendSurfCurView.MinY++;
+				directionGrowth = true;
+			} else {
+				RendSurfCurView.MaxX--;
+				RendSurfCurView.MinX++;
+				RendSurfCurView.MaxY--;
+				RendSurfCurView.MinY++;
+			}
 		}
 	}
 
