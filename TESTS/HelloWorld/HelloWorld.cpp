@@ -22,6 +22,7 @@ FONT F1;
 // display parameters
 bool SynchScreen=false;
 bool pauseHello=false;
+bool exitApp=false;
 // synch buffers
 char EventsLoopSynchBuff[SIZE_SYNCH_BUFF];
 char RenderSynchBuff[SIZE_SYNCH_BUFF];
@@ -45,20 +46,6 @@ int main (int argc, char ** argv)
 		printf("DUGL init error\n"); exit(-1);
 	}
 
-    // install timer and keyborad handler
-    DgInstallTimer(500);
-
-    if (DgTimerFreq == 0)
-    {
-       DgQuit();
-       printf("Timer error\n");
-       exit(-1);
-    }
-    if (!InstallKeyboard()) {
-		DgQuit();
-		printf("Keyboard error\n");
-		exit(-1);
-    }
 
     // create rendering DWorker
     renderWorkerID = CreateDWorker(RenderWorkerFunc, nullptr);
@@ -89,6 +76,21 @@ int main (int argc, char ** argv)
         exit(-1);
     }
 
+    // install timer and keyborad handler
+    DgInstallTimer(500);
+
+    if (DgTimerFreq == 0)
+    {
+       DgQuit();
+       printf("Timer error\n");
+       exit(-1);
+    }
+    if (!InstallKeyboard()) {
+		DgQuit();
+		printf("Keyboard error\n");
+		exit(-1);
+    }
+
 	// set screen rendering Surf origin on the middle of the screen
 	SetOrgSurf(&RendSurf, RendSurf.ResH/2, RendSurf.ResV/2);
 	SetOrgSurf(&RendFrontSurf, RendFrontSurf.ResH/2, RendFrontSurf.ResV/2);
@@ -108,7 +110,7 @@ int main (int argc, char ** argv)
     // init resize view of Hello world
 	RendSurfCurView = HelloWorldView;
     // init synchro
-    InitSynch(EventsLoopSynchBuff, NULL, 500); // speed of events scan per second, this will be too the max fps detectable
+    InitSynch(EventsLoopSynchBuff, NULL, 250); // speed of events scan per second, this will be too the max fps detectable
     InitSynch(RenderSynchBuff, NULL, 60); // screen frequency
 	// main loop
 	for (int j=0;;j++) {
@@ -128,6 +130,9 @@ int main (int argc, char ** argv)
 
 		GetKey(&keyCode, &keyFLAG);
 		switch (keyCode) {
+			case KB_KEY_ESC: // F5 vertical synch e/d
+				exitApp = true;
+				break;
 			case KB_KEY_F5: // F5 vertical synch e/d
 				SynchScreen=!SynchScreen;
 				break;
@@ -141,7 +146,9 @@ int main (int argc, char ** argv)
 		}
 
 		// esc exit
-		if (IsKeyDown(KB_KEY_ESC)) break;
+        if (exitApp) {
+			break;
+        }
 		// ctrl + shift + tab  = jpeg screen shot
 		if (IsKeyDown(KB_KEY_TAB) && (KbFLAG&KB_SHIFT_PR) && (KbFLAG&KB_CTRL_PR))
 			SaveBMP16(&RendFrontSurf,(char*)"HelloWorld.bmp");
@@ -149,10 +156,9 @@ int main (int argc, char ** argv)
 		DgCheckEvents();
 	}
 
-	DestroySurf(&HelloWorldSurf16);
-	WaitDWorker(renderWorkerID);
 	DestroyDWorker(renderWorkerID);
 	renderWorkerID = 0;
+	DestroySurf(&HelloWorldSurf16);
     DgQuit();
     printf("See you!\n");
     return 0;

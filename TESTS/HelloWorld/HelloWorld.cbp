@@ -12,6 +12,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option use_console_runner="0" />
 				<Compiler>
 					<Add option="-g" />
 					<Add directory="../../" />
@@ -36,7 +37,7 @@
 				<Option output="../HelloWorld" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="../" />
 				<Option object_output="obj/Release/" />
-				<Option type="1" />
+				<Option type="0" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-march=corei7" />
@@ -55,10 +56,6 @@
 					<Add library="DUGL" />
 					<Add library="SDL2Main" />
 					<Add library="SDL2.dll" />
-					<Add library="user32" />
-					<Add library="gdi32" />
-					<Add library="winmm" />
-					<Add library="dxguid" />
 					<Add directory="../../bin/Release/" />
 				</Linker>
 			</Target>
