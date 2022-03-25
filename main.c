@@ -72,6 +72,11 @@ void DgQuit()
         }
     }
     DestroyDWorkers();
+    if (window != NULL) {
+		SDL_DestroyWindow(window);
+		DestroySurf(&RendSurf);
+		DestroySurf(&RendFrontSurf);
+    }
     SDL_Quit();
 }
 

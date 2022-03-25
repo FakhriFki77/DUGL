@@ -213,6 +213,7 @@ void DestroyDWorker(unsigned int dworkerID) {
 		return;
 	unsigned int idx = dworkerID - 1;
 	if (threadsDWorker[idx] != NULL) {
+		SDL_DetachThread(threadsDWorker[idx]);
 		if (condsDworker[idx] != NULL) {
 			SDL_DestroyCond(condsDworker[idx]);
 			condsDworker[idx] = NULL;
@@ -221,7 +222,6 @@ void DestroyDWorker(unsigned int dworkerID) {
 			SDL_DestroyMutex(locksDworker[idx]);
 			locksDworker[idx] = NULL;
 		}
-		SDL_DetachThread(threadsDWorker[idx]);
 		countDWorker --;
 		if (idx < FirstFreeDWorkerID)
 			FirstFreeDWorkerID = idx;

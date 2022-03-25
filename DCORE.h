@@ -204,6 +204,8 @@ void GetSurfRView(DgSurf *S, DgView *V);;
 		}  // extern "C" {
 #endif
 
+// utils macro
+#define RGB16(r,g,b) ((r>>3)|((g>>2)<<5)|((b>>3)<<11))
 
 #endif // DCORE_H_INCLUDED
 
