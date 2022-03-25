@@ -102,7 +102,8 @@ DSplitString * CreateDSplitString(unsigned int maxCharsCount, unsigned int maxSt
 int splitDSplitString(DSplitString *splitString, const char *str, char delim, bool addEmpty);
 void SetMultiDelimDSplitString(DSplitString *splitString, char *mDelim);
 int splitMultiDelimDSplitString(DSplitString *splitString, const char *str, bool addEmpty);
-
+void TrimStringsDSplitString(DSplitString *splitString); // remove (spaces,tabs) from start and (spaces,tabs,'\n','\r') from the end of each splitted string
+void TrimGlobStringDSplitString(DSplitString *splitString);
 void DestroyDSplitString(DSplitString *splitString);
 
 // DFileBuffer

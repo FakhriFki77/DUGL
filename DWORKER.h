@@ -29,7 +29,7 @@ typedef void (*dworkerFunctionPointer)(void*, int);
 #define DWORKERS_DEFAULT_MAX_COUNT	128
 
 bool InitDWorkers(unsigned int MAX_DWorker);
-bool DestroyDWorkers();
+void DestroyDWorkers();
 unsigned int CreateDWorker(dworkerFunctionPointer workerFunction, void *workerData);
 void RunDWorker(unsigned int dworkerID, bool WaitIfBusy);
 void SetDWorkerDataPtr(unsigned int dworkerID, void *dataPtr);

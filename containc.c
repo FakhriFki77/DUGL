@@ -365,11 +365,14 @@ DSplitString * CreateDSplitString(unsigned int maxCharsCount, unsigned int maxSt
 
 int splitDSplitString(DSplitString *splitString, const char *str, char delim, bool addEmpty) {
 	int idx =0;
-	splitString->globLen = strlen(str);
-	if (splitString->globLen > splitString->maxGlobLength)
-		splitString->globLen = splitString->maxGlobLength;
-	SDL_memcpy(splitString->globStr, str, splitString->globLen);
-	splitString->globStr[splitString->globLen] = '\0';
+	// if str NULL use current globStr
+	if (str != NULL) {
+		splitString->globLen = strlen(str);
+		if (splitString->globLen > splitString->maxGlobLength)
+			splitString->globLen = splitString->maxGlobLength;
+		SDL_memcpy(splitString->globStr, str, splitString->globLen);
+		splitString->globStr[splitString->globLen] = '\0';
+	}
 	splitString->countStrings = 0;
 	unsigned int startIdx = 0;
 	for (idx =0;idx < splitString->globLen; idx++) {
@@ -400,11 +403,14 @@ void SetMultiDelimDSplitString(DSplitString *splitString, char *mDelim) {
 
 int splitMultiDelimDSplitString(DSplitString *splitString, const char *str, bool addEmpty) {
 	int idx =0;
-	splitString->globLen = strlen(str);
-	if (splitString->globLen > splitString->maxGlobLength)
-		splitString->globLen = splitString->maxGlobLength;
-	SDL_memcpy(splitString->globStr, str, splitString->globLen);
-	splitString->globStr[splitString->globLen] = '\0';
+	// if str NULL use current globStr
+	if (str != NULL) {
+		splitString->globLen = strlen(str);
+		if (splitString->globLen > splitString->maxGlobLength)
+			splitString->globLen = splitString->maxGlobLength;
+		SDL_memcpy(splitString->globStr, str, splitString->globLen);
+		splitString->globStr[splitString->globLen] = '\0';
+	}
 	splitString->countStrings = 0;
 	unsigned int startIdx = 0;
 	for (idx =0;idx < splitString->globLen; idx++) {
@@ -423,6 +429,66 @@ int splitMultiDelimDSplitString(DSplitString *splitString, const char *str, bool
 	}
 
 	return splitString->countStrings;
+}
+
+void TrimGlobStringDSplitString(DSplitString *splitString) {
+	unsigned int sdx = 0;
+	char c;
+	splitString->globLen = SDL_strlen(splitString->globStr);
+	if (splitString->globLen == 0)
+		return;
+	// remove from space,tabs,\n and \r the end
+	for (sdx = splitString->globLen-1; sdx >=0 ; sdx--) {
+		if ((c = splitString->globStr[sdx]) == ' ' || c == '\t' || c == '\n' || c == '\r') {
+			splitString->globStr[sdx] = '\0';
+			splitString->globLen--;
+			if (splitString->globLen == 0)
+				return;
+		}
+		else
+			break;
+	}
+	// remove from space,tabs from start
+	for (sdx = 0; sdx < splitString->globLen; sdx++) {
+		if ((c = splitString->globStr[sdx]) != ' ' && c != '\t')
+			break;
+	}
+	if (sdx > 0) {
+		// empty ?
+		if (sdx == splitString->globLen - 1) {
+			splitString->globStr[0] = '\0';
+			splitString->globLen = 0;
+		} else {
+			splitString->globLen -= sdx;
+			SDL_memcpy(splitString->globStr, &splitString->globStr[sdx], splitString->globLen);
+		}
+	}
+}
+
+void TrimStringsDSplitString(DSplitString *splitString) {
+	unsigned int idx = 0;
+	unsigned int sdx = 0;
+	unsigned int lenCurString = 0;
+	char c;
+	for (idx =0;idx < splitString->countStrings; idx++) {
+		lenCurString = SDL_strlen(splitString->ListStrings[idx]);
+		if (lenCurString == 0)
+			continue;
+		// remove from space,tabs,\n and \r the end
+		for (sdx = lenCurString-1; sdx >=0 ; sdx--) {
+			if ((c = splitString->ListStrings[idx][sdx]) == ' ' || c == '\t' || c == '\n' || c == '\r')
+				splitString->ListStrings[idx][sdx] = '\0';
+			else
+				break;
+		}
+		// remove from space,tabs from start by incrementing string pointer
+		for (;*splitString->ListStrings[idx] != '\0'; splitString->ListStrings[idx]++) {
+			if ((c = *splitString->ListStrings[idx]) == ' ' || c == '\t')
+				continue;
+			else
+				break;
+		}
+	}
 }
 
 void DestroyDSplitString(DSplitString *splitString) {
