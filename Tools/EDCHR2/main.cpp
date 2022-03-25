@@ -247,9 +247,8 @@ int main()
 		RunDWorker(renderWorkerID, false);
 
         DgCheckEvents();
-        if (IsKeyDown(KB_KEY_ESC) || ExitNow == 1) // esc
-            break;
-        if (WH->Key == 0x2d && (WH->KeyFLAG & KB_ALT_PR)) // alt + x
+
+        if (WH->Key == KB_KEY_QWERTY_X && (WH->KeyFLAG & KB_ALT_PR)) // alt + x
             break;
 
         switch (WH->Key)
@@ -267,6 +266,10 @@ int main()
                 break;
             default:
                 break;
+        }
+        if (IsKeyDown(KB_KEY_ESC) || ExitNow == 1) {
+			WaitDWorker(renderWorkerID);
+            break;
         }
     }
 
