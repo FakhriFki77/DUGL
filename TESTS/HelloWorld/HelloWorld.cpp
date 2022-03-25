@@ -147,6 +147,8 @@ int main (int argc, char ** argv)
 
 		// esc exit
         if (exitApp) {
+        	// it's safer to wait the render DWorker to finish before exiting
+			WaitDWorker(renderWorkerID);
 			break;
         }
 		// ctrl + shift + tab  = jpeg screen shot
