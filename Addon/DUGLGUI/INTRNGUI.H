@@ -1,0 +1,6 @@
+
+// GUI PARAMETERS
+
+#define DGUI_DELAY_REPEAT   0.5
+#define DGUI_REPEAT_RATE    15.0
+
