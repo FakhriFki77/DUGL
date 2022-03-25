@@ -1,3 +1,6 @@
+/*	Dust Ultimate Game Library (DUGL)
+    Copyright (C) 2022	Fakhri Feki     */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
