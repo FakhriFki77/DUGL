@@ -19,10 +19,11 @@ int ScrResH=800,ScrResV=600;
 //******************
 // FONT
 FONT F1;
-// display parameters
+// functions
 bool SynchScreen=false;
 bool pauseHello=false;
 bool exitApp=false;
+bool takeScreenShot=false;
 // synch buffers
 char EventsLoopSynchBuff[SIZE_SYNCH_BUFF];
 char RenderSynchBuff[SIZE_SYNCH_BUFF];
@@ -143,6 +144,9 @@ int main (int argc, char ** argv)
 				break;
 			case KB_KEY_F7 : // F7 Todo
 				break;
+			case KB_KEY_TAB: // ctrl + shift + TAB = screenshot
+				takeScreenShot = ((keyFLAG&(KB_SHIFT_PR|KB_CTRL_PR)) > 0);
+				break;
 		}
 
 		// esc exit
@@ -151,9 +155,12 @@ int main (int argc, char ** argv)
 			WaitDWorker(renderWorkerID);
 			break;
         }
-		// ctrl + shift + tab  = jpeg screen shot
-		if (IsKeyDown(KB_KEY_TAB) && (KbFLAG&KB_SHIFT_PR) && (KbFLAG&KB_CTRL_PR))
-			SaveBMP16(&RendFrontSurf,(char*)"HelloWorld.bmp");
+		// need screen shot
+		if (takeScreenShot) {
+			WaitDWorker(renderWorkerID); // wait image ready
+			SaveBMP16(&RendSurf,(char*)"HelloWorld.bmp");
+			takeScreenShot = false;
+		}
 
 		DgCheckEvents();
 	}

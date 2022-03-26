@@ -37,8 +37,9 @@
 				<Option output="../HelloWorld" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="../" />
 				<Option object_output="obj/Release/" />
-				<Option type="0" />
+				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option use_console_runner="0" />
 				<Compiler>
 					<Add option="-march=corei7" />
 					<Add option="-fexpensive-optimizations" />
