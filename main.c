@@ -24,6 +24,8 @@
 #include "DUGL.h"
 #include "intrndugl.h"
 
+#define DEFAULT_DBLBUFF_ENABLED false
+
 int SDLEventHandler(void *data, SDL_Event* event);
 
 SDL_Window *window = NULL;
@@ -31,6 +33,7 @@ SDL_Surface *surfaceW = NULL;
 SDL_mutex *mutexEvents = NULL;
 SDL_Surface *surf16bpp = NULL;
 SDL_Surface *surfFront16bpp = NULL;
+bool enableDoubleBuff = true;
 
 
 int DgInit()
@@ -49,12 +52,14 @@ int DgInit()
     }
     SDL_memset4(&CurSurf, 0, sizeof(DgSurf) / 4);
     SDL_memset4(&RendSurf, 0, sizeof(DgSurf) / 4);
+    SDL_memset4(&RendFrontSurf, 0, sizeof(DgSurf) / 4);
 
     SDL_AddEventWatch(SDLEventHandler, NULL);
     if (!InitDWorkers(0)) {
 		return 0;
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "failed to init DWorkers\n");
     }
+    enableDoubleBuff = DEFAULT_DBLBUFF_ENABLED;
 
     return 1;
 }
@@ -74,8 +79,10 @@ void DgQuit()
     DestroyDWorkers();
     if (window != NULL) {
 		SDL_DestroyWindow(window);
-		DestroySurf(&RendSurf);
-		DestroySurf(&RendFrontSurf);
+		if (RendSurf.rlfb != 0)
+			DestroySurf(&RendSurf);
+		if (RendFrontSurf.rlfb != 0)
+			DestroySurf(&RendFrontSurf);
     }
     SDL_Quit();
 }
@@ -131,19 +138,21 @@ int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, i
     if (!CreateSurf(&RendSurf, ResHz, ResVt, 16))
         return 0;
 
-    if (!CreateSurf(&RendFrontSurf, ResHz, ResVt, 16))
-        return 0;
-
     // create the render Surface 16bpp
     surf16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendSurf.rlfb), ResHz, ResVt, 16, ResHz*2, SDL_PIXELFORMAT_RGB565);
     if (surf16bpp == NULL) {
         SDL_Log("SDL_CreateRGBSurfaceWithFormat() failed: %s", SDL_GetError());
         return 0;
     }
-	surfFront16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendFrontSurf.rlfb), ResHz, ResVt, 16, ResHz*2, SDL_PIXELFORMAT_RGB565);
-    if (surfFront16bpp == NULL) {
-        SDL_Log("SDL_CreateRGBSurfaceWithFormat() failed: %s", SDL_GetError());
-        return 0;
+    if (enableDoubleBuff) {
+		if (!CreateSurf(&RendFrontSurf, ResHz, ResVt, 16))
+			return 0;
+
+		surfFront16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendFrontSurf.rlfb), ResHz, ResVt, 16, ResHz*2, SDL_PIXELFORMAT_RGB565);
+		if (surfFront16bpp == NULL) {
+			SDL_Log("SDL_CreateRGBSurfaceWithFormat() failed: %s", SDL_GetError());
+			return 0;
+		}
     }
 
 	if (FullScreen) {
@@ -169,20 +178,54 @@ void DgUpdateWindow()
 {
 	SDL_Surface *tmpSDLSurf = surf16bpp;
 	DgSurf tmpSurf;
-	SDL_memcpy4(&tmpSurf,&RendSurf, sizeof(DgSurf)/4);
 	surfaceW = SDL_GetWindowSurface(window);
 
     if (RendSurf.rlfb != 0 && surfaceW != NULL)
     {
-        SDL_BlitSurface( surf16bpp, NULL, surfaceW, NULL );
+        SDL_BlitSurface( tmpSDLSurf, NULL, surfaceW, NULL );
 		SDL_UpdateWindowSurface(window);
 
-        surf16bpp = surfFront16bpp;
-        SDL_memcpy4(&RendSurf,&RendFrontSurf, sizeof(DgSurf)/4);
+		if (enableDoubleBuff) {
+			SDL_memcpy4(&tmpSurf,&RendSurf, sizeof(DgSurf)/4);
 
-        surfFront16bpp = surf16bpp;
-        SDL_memcpy4(&RendFrontSurf,&tmpSurf, sizeof(DgSurf)/4);
+			surf16bpp = surfFront16bpp;
+			SDL_memcpy4(&RendSurf,&RendFrontSurf, sizeof(DgSurf)/4);
+
+			surfFront16bpp = tmpSDLSurf;
+			SDL_memcpy4(&RendFrontSurf,&tmpSurf, sizeof(DgSurf)/4);
+		}
    }
+}
+
+void DgSetEnabledDoubleBuff(bool dblBuffEnabled) {
+	if (enableDoubleBuff && !dblBuffEnabled) { // disable
+		// destroy not required data
+		if (RendFrontSurf.rlfb != 0) {
+			DestroySurf(&RendFrontSurf);
+			SDL_memset4(&RendFrontSurf, 0, sizeof(DgSurf));
+		}
+		if (surfFront16bpp != NULL) {
+			SDL_FreeSurface(surfFront16bpp);
+			surfFront16bpp = NULL;
+		}
+
+		enableDoubleBuff = false;
+	} else if (enableDoubleBuff && !dblBuffEnabled) { // enable
+		if (!CreateSurf(&RendFrontSurf, RendSurf.ResH, RendSurf.ResV, 16))
+			return; // failed to enable double buff
+
+		surfFront16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendFrontSurf.rlfb), RendSurf.ResH, RendSurf.ResV, 16, RendSurf.ResH*2, SDL_PIXELFORMAT_RGB565);
+		if (surfFront16bpp == NULL) {
+			DestroySurf(&RendFrontSurf);
+			return; // failed 2
+		}
+
+		enableDoubleBuff = true;
+	}
+}
+
+bool DgGetEnabledDoubleBuff() {
+	return enableDoubleBuff;
 }
 
 int GetPixelSize(int bitsPixel) {

@@ -92,6 +92,9 @@ void DgToggleFullScreen(bool fullScreen);
 bool DgIsFullScreen();
 // Check events
 void DgCheckEvents();
+// Set/Get Double buffers or screen swap when DgUpdateWindow is called
+void DgSetEnabledDoubleBuff(bool dblBuffEnabled);
+bool DgGetEnabledDoubleBuff();
 
 // DGSurf handling ========================
 
