@@ -168,6 +168,7 @@ void PushKbReleaseEvent(unsigned int KeyCode);
 int  IsKeyDown(unsigned int NumKey);
 int  GetKeyNbElt();
 void GetKey(unsigned char *Key,unsigned int *KeyFLAG);
+void WaitKeyPressed();
 void ClearKeyCircBuff();
 int GetTimedKeyNbElt();
 unsigned int GetCurrTimeKeyDown(unsigned int Key);

@@ -698,6 +698,18 @@ int  WaitSynch(void *SynchBuff,int *Pos) {
     return (lastIPos - curIPos);
 }
 
+void DelayMs(unsigned int delayInMs) {
+	#define bigDelay 10
+	const Uint64 timeout = SDL_GetTicks64() + delayInMs;
+	Uint64 curTick64 = 0;
+	while ((curTick64 = SDL_GetTicks64()) < timeout) {
+		if (curTick64 + bigDelay <= timeout) {
+			SDL_Delay(bigDelay);
+		} else
+			SDL_Delay(1);
+	}
+}
+
 ///////////////////////////////////////
 // Keyboard ///////////////////////////
 
@@ -794,6 +806,13 @@ void GetKey(unsigned char *Key,unsigned int *KeyFLAG)
         iGetKey(Key, KeyFLAG);
         SDL_UnlockMutex(mutexEvents);
     }
+}
+
+void WaitKeyPressed() {
+	while (GetKeyNbElt() == 0) {
+		SDL_Delay(10);
+		DgCheckEvents();
+	}
 }
 
 void ClearKeyCircBuff()
