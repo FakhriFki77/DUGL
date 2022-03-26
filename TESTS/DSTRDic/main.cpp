@@ -102,6 +102,8 @@ int main (int argc, char ** argv)
     printf("%i - traversing all %0.2f milions elements  (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
 	DestroyDSTRDic(strDIC);
 
+	DgUninstallTimer();
+
     DgQuit();
     return 0;
 }
