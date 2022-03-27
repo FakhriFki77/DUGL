@@ -94,7 +94,6 @@ int main (int argc, char ** argv)
 
 	// set screen rendering Surf origin on the middle of the screen
 	SetOrgSurf(&RendSurf, RendSurf.ResH/2, RendSurf.ResV/2);
-	SetOrgSurf(&RendFrontSurf, RendFrontSurf.ResH/2, RendFrontSurf.ResV/2);
 
 	GetSurfRView(&RendSurf, &RendSurfOrgView); // save current View
 	GetSurfRView(&HelloWorldSurf16, &HelloWorldView);
@@ -103,8 +102,6 @@ int main (int argc, char ** argv)
 
 	// both rendering and front RenderSurf should be cleared to avoid any garbage at start-up
     DgSetCurSurf(&RendSurf);
-    DgClear16(0); // clear by black
-    DgSetCurSurf(&RendFrontSurf);
     DgClear16(0); // clear by black
     DgUpdateWindow();
 
