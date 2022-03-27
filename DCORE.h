@@ -140,9 +140,9 @@ void DgPutPixel16(int x, int y, int col);
 // View port clipped PutPixel
 void DgCPutPixel16(int x, int y, int col);
 // Get Pixel
-unsigned int DgGetPixel16(int x, int y, int col);
+unsigned int DgGetPixel16(int x, int y);
 // View port clipped GetPixel, return 0xFFFFFFFF if clipped, else the pixel on the low word
-unsigned int DgCGetPixel16(int x, int y, int col);
+unsigned int DgCGetPixel16(int x, int y);
 
 // Clipped lines
 void line16(int X1,int Y1,int X2,int Y2,int LgCol);

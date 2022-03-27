@@ -520,12 +520,11 @@ _OutText16:
 		MOV			ESI,[EBP+Str16]
 		XOR			EAX,EAX
 .BcOutChar:
-		LODSB
-		MOVD		xmm3,ESI
-		MOVD		xmm4,EAX
-		MOVD		xmm5,EBX
-		OR			AL,AL
+		OR			AL,[ESI]
 		JZ			.FinOutText
+		INC			ESI
+		PUSH		EBX
+		PUSH		ESI
 ;**************** Affichage et traitement **********************************
 ;***************************************************************************
 		CMP			AL,13		 ;** Debut Cas Special
@@ -586,8 +585,8 @@ _OutText16:
 		ADD			ESI,BYTE 4
 ;ALIGN 4
 .BcDrCarHline:
-		TEST		BL,1
-		JZ			SHORT .PasDrPixel
+		BT			EBX,0
+		JNC			SHORT .PasDrPixel
 		MOV			[EDI],AX
 .PasDrPixel:
 		SHR			EBX,1
@@ -718,8 +717,8 @@ _OutText16:
 		ADD			ESI,BYTE 4
 ;ALIGN 4
 .CBcDrCarHline:
-		TEST		BL,1
-		JZ			SHORT .CPasDrPixel
+		BT			EBX,0
+		JNC			SHORT .CPasDrPixel
 		MOV			[EDI],AX
 .CPasDrPixel:
 		SHR			EBX,1
@@ -785,10 +784,10 @@ _OutText16:
 		ADD			ESI,ECX
 		MOV			[_FntX],ESI	;***********fin trait Cas sp
 .Norm:
-		MOVD		ESI,xmm3
-		MOVD		EAX,xmm4
-		MOVD		EBX,xmm5
-		JMP		.BcOutChar
+		XOR			EAX,EAX
+		POP			ESI
+		POP			EBX
+		JMP			.BcOutChar
 .FinOutText:
 		POP			ESI
 		POP			EDI
