@@ -23,7 +23,8 @@
 
 ; GLOBAL Functions
 GLOBAL  _DgSetCurSurf, _DgSetSrcSurf, _DgGetCurSurf, _GetMaxResVSetSurf, _SurfCopy
-GLOBAL  _DgClear16, _InBar16, _DgPutPixel16, _DgCPutPixel16
+GLOBAL  _DgClear16, _InBar16, _DgPutPixel16, _DgCPutPixel16, _DgGetPixel16, _DgCGetPixel16
+
 GLOBAL	_line16,_Line16,_linemap16,_LineMap16,_lineblnd16,_LineBlnd16, _linemapblnd16,_LineMapBlnd16
 GLOBAL	_Poly16, _PutSurf16,_PutMaskSurf16,_PutSurfBlnd16,_PutMaskSurfBlnd16
 GLOBAL	_PutSurfTrans16,_PutMaskSurfTrans16
@@ -247,7 +248,6 @@ _DgClear16:
 		POP			EDI
 		RETURN
 
-ALIGN 32
 _DgPutPixel16:
     ARG PPX, 4, PPY, 4, PPCOL16, 4
 
@@ -282,6 +282,39 @@ _DgCPutPixel16:
 		MOV		   	EAX,[EBP+CPPCOL16]
 		ADD		   	EDX,[_vlfb]
 		MOV		   	[EDX+ECX*2],AX
+.Clip:
+
+    RETURN
+
+_DgGetPixel16:
+    ARG GPPX, 4, GPPY, 4
+
+        MOV         EDX,[_NegScanLine]
+		MOV         ECX,[EBP+GPPX]
+		IMUL        EDX,[EBP+GPPY]
+		ADD         EDX,[_vlfb]
+		MOVZX		EAX,WORD [EDX+ECX*2]
+
+    RETURN
+
+_DgCGetPixel16:
+    ARG CGPPX, 4, CGPPY, 4
+
+		MOV			EDX,[EBP+CGPPY]
+		MOV			ECX,[EBP+CGPPX]
+		MOV			EAX,0xFFFFFFFF
+		CMP         EDX,[_MaxY]
+		JG          SHORT .Clip
+		CMP         ECX,[_MaxX]
+		JG          SHORT .Clip
+		CMP         EDX,[_MinY]
+		JL          SHORT .Clip
+		CMP         ECX,[_MinX]
+		JL          SHORT .Clip
+
+		IMUL	    EDX,[_NegScanLine]
+		ADD		   	EDX,[_vlfb]
+		MOVZX		EAX,WORD [EDX+ECX*2]
 .Clip:
 
     RETURN
@@ -729,15 +762,13 @@ _OutText16:
 		JMP			SHORT .Norm
 
 .DebNextLigne:
-		XOR			EAX,EAX 	      ;***debut trait Cas sp
-		MOV			AL,[_FntDistLgn]
+		MOVZX		EAX,BYTE [_FntDistLgn] ;***debut trait Cas sp
 		MOV			EBX,[_FntY]
 		SUB			EBX,EAX
 		MOV			[_FntY],EBX
 .DebLigne:
-		MOV			AL,[_FntSens]
-		OR			AL,AL
-		JZ			SHORT .GchDrt
+		CMP			BYTE [_FntSens], 0
+		JE			SHORT .GchDrt
 		MOV			EBX,[_MaxX]
 		JMP			SHORT .DrtGch
 .GchDrt:
