@@ -1,0 +1,236 @@
+/*  Dust Ultimate Game Library (DUGL) - (C) 2022 Fakhri Feki */
+/*  Console - graphic console like profiling of DSTRDic against std::map*/
+/*  History : */
+/*  27 march 2022 : first release */
+
+#include <map>
+#include <string>
+
+#include <stdio.h>
+#include <conio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "DUGL.h"
+
+
+// screen resolution
+//int ScrResH=640,ScrResV=480;
+int ScrResH=800,ScrResV=600;
+//int ScrResH=1024,ScrResV=768;
+//int ScrResH=1280,ScrResV=1024;
+
+//******************
+// FONT
+FONT F1;
+// functions
+bool exitApp=false;
+bool takeScreenShot=false;
+// synch buffers
+char EventsLoopSynchBuff[SIZE_SYNCH_BUFF];
+// render DWorker
+unsigned int renderWorkerID = 0;
+void RenderWorkerFunc(void *, int );
+
+
+int main (int argc, char ** argv)
+{
+    // init the lib
+    if (!DgInit()) {
+		printf("DUGL init error\n"); exit(-1);
+	}
+
+
+    // create rendering DWorker
+    renderWorkerID = CreateDWorker(RenderWorkerFunc, nullptr);
+
+    // load font
+    if (!LoadFONT(&F1,"../Asset/FONT/hello.chr")) {
+		printf("Error loading hello.chr\n"); exit(-1);
+	}
+
+    SetFONT(&F1);
+
+    // init video mode
+    if (!DgInitMainWindowX("Console", ScrResH, ScrResV, 16, -1, -1, false, false, false))
+    {
+        DgQuit();
+        exit(-1);
+    }
+
+    // install timer and keyborad handler
+    DgInstallTimer(500);
+
+    if (DgTimerFreq == 0)
+    {
+       DgQuit();
+       printf("Timer error\n");
+       exit(-1);
+    }
+    if (!InstallKeyboard()) {
+		DgQuit();
+		printf("Keyboard error\n");
+		exit(-1);
+    }
+
+	// set screen rendering Surf origin on the middle of the screen
+	SetOrgSurf(&RendSurf, RendSurf.ResH/2, RendSurf.ResV/2);
+
+	// both rendering and front RenderSurf should be cleared to avoid any garbage at start-up
+    DgSetCurSurf(&RendSurf);
+    DgClear16(0); // clear by black
+    DgUpdateWindow();
+
+    // init synchro
+    InitSynch(EventsLoopSynchBuff, NULL, 250); // speed of events scan per second, this will be too the max fps detectable
+	// main loop
+	for (int j=0;;j++) {
+		// synchronise event loop
+		// WaitSynch should be used as Synch will cause scan events by milions or bilions time per sec !
+		WaitSynch(EventsLoopSynchBuff, NULL);
+
+		// render one frame in separate DWorker (Thread)
+		RunDWorker(renderWorkerID, false);
+
+		// get key
+		unsigned char keyCode;
+		unsigned int keyFLAG;
+
+		GetKey(&keyCode, &keyFLAG);
+		switch (keyCode) {
+			case KB_KEY_ESC: // F5 vertical synch e/d
+				exitApp = true;
+				break;
+			case KB_KEY_F6: // F6 Todo
+				break;
+			case KB_KEY_F7 : // F7 Todo
+				break;
+			case KB_KEY_TAB: // ctrl + shift + TAB = screenshot
+				takeScreenShot = ((keyFLAG&(KB_SHIFT_PR|KB_CTRL_PR)) > 0);
+				break;
+		}
+
+		// esc exit
+        if (exitApp) {
+        	// it's safer to wait the render DWorker to finish before exiting
+			WaitDWorker(renderWorkerID);
+			break;
+        }
+		// need screen shot
+		if (takeScreenShot) {
+			WaitDWorker(renderWorkerID); // wait image ready
+			SaveBMP16(&RendSurf,(char*)"Console.bmp");
+			takeScreenShot = false;
+		}
+
+		DgCheckEvents();
+	}
+
+	DestroyDWorker(renderWorkerID);
+	renderWorkerID = 0;
+	UninstallKeyboard();
+	DgUninstallTimer();
+    DgQuit();
+    return 0;
+}
+
+void RenderWorkerFunc(void *, int ) {
+
+	static bool finished = false;
+	char text[100];
+
+	// profiling finished ? exit
+	if (finished)
+		return;
+
+	DgSetCurSurf(&RendSurf);
+
+	// clear all the Surf
+	DgClear16(0);
+
+	// put text cursor on the top
+	ClearText();
+	SetTextCol(0xffff);
+
+	// std::map
+
+    std::map<std::string,void*> mapData;
+	char intstr[10];
+    unsigned int countKeyVal = 1500000;
+    unsigned int lastDgTime = 0;
+    sprintf(text, "%i - Timing std::map\n", DgTime);
+    OutText16(text);
+	DgUpdateWindow(); // required if we want to see the output OutText16 on the screen
+    sprintf(text, "%i - Creating std::map Dictionnary\n", DgTime);
+    OutText16(text);
+	DgUpdateWindow();
+    lastDgTime = DgTime;
+    for (unsigned int idic=0;idic<countKeyVal;idic++) {
+		itoa(idic+123456, intstr, 10);
+		mapData.insert(std::make_pair(intstr, (void*)(idic+1+123456))); // inserting an integer instead of void *
+    }
+    sprintf(text, "%i - Inserting %0.2f milions (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
+    OutText16(text);
+	DgUpdateWindow();
+    lastDgTime = DgTime;
+    int valptr = 0;
+    for (int idic=0;idic<1000000;idic++) {
+		itoa((rand()%countKeyVal)+123456, intstr, 10);
+		auto fit = mapData.find(intstr);
+		if (fit != mapData.end()) {
+			valptr = (int)fit->second;
+		}
+    }
+    sprintf(text, "%i - searching for random 1 milions (key, value) in %0.2f sec\n", DgTime, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
+    OutText16(text);
+	DgUpdateWindow();
+    lastDgTime = DgTime;
+	for (auto i = mapData.begin(); i != mapData.end(); i++) {
+		valptr = (int)i->second;
+	}
+    sprintf(text, "%i - traversing all %0.2f milions elements  (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
+    OutText16(text);
+	DgUpdateWindow();
+
+    // DSTRDic
+
+    sprintf(text, "%i - Timing DSTRDic\n", DgTime);
+    OutText16(text);
+	DgUpdateWindow();
+	DSTRDic *strDIC =CreateDSTRDic(0, 18); // hash Table in 18bits or 256k elements without collision
+	sprintf(text, "%i - Creating DSTRDic Dictionnary \n", DgTime);
+    OutText16(text);
+	DgUpdateWindow();
+    lastDgTime = DgTime;
+	for (unsigned int idic=0;idic<countKeyVal;idic++) {
+		itoa(idic+123456, intstr, 10);
+		InsertDSTRDic(strDIC, intstr, (void*)(idic+1+123456), false);
+	}
+    sprintf(text, "%i - Inserting %0.2f milions (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
+    OutText16(text);
+	DgUpdateWindow();
+    lastDgTime = DgTime;
+    valptr = 0;
+	for (unsigned int idic=0;idic<1000000;idic++) {
+		itoa((rand()%countKeyVal)+123456, intstr, 10);
+		valptr = (int)keyValueDSTRDic(strDIC, intstr);
+	}
+    sprintf(text, "%i - searching for random 1 milions (key, value) in %0.2f sec\n", DgTime, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
+    OutText16(text);
+	DgUpdateWindow();
+    lastDgTime = DgTime;
+    char *strv = NULL;
+    void *datav = NULL;
+    bool hasElem = false;
+    for (hasElem = GetFirstValueDSTRDic(strDIC, &strv, &datav); hasElem; hasElem = GetNextValueDSTRDic(strDIC, &strv, &datav)) {
+		valptr = (int)datav;
+    }
+    sprintf(text, "%i - traversing all %0.2f milions elements  (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
+    OutText16(text);
+	DgUpdateWindow();
+	DestroyDSTRDic(strDIC);
+
+	OutText16("\nconsole sample finished,\nEsc to exit\n");
+	DgUpdateWindow();
+
+	finished = true;
+}
