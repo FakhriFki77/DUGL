@@ -103,6 +103,7 @@ typedef struct
 #define KB_KEY_8			0x09
 #define KB_KEY_9			0x0a
 #define KB_KEY_0			0x0b
+#define KB_KEY_BACKSPACE	0x0e
 #define KB_KEY_QWERTY_A		0x1e
 #define KB_KEY_QWERTY_B		0x2e
 #define KB_KEY_QWERTY_C		0x30
@@ -150,10 +151,14 @@ typedef struct
 #define KB_KEY_F12			0x58
 #define KB_KEY_RIGHT_CTRL	0x9d
 #define KB_KEY_RIGHT_ALT	0xb8
+#define KB_KEY_HOME			0xc7
 #define KB_KEY_UP			0xc8
 #define KB_KEY_PGUP			0xc9
+#define KB_KEY_END			0xcf
 #define KB_KEY_DOWN			0xd0
 #define KB_KEY_PGDOWN		0xd1
+#define KB_KEY_INSERT		0xd2
+#define KB_KEY_DELETE		0xd3
 #define KB_KEY_LEFT			0xcb
 #define KB_KEY_RIGHT		0xcd
 
