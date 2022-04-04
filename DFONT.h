@@ -58,6 +58,8 @@ int  PosWidthText(const char *str,int width); // Position in *str if we progress
 void OutText16(const char *str);
 void OutText16XY(int TX,int TY,const char *str);
 int  OutText16Mode(const char *str,int Mode);
+void OutText16Format(char *midStr, unsigned int sizeMidStr, char *fmt, ...);
+void OutText16ModeFormat(int Mode, char *midStr, unsigned int sizeMidStr, char *fmt, ...);
 int  OutText16YMode(int TY,const char *str,int Mode);
 int  RViewOutText16Mode(DgView *V,const char *str,int Mode);
 int  RViewGetXOutTextMode(DgView *V,const char *str,int Mode);
