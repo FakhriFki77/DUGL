@@ -579,7 +579,7 @@ void ReadChunkDFileBuffer(DFileBuffer *ptr) {
 bool OpenFileDFileBuffer(DFileBuffer *ptr, const char *filename, const char *openmode) {
 	if (ptr->m_file != NULL || ptr->m_readWorkerID == 0)
 		return false;
-	if ((ptr->m_file = fopen(filename, openmode)) == NULL)
+	if (fopen_s(&ptr->m_file, filename, openmode) !=0 )
 		return false;
 	ptr->m_ReadJob.m_buffRead = ptr->m_buffReadWorker;
 	ptr->m_ReadJob.m_file = ptr->m_file;
