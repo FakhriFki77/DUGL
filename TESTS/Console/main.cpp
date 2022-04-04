@@ -136,7 +136,8 @@ int main (int argc, char ** argv)
 void RenderWorkerFunc(void *, int ) {
 
 	static bool finished = false;
-	char text[100];
+	#define SIZE_TEXT 127
+	char text[SIZE_TEXT+1];
 
 	// profiling finished ? exit
 	if (finished)
@@ -157,19 +158,16 @@ void RenderWorkerFunc(void *, int ) {
 	char intstr[10];
     unsigned int countKeyVal = 1500000;
     unsigned int lastDgTime = 0;
-    sprintf(text, "%i - Timing std::map\n", DgTime);
-    OutText16(text);
+    OutText16Format(text, SIZE_TEXT, "%i - Timing std::map\n", DgTime);
 	DgUpdateWindow(); // required if we want to see the output OutText16 on the screen
-    sprintf(text, "%i - Creating std::map Dictionnary\n", DgTime);
-    OutText16(text);
+    OutText16Format(text, SIZE_TEXT, "%i - Creating std::map Dictionnary\n", DgTime);
 	DgUpdateWindow();
     lastDgTime = DgTime;
     for (unsigned int idic=0;idic<countKeyVal;idic++) {
 		itoa(idic+123456, intstr, 10);
 		mapData.insert(std::make_pair(intstr, (void*)(idic+1+123456))); // inserting an integer instead of void *
     }
-    sprintf(text, "%i - Inserting %0.2f milions (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
-    OutText16(text);
+    OutText16Format(text, SIZE_TEXT, "%i - Inserting %0.2f milions (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
 	DgUpdateWindow();
     lastDgTime = DgTime;
     int valptr = 0;
@@ -180,33 +178,28 @@ void RenderWorkerFunc(void *, int ) {
 			valptr = (int)fit->second;
 		}
     }
-    sprintf(text, "%i - searching for random 1 milions (key, value) in %0.2f sec\n", DgTime, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
-    OutText16(text);
+    OutText16Format(text, SIZE_TEXT, "%i - searching for random 1 milions (key, value) in %0.2f sec\n", DgTime, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
 	DgUpdateWindow();
     lastDgTime = DgTime;
 	for (auto i = mapData.begin(); i != mapData.end(); i++) {
 		valptr = (int)i->second;
 	}
-    sprintf(text, "%i - traversing all %0.2f milions elements  (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
-    OutText16(text);
+    OutText16Format(text, SIZE_TEXT, "%i - traversing all %0.2f milions elements  (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
 	DgUpdateWindow();
 
     // DSTRDic
 
-    sprintf(text, "%i - Timing DSTRDic\n", DgTime);
-    OutText16(text);
+    OutText16Format(text, SIZE_TEXT, "%i - Timing DSTRDic\n", DgTime);
 	DgUpdateWindow();
 	DSTRDic *strDIC =CreateDSTRDic(0, 18); // hash Table in 18bits or 256k elements without collision
-	sprintf(text, "%i - Creating DSTRDic Dictionnary \n", DgTime);
-    OutText16(text);
+	OutText16Format(text, SIZE_TEXT, "%i - Creating DSTRDic Dictionnary \n", DgTime);
 	DgUpdateWindow();
     lastDgTime = DgTime;
 	for (unsigned int idic=0;idic<countKeyVal;idic++) {
 		itoa(idic+123456, intstr, 10);
 		InsertDSTRDic(strDIC, intstr, (void*)(idic+1+123456), false);
 	}
-    sprintf(text, "%i - Inserting %0.2f milions (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
-    OutText16(text);
+    OutText16Format(text, SIZE_TEXT, "%i - Inserting %0.2f milions (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
 	DgUpdateWindow();
     lastDgTime = DgTime;
     valptr = 0;
@@ -214,8 +207,7 @@ void RenderWorkerFunc(void *, int ) {
 		itoa((rand()%countKeyVal)+123456, intstr, 10);
 		valptr = (int)keyValueDSTRDic(strDIC, intstr);
 	}
-    sprintf(text, "%i - searching for random 1 milions (key, value) in %0.2f sec\n", DgTime, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
-    OutText16(text);
+    OutText16Format(text, SIZE_TEXT, "%i - searching for random 1 milions (key, value) in %0.2f sec\n", DgTime, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
 	DgUpdateWindow();
     lastDgTime = DgTime;
     char *strv = NULL;
@@ -224,8 +216,7 @@ void RenderWorkerFunc(void *, int ) {
     for (hasElem = GetFirstValueDSTRDic(strDIC, &strv, &datav); hasElem; hasElem = GetNextValueDSTRDic(strDIC, &strv, &datav)) {
 		valptr = (int)datav;
     }
-    sprintf(text, "%i - traversing all %0.2f milions elements  (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
-    OutText16(text);
+    OutText16Format(text, SIZE_TEXT, "%i - traversing all %0.2f milions elements  (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
 	DgUpdateWindow();
 	DestroyDSTRDic(strDIC);
 
