@@ -16,6 +16,7 @@
 
     contact: libdugl@hotmail.com    */
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -292,7 +293,7 @@ void DestroySurf(DgSurf *S)
     if (S->rlfb!=0)
     {
         SDL_SIMDFree((void*)S->rlfb);
-        S->rlfb = 0;
+        SDL_memset4(S, 0, sizeof(DgSurf)/4);
 	}
 }
 
@@ -655,6 +656,22 @@ int RViewGetFntYMID(DgView *V) {
 void OutText16XY(int TX,int TY,const char *str)
 {	FntX=TX; 	FntY=TY;
 	OutText16(str);
+}
+
+void OutText16ModeFormat(int Mode, char *midStr, unsigned int sizeMidStr, char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vsprintf_s(midStr, sizeMidStr, fmt, args);
+    va_end(args);
+    OutText16Mode(midStr, Mode);
+}
+
+void OutText16Format(char *midStr, unsigned int sizeMidStr, char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vsprintf_s(midStr, sizeMidStr, fmt, args);
+    va_end(args);
+    OutText16(midStr);
 }
 
 // Mode : 0 CurPos, 1 mid, 2 AjusteSrc, 3 AjusteI-src, 4 AjLeft, 5 AjRight
