@@ -28,6 +28,8 @@ public:
    char Chgd,resv[3];
    char *ExtChgd;
    char *StrPtr;
+   unsigned int ReservedSize;
+   unsigned int used;
 public:
    String(const char *s,int MaxSize);
    String(const char *s);
@@ -234,8 +236,21 @@ public:
    void (*cputpixel)(int X,int Y,int Col);
    void (*rectmap)(int X1,int Y1,int X2,int Y2,int rcol,unsigned int rmap);
    void (*rect)(int X1,int Y1,int X2,int Y2,int rcol);
+
    void (*PutSurf)(DgSurf *S,int X,int Y,int PType);
    void (*PutMaskSurf)(DgSurf *S,int X,int Y,int PType);
+   void (*PutSurfBlnd)(DgSurf *S,int X,int Y,int PType,int colBlnd);
+   void (*PutMaskSurfBlnd)(DgSurf *S,int X,int Y,int PType,int colBlnd);
+   void (*PutSurfTrans)(DgSurf *S,int X,int Y,int PType,int trans);
+   void (*PutMaskSurfTrans)(DgSurf *S,int X,int Y,int PType,int trans);
+
+   void (*ResizeViewSurf)(DgSurf *SSrcSurf, int swapHz, int swapVt);
+   void (*MaskResizeViewSurf)(DgSurf *SSrcSurf, int swapHz, int swapVt);
+   void (*TransResizeViewSurf)(DgSurf *SSrcSurf, int swapHz, int swapVt, int transparency);
+   void (*MaskTransResizeViewSurf)(DgSurf *SSrcSurf, int swapHz, int swapVt, int transparency);
+   void (*BlndResizeViewSurf)(DgSurf *SSrcSurf, int swapHz, int swapVt, int colBlnd);
+   void (*MaskBlndResizeViewSurf)(DgSurf *SSrcSurf, int swapHz, int swapVt, int colBlnd);
+
    void (*Line)(void *Point1,void *Point2,int col);
    void (*Poly)(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
    // low-level font
@@ -307,6 +322,7 @@ public:
 protected:
    List *ChList;
    NodeWin *MWNode;
+   NodeWin *lastMWNode;
 public:
    MainWin(int x,int y,int width,int height,const char *label,WinHandler *WH);
    ~MainWin();
@@ -318,6 +334,8 @@ public:
    void SetNextFocus();
    void Enable();
    void Disable();
+   void ShowModal();
+   void HideModal();
    void Show();
    void Hide();
    void Move(int NewX,int NewY);
@@ -408,7 +426,7 @@ public:
    void (*Click)();
 public:
    Button(int x1,int y1,int x2,int y2,MainWin *Father,const char *label,
-          char def,char Echap);
+          char def,char Echap, ContBox *parentFrame=NULL);
    ~Button();
    void Draw();
    void Scan();
@@ -657,7 +675,7 @@ class HzSlider : public Child {
 public:
    void (*Changed)(int Val);
 public:
-   HzSlider(int x1,int x2,int y,MainWin *Father,int MinVal,int MaxVal);
+   HzSlider(int x1,int x2,int y,MainWin *Father,int MinVal,int MaxVal,ContBox *Cont = NULL);
    ~HzSlider();
    void Draw();
    void Scan();

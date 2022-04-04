@@ -35,9 +35,9 @@ WinHandler::~WinHandler() {
 }
 
 void WinHandler::Scan() {
-   DgSurf SaveSurf;
+   //DgSurf SaveSurf;
    NodeFly *FlyParcNode=NULL,*FlyFoundNode=NULL;
-   DgGetCurSurf(&SaveSurf);
+   //DgGetCurSurf(&SaveSurf);
 
    GetAscii(&Ascii,&AsciiFLAG);
    GetKey(&Key,&KeyFLAG);
@@ -63,11 +63,6 @@ void WinHandler::Scan() {
      else
        if (CurWinNode && CurWinNode->Item->ActivMenu)
          CurWinNode->Item->MyMenu->Scan();
-
-/*     if (FlyFoundNode!=NULL)
-       m_GraphCtxt->WinFreeMs=0;
-     else
-       m_GraphCtxt->WinFreeMs=1;*/
 
      if (FlyFoundNode!=FlyList->Nodes && FlyList->Nodes)
        FlyList->Nodes->Item->Scan();
@@ -112,7 +107,7 @@ void WinHandler::Scan() {
    // if mouse isn't up a fly obj and we have a current win
    if (CurWinNode && FlyFoundNode==NULL) CurWinNode->Item->Scan();
    //}
-   DgSetCurSurf(&SaveSurf);
+   //DgSetCurSurf(&SaveSurf);
 }
 
 void WinHandler::EnableDelAllFly()
@@ -228,6 +223,7 @@ MainWin::MainWin(int x,int y,int width,int height,const char *label,WinHandler *
    ChList = new List;
    if (label) Label=label;
    else Label="";
+   MyMenu = nullptr;
    MWWinHand=WH;
    m_GraphCtxt=WH->m_GraphCtxt;
    X=x; Y=y;
@@ -235,6 +231,7 @@ MainWin::MainWin(int x,int y,int width,int height,const char *label,WinHandler *
    DefaultActiv=1;
    ValidDef=0; ActivMenu=0; MyMenu=NULL;
    MWNode=WH->AddMainWin(this);
+   lastMWNode = nullptr;
    if (!(WH->CurWinNode)) {
      Visible=Focus=1;
      WH->CurWinNode=MWNode;
@@ -463,11 +460,30 @@ void MainWin::SetNextFocus() {
    MWWinHand->DelAllFly();
 }
 
+
+void MainWin::ShowModal() {
+	// already the current MainWin
+	if (MWWinHand->CurWinNode == MWNode)
+		return;
+	lastMWNode = MWWinHand->CurWinNode;
+	Enable();
+}
+
+void MainWin::HideModal() {
+	if (lastMWNode == nullptr)
+		return;
+	Disable();
+	lastMWNode->Item->Enable();
+	lastMWNode = nullptr;
+	Hide();
+}
+
 void MainWin::Enable() {
    NodeWin *OldWin=MWWinHand->CurWinNode;
    MWWinHand->MoveCurWin=0;
    ValidDef=0;
-   if (!MWWinHand->FlyList->Empty()) MWWinHand->DelAllFly();
+   if (MWWinHand->FlyList != NULL && !MWWinHand->FlyList->Empty())
+	  MWWinHand->DelAllFly();
    if (OldWin!=MWNode) {
      ClearKeyCircBuff();
      ClearAsciiCircBuff();
@@ -582,21 +598,31 @@ Child::~Child() {
 }
 
 void Child::SetFocus() {
-   Node *CN=*CurFocusNode;
-   if (CN==ChNode) return;
-   if (CN) CN->Item->UnsetFocus();
-   *CurFocusNode=ChNode;
+   Node *CN=nullptr;
+   if (MainCBox) {
+       CN=MainCBox->CurFocusInNode;
+       if (CN) CN->Item->UnsetFocus();
+       Focus=1; MainCBox->CurFocusInNode=ChNode;
+       if (!MainCBox->Focus) MainCBox->SetFocus();
+   } else {
+   	 CN=*CurFocusNode;
+     if (CN==ChNode) return;
+     if (CN) CN->Item->UnsetFocus();
+     *CurFocusNode=ChNode;
+   }
    Focus=1;
 }
 
 void Child::UnsetFocus() {
-   ClearAsciiCircBuff();
-   ClearKeyCircBuff();
-   Main->Ascii=Main->Key=0;
-   if (*CurFocusNode==ChNode) {
-     Focus=0;
-     if (MsDown) { MsDown=0; m_GraphCtxt->WinFreeMs=1; }
-     *CurFocusNode=NULL;
+
+   if (Focus) {
+	   ClearAsciiCircBuff();
+	   ClearKeyCircBuff();
+	   Focus=Main->Ascii=Main->Key=0;
+	   if (MainCBox == NULL && *CurFocusNode==ChNode) {
+		 if (MsDown) { MsDown=0; m_GraphCtxt->WinFreeMs=1; }
+		 *CurFocusNode=NULL;
+	   }
    }
 }
 
@@ -963,7 +989,7 @@ void ContBox::SetPrevFocus() {
 //*************** class Button ************************************
 //*****************************************************************
 Button::Button(int x1,int y1,int x2,int y2,MainWin *Father,const char *label,
-   char def,char Echap) : Child(x1,y1,x2,y2,Father,NULL)  {
+   char def,char Echap, ContBox *parentFrame) : Child(x1,y1,x2,y2,Father,parentFrame)  {
    CanDefault=1;
    Click=NULL;
    if (label) Label=label;
@@ -1014,19 +1040,25 @@ void Button::Draw() {
 void Button::Scan() {
    int Redr=0;
    Child::Scan();
-   if (MsDown && (!Focus)) {
+   if (MsDown) {
       Etat=(MsIn)?1:0;
-      SetFocus();
-      }
+	  if (!Focus) SetFocus();
+      Redr = 1;
+   }
    if ( (Etat && (!MsIn))	     ||
         (MsDown && Etat && (!MsIn))  ||
         ((!MsDown) && Etat)	     ||
         ((!Focus) && Etat) ) {
      Etat=0; Redr=1; }
+   if (Focus && Etat && MsDown && MsIn) { Etat=1; Redr=1; }
    if (MsDown && (!Etat) && MsIn) { Etat=1; Redr=1; }
    if (Label.Changed()) Redr=1;
-   if (LostMsDown && MsIn) {
-     UnsetFocus(); Redraw(); Validate(); return; }
+   if (LostMsDown) {
+   	  Redr = 1;
+	  //UnsetFocus();
+	  if(MsIn) { Validate(); }
+   }
+//     UnsetFocus(); Redraw(); Validate(); return; }
    if (Redr) Redraw();
 }
 
@@ -1035,25 +1067,17 @@ void Button::MsEnter() { if (ReactMsInOut) Redraw(); }
 void Button::MsLeave() { if (ReactMsInOut) Redraw(); }
 
 void Button::SetFocus() {
-   Node *CN=nullptr;
-   Child::SetFocus();
-   if (Main->DefaultActiv) {
-     Main->DefaultActiv=0;
-     CN=Main->DefNode;
-     if (CN) CN->Item->Redraw();
+   if (!Focus) {
+     Child::SetFocus();
+	 Redraw();
    }
-//   if (CN) CN->Item->Redraw();
-   Redraw();
 }
 
 void Button::UnsetFocus() {
    if (Focus) {
-     Child::UnsetFocus();
-     Etat=0;
-     Redraw();
-     if (Main->DefNode) {
-       Main->DefaultActiv=1;
-       Main->DefNode->Item->Redraw(); }
+      Etat=0;
+      Child::UnsetFocus();
+      Redraw();
    }
 }
 
@@ -1660,35 +1684,16 @@ void CocheBox::Scan() {
 }
 
 void CocheBox::SetFocus() {
-   Node *CN=Main->CurFocusNode;
    if (!Focus) {
-     if (MainCBox) {
-       CN=MainCBox->CurFocusInNode;
-       if (CN) CN->Item->UnsetFocus();
-       Focus=1; MainCBox->CurFocusInNode=ChNode;
-       if (!MainCBox->Focus) MainCBox->SetFocus();
-     } else {
-       Child::SetFocus();
-     }
-//     if (CN) CN->Item->Redraw();
+	 Child::SetFocus();
      Redraw();
    }
 }
 
 void CocheBox::UnsetFocus() {
    if (Focus) {
-     if (MainCBox) {
-       ClearAsciiCircBuff();
-       ClearKeyCircBuff();
-       Focus=Main->Ascii=Main->Key=0;
-       Etat=1;
-     } else {
-       ClearAsciiCircBuff();
-       ClearKeyCircBuff();
-       Main->Ascii=Main->Key=0;
-       Etat=1;
-       Child::UnsetFocus();
-     }
+     Etat=1;
+     Child::UnsetFocus();
      Redraw();
    }
 }
@@ -1843,16 +1848,8 @@ void OptionButt::Scan() {
 }
 
 void OptionButt::SetFocus() {
-   Node *CN;
    if (!Focus) {
-     if (MainCBox) {
-       CN=MainCBox->CurFocusInNode;
-       if (CN) CN->Item->UnsetFocus();
-       Focus=1; MainCBox->CurFocusInNode=ChNode;
-       if (!MainCBox->Focus) MainCBox->SetFocus();
-     } else {
-       Child::SetFocus();
-     }
+	 Child::SetFocus();
      Redraw();
    }
 }
@@ -2711,7 +2708,7 @@ HzScrollBar& HzScrollBar::operator=(int NewVal) {
 //*****************************************************************
 
 HzSlider::HzSlider(int x1,int x2,int y,MainWin *Father,
-  int MinVal,int MaxVal) : Child(x1,y,x2,y+16,Father,NULL)  {
+  int MinVal,int MaxVal,ContBox *Cont) : Child(x1,y,x2,y+16,Father,Cont)  {
    xbth=XC1;    ybth=YC2-14;
    xbtb=XC2-7;  ybtb=YC2-14;
    HzMinVal=MinVal; HzMaxVal=MaxVal;

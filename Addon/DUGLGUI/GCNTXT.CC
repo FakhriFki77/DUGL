@@ -61,8 +61,21 @@ CGraphContext::CGraphContext(int BitsPixel,void *PalBGR1024) {
      cputpixel=::DgCPutPixel16;
      rectmap=::rectmap16;
      rect=::rect16;
+
      PutSurf=::PutSurf16;
      PutMaskSurf=::PutMaskSurf16;
+	 PutSurfBlnd=::PutSurfBlnd16;
+     PutMaskSurfBlnd=::PutMaskSurfBlnd16;
+     PutSurfTrans=::PutSurfTrans16;
+     PutMaskSurfTrans=::PutMaskSurfTrans16;
+
+     ResizeViewSurf=::ResizeViewSurf16;
+     MaskResizeViewSurf=::MaskResizeViewSurf16;
+     TransResizeViewSurf=::TransResizeViewSurf16;
+     MaskTransResizeViewSurf=::MaskTransResizeViewSurf16;
+     BlndResizeViewSurf=::BlndResizeViewSurf16;
+     MaskBlndResizeViewSurf=::MaskBlndResizeViewSurf16;
+
      OutText=::OutText16;
      RViewOutTextMode=::RViewOutText16Mode;
      Line=::Line16;
@@ -76,8 +89,21 @@ CGraphContext::CGraphContext(int BitsPixel,void *PalBGR1024) {
      cputpixel=NULL;
      rectmap=NULL;
      rect=NULL;
+
      PutSurf=NULL;
      PutMaskSurf=NULL;
+	 PutSurfBlnd=NULL;
+     PutMaskSurfBlnd=NULL;
+     PutSurfTrans=NULL;
+     PutMaskSurfTrans=NULL;
+
+     ResizeViewSurf=NULL;
+     MaskResizeViewSurf=NULL;
+     TransResizeViewSurf=NULL;
+     MaskTransResizeViewSurf=NULL;
+     BlndResizeViewSurf=NULL;
+     MaskBlndResizeViewSurf=NULL;
+
      OutText=NULL;
      Line=NULL;
      Poly=NULL;

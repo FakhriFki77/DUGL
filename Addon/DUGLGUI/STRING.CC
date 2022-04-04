@@ -480,37 +480,52 @@ String* ListString::operator[](int ind) {
 
 String::String(const char *s,int MaxSize) {
    StrPtr=new char[MaxSize];
+   ReservedSize = MaxSize;
+   used = strlen(s)+1;
+   if (used>ReservedSize)
+     used = ReservedSize;
    Chgd=0; ExtChgd=NULL;
-   strcpy(StrPtr,s);
+   memcpy(StrPtr,s, used-1);
+   StrPtr[used-1] = 0;
 }
 
 String::String(const char *s) {
-   int l=strlen(s),maxsize;
-   maxsize=(l<360)?360:l+1;
+   int l=strlen(s)+1,maxsize;
+   maxsize=(l<360)?360:l;
    Chgd=0; ExtChgd=NULL;
-   StrPtr=new  char[maxsize];
-   strcpy(StrPtr,s);
+   StrPtr=new char[maxsize];
+   ReservedSize = maxsize;
+   used = l;
+   memcpy(StrPtr,s, used-1);
+   StrPtr[used-1] = 0;
 }
 
 String::String(int MaxSize) {
    StrPtr=new char[MaxSize];
    Chgd=0; ExtChgd=NULL;
+   ReservedSize = MaxSize;
+   used = 1;
    StrPtr[0]='\0';
 }
 
 String::String() {
-   StrPtr=new  char[360];
+   ReservedSize = 360;
+   StrPtr=new  char[ReservedSize];
+   used = 1;
    Chgd=0; ExtChgd=NULL;
    StrPtr[0]='\0';
 }
 
-String::String(String &S) {   // constructeur de copie
-   if (S.Length()<360)
-     StrPtr=new char [360];
-   else
-     StrPtr=new char [S.Length()+1];
+String::String(String &S) {
+   int l=S.Length()+1,maxsize;
+   maxsize=(l<360)?360:l;
+   Chgd=0; ExtChgd=NULL;
+   StrPtr=new char[maxsize];
    Chgd=1; ExtChgd=S.ExtChgd;
-   strcpy(StrPtr,S.StrPtr);
+   ReservedSize = maxsize;
+   used = l;
+   memcpy(StrPtr,S.StrPtr,used - 1);
+   StrPtr[used-1] = 0;
 }
 
 String::~String() {	     // Destructeur
@@ -520,11 +535,12 @@ String::~String() {	     // Destructeur
 int String::Changed() {
    int savChgd=Chgd;
    Chgd=0;
+   used = strlen(StrPtr) + 1;
    return savChgd;
 }
 
 int String::Length() {
-  return strlen(StrPtr);
+  return used - 1;
 }
 
 
@@ -549,10 +565,11 @@ double String::GetDouble() {
 }
 
 unsigned int  String::AddCursChar(unsigned int PosCurs,char c,int Ins) {
-   unsigned int len=strlen(StrPtr),pc;
+   unsigned int len= used-1,pc;
    char *tmp;
-   if (PosCurs>len) pc=len;
-   else pc=PosCurs;
+   if (used >= ReservedSize) return 0;
+
+   pc = (PosCurs>len) ? pc=len : PosCurs;
    if (!c) return pc;
    if (pc==len) {
      *this+=c;
@@ -572,10 +589,9 @@ unsigned int  String::AddCursChar(unsigned int PosCurs,char c,int Ins) {
 }
 
 unsigned int  String::DelCurs(unsigned int PosCurs) {
-   unsigned int len=strlen(StrPtr),pc;
+   unsigned int len=used-1,pc;
    char *tmp;
-   if (PosCurs>len) pc=len;
-   else pc=PosCurs;
+   pc = (PosCurs>len) ? pc=len : PosCurs;
    if (pc==len || len==0) return pc;
    Chgd=1;
    if (ExtChgd!=NULL) *ExtChgd=1;
@@ -591,10 +607,9 @@ unsigned int  String::DelCurs(unsigned int PosCurs) {
 }
 
 unsigned int  String::BackDelCurs(unsigned int PosCurs) {
-   unsigned int len=strlen(StrPtr),pc;
+   unsigned int len=used-1,pc;
    char *tmp;
-   if (PosCurs>len) pc=len;
-   else pc=PosCurs;
+   pc = (PosCurs>len) ? pc=len : PosCurs;
    if (pc==0 || len==0) return pc;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
@@ -608,219 +623,203 @@ unsigned int  String::BackDelCurs(unsigned int PosCurs) {
 }
 
 String operator+(String s1, String s2) {
-   String *STemp=new String(strlen(s1.StrPtr)+strlen(s2.StrPtr)+3);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%s%s",s1.StrPtr,s2.StrPtr);
+   String *STemp=new String(s1.Length()+s2.Length()+3);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%s%s",s1.StrPtr,s2.StrPtr) + 1;
    return *STemp;
 }
 
 String operator+(String s1, double d) {
-   String *STemp=new String(strlen(s1.StrPtr)+350);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%s%f",s1.StrPtr,d);
+   String *STemp=new String(s1.Length()+350);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%s%f",s1.StrPtr,d) + 1;
    return *STemp;
 }
 
 String operator+(double d, String s1) {
-   String *STemp=new String(strlen(s1.StrPtr)+350);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%f%s",d,s1.StrPtr);
+   String *STemp=new String(s1.Length()+350);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%f%s",d,s1.StrPtr) + 1;
    return *STemp;
 }
 
 String operator+(String s1, int i) {
-   String *STemp=new String(strlen(s1.StrPtr)+40);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%s%i",s1.StrPtr,i);
+   String *STemp=new String(s1.Length()+40);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%s%i",s1.StrPtr,i) + 1;
    return *STemp;
 }
 
 String operator+(int i, String s1) {
-   String *STemp=new String(strlen(s1.StrPtr)+40);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%i%s",i,s1.StrPtr);
+   String *STemp=new String(s1.Length()+40);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%i%s",i,s1.StrPtr) + 1;
    return *STemp;
 }
 
 String operator+(String s1, unsigned int u) {
-   String *STemp=new String(strlen(s1.StrPtr)+40);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%s%u",s1.StrPtr,u);
+   String *STemp=new String(s1.Length()+40);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%s%u",s1.StrPtr,u) + 1;
    return *STemp;
 }
 
 String operator+(unsigned int u, String s1) {
-   String *STemp=new String(strlen(s1.StrPtr)+40);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%u%s",u,s1.StrPtr);
+   String *STemp=new String(s1.Length()+40);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%u%s",u,s1.StrPtr) + 1;
    return *STemp;
 }
 
 
 String operator+(String s1, long long int D) {
-   String *STemp=new String(strlen(s1.StrPtr)+40);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%s%LLD",s1.StrPtr,D);
+   String *STemp=new String(s1.Length()+40);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%s%LLD",s1.StrPtr,D) + 1;
    return *STemp;
 }
 
 String operator+(long long int D, String s1) {
-   String *STemp=new String(strlen(s1.StrPtr)+40);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%LLD%s",D,s1.StrPtr);
+   String *STemp=new String(s1.Length()+40);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%LLD%s",D,s1.StrPtr) + 1;
    return *STemp;
 }
 
 String operator+(String s1, unsigned long long int U) {
-   String *STemp=new String(strlen(s1.StrPtr)+40);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%s%llu",s1.StrPtr,U);
+   String *STemp=new String(s1.Length()+40);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%s%llu",s1.StrPtr,U) + 1;
    return *STemp;
 }
 
 String operator+(unsigned long long int U, String s1) {
-   String *STemp=new String(strlen(s1.StrPtr)+40);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%llu%s",U,s1.StrPtr);
+   String *STemp=new String(s1.Length()+40);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%llu%s",U,s1.StrPtr) + 1;
    return *STemp;
 }
 
 String operator+(String s1, char c) {
-   String *STemp=new String(strlen(s1.StrPtr)+3);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%s%c",s1.StrPtr,c);
+   String *STemp=new String(s1.Length()+3);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%s%c",s1.StrPtr,c) + 1;
    return *STemp;
 }
 
 String operator+(char c, String s1) {
-   String *STemp=new String(strlen(s1.StrPtr)+3);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%c%s",c,s1.StrPtr);
+   String *STemp=new String(s1.Length()+3);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%c%s",c,s1.StrPtr) + 1;
    return *STemp;
 }
 
 String operator+(String s1, const char *s) {
-   String *STemp=new String(strlen(s1.StrPtr)+strlen(s)+3);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%s%s",s1.StrPtr,s);
+   String *STemp=new String(s1.Length()+strlen(s)+3);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%s%s",s1.StrPtr,s) + 1;
    return *STemp;
 }
 
 String operator+(const char *s, String s1) {
-   String *STemp=new String(strlen(s1.StrPtr)+strlen(s)+3);
-   if (STemp!=NULL) sprintf(STemp->StrPtr,"%s%s",s,s1.StrPtr);
+   String *STemp=new String(s1.Length()+strlen(s)+3);
+   if (STemp!=NULL) STemp->used = sprintf_s(STemp->StrPtr, STemp->ReservedSize-1,"%s%s",s,s1.StrPtr) + 1;
    return *STemp;
 }
 
 String& String::operator+=(String s1) {
-   char s[strlen(StrPtr)+strlen(s1.StrPtr)+4];
-   sprintf(s,"%s%s",StrPtr,s1.StrPtr);
-   strcpy(StrPtr,s);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%s%s",StrPtr,s1.StrPtr) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator+=(const char *s) {
-   char s2[strlen(StrPtr)+strlen(s)+4];
-   sprintf(s2,"%s%s",StrPtr,s);
-   strcpy(StrPtr,s2);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%s%s",StrPtr,s) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator+=(double d) {
-   char s[strlen(StrPtr)+350];
-   sprintf(s,"%s%f",StrPtr,d);
-   strcpy(StrPtr,s);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%s%f",StrPtr,d) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator+=(int i) {
-   char s[strlen(StrPtr)+40];
-   sprintf(s,"%s%i",StrPtr,i);
-   strcpy(StrPtr,s);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%s%i",StrPtr,i) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator+=(unsigned int u) {
-   char s[strlen(StrPtr)+40];
-   sprintf(s,"%s%u",StrPtr,u);
-   strcpy(StrPtr,s);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%s%u",StrPtr,u) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator+=(long long int D) {
-   char s[strlen(StrPtr)+40];
-   sprintf(s,"%s%lld",StrPtr,D);
-   strcpy(StrPtr,s);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%s%lld",StrPtr,D) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator+=(unsigned long long int U) {
-   char s[strlen(StrPtr)+40];
-   sprintf(s,"%s%llu",StrPtr,U);
-   strcpy(StrPtr,s);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%s%llu",StrPtr,U) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator+=(char c) {
-   char s[strlen(StrPtr)+3];
-   sprintf(s,"%s%c",StrPtr,c);
-   strcpy(StrPtr,s);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%s%c",StrPtr,c) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator=(String s1) {
-   sprintf(StrPtr,"%s",s1.StrPtr);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%s",s1.StrPtr) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator=(const char *s) {
-   sprintf(StrPtr,"%s",s);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%s",s) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator=(double d) {
-   sprintf(StrPtr,"%f",d);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%f",d) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator=(int i) {
-   sprintf(StrPtr,"%i",i);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%i",i) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator=(unsigned int u) {
-   sprintf(StrPtr,"%u",u);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%u",u) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator=(long long int D) {
-   sprintf(StrPtr,"%lld",D);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%lld",D) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator=(unsigned long long int U) {
-   sprintf(StrPtr,"%llu",U);
+   used = sprintf_s(StrPtr, ReservedSize-1,"%llu",U) + 1;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
 }
 
 String& String::operator=(char c) {
-   sprintf(StrPtr,"%c",c);
+   StrPtr[0] = c; StrPtr[1] = 0;
    Chgd=1;
    if (ExtChgd) *ExtChgd=1;
    return *this;
@@ -880,7 +879,7 @@ bool  String::operator == (const char *S) {
 
 int String::FindChar(char c, int Pos) {
   int len;
-  if ((len=strlen(StrPtr))<=Pos) return -1;
+  if ((len=Length())<=Pos) return -1;
   for (int i=Pos;i<len;i++)
     if (c==StrPtr[i]) return i; // found
   return -1; // not found ! :(
