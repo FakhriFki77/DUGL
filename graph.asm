@@ -23,7 +23,7 @@
 
 ; GLOBAL Functions
 GLOBAL  _DgSetCurSurf, _DgSetSrcSurf, _DgGetCurSurf, _GetMaxResVSetSurf, _SurfCopy
-GLOBAL  _DgClear16, _InBar16, _DgPutPixel16, _DgCPutPixel16, _DgGetPixel16, _DgCGetPixel16
+GLOBAL  _DgClear16, _InBar16, _DgPutPixel16, _DgCPutPixel16, _DgGetPixel16, _DgCGetPixel16, _DgSurfCGetPixel16, _DgSurfCPutPixel16
 
 GLOBAL	_line16,_Line16,_linemap16,_LineMap16,_lineblnd16,_LineBlnd16, _linemapblnd16,_LineMapBlnd16
 GLOBAL	_Poly16, _PutSurf16,_PutMaskSurf16,_PutSurfBlnd16,_PutMaskSurfBlnd16
@@ -315,6 +315,52 @@ _DgCGetPixel16:
 		IMUL	    EDX,[_NegScanLine]
 		ADD		   	EDX,[_vlfb]
 		MOVZX		EAX,WORD [EDX+ECX*2]
+.Clip:
+
+    RETURN
+
+_DgSurfCGetPixel16:
+    ARG PSURFCGP, 4, SCGPPX, 4, SCGPPY, 4
+
+		MOV			EDX,[EBP+SCGPPY]
+		MOV			ECX,[EBP+SCGPPX]
+		MOV			EAX,0xFFFFFFFF
+		MOV			EBP,[EBP+PSURFCGP]
+		CMP         EDX,[EBP+_MaxY-_CurSurf]
+		JG          SHORT .Clip
+		CMP         ECX,[EBP+_MaxX-_CurSurf]
+		JG          SHORT .Clip
+		CMP         EDX,[EBP+_MinY-_CurSurf]
+		JL          SHORT .Clip
+		CMP         ECX,[EBP+_MinX-_CurSurf]
+		JL          SHORT .Clip
+
+		IMUL	    EDX,[EBP+_NegScanLine-_CurSurf]
+		ADD		   	EDX,[EBP+_vlfb-_CurSurf]
+		MOVZX		EAX,WORD [EDX+ECX*2]
+.Clip:
+
+    RETURN
+
+_DgSurfCPutPixel16:
+    ARG PSURFCPP, 4, SCPPPX, 4, SCPPPY, 4, SCPPCOL, 4
+
+		MOV			EDX,[EBP+SCPPPY]
+		MOV			ECX,[EBP+SCPPPX]
+		MOV			EAX,[EBP+PSURFCGP]
+		CMP         EDX,[EAX+_MaxY-_CurSurf]
+		JG          SHORT .Clip
+		CMP         ECX,[EAX+_MaxX-_CurSurf]
+		JG          SHORT .Clip
+		CMP         EDX,[EAX+_MinY-_CurSurf]
+		JL          SHORT .Clip
+		CMP         ECX,[EAX+_MinX-_CurSurf]
+		JL          SHORT .Clip
+
+		IMUL	    EDX,[EAX+_NegScanLine-_CurSurf]
+		MOV			ECX,[EBP+SCPPCOL]
+		ADD		   	EDX,[EAX+_vlfb-_CurSurf]
+		MOV			[EDX+ECX*2],CX
 .Clip:
 
     RETURN
@@ -1354,6 +1400,10 @@ _BlndResizeViewSurf16:
 		IMUL		BX,AX
 		IMUL		CX,AX
 		IMUL		DX,AX
+		MOV         [WBGR16Blend],BX
+		MOV         [WBGR16Blend+2],CX
+		MOV         [WBGR16Blend+4],DX
+
 		MOVD		xmm3,EBX
 		MOVD		xmm4,ECX
 		MOVD		xmm5,EDX
@@ -1472,6 +1522,9 @@ _MaskBlndResizeViewSurf16:
 
 ; prepare col blending
 		MOV			EAX,[EBP+ColMaskBlndResizeSurf16] ;
+		PSHUFLW     xmm0,[SMask],0
+
+
 		MOV			EBX,EAX ;
 		MOV			ECX,EAX ;
 		MOV			EDX,EAX ;
@@ -1488,6 +1541,9 @@ _MaskBlndResizeViewSurf16:
 		IMUL		BX,AX
 		IMUL		CX,AX
 		IMUL		DX,AX
+		MOV         [WBGR16Blend],BX
+		MOV         [WBGR16Blend+2],CX
+		MOV         [WBGR16Blend+4],DX
 		MOVD		xmm3,EBX
 		MOVD		xmm4,ECX
 		MOVD		xmm5,EDX
@@ -1496,10 +1552,12 @@ _MaskBlndResizeViewSurf16:
 		PSHUFLW		xmm4,xmm4,0
 		PSHUFLW		xmm5,xmm5,0
 		PSHUFLW		xmm7,xmm7,0
+		PUNPCKLQDQ	xmm0,xmm0
 		PUNPCKLQDQ  xmm3,xmm3
 		PUNPCKLQDQ  xmm4,xmm4
 		PUNPCKLQDQ  xmm5,xmm5
 		PUNPCKLQDQ  xmm7,xmm7
+		MOVDQA  	[DQ16Mask],xmm0
 
 		MOV		    EAX,[EBP+MaskBlndResizeRevertHz]
 		XOR         EBX,EBX ; store flags revert Hz and Vt

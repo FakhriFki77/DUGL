@@ -143,6 +143,8 @@ void DgCPutPixel16(int x, int y, int col);
 unsigned int DgGetPixel16(int x, int y);
 // View port clipped GetPixel, return 0xFFFFFFFF if clipped, else the pixel on the low word
 unsigned int DgCGetPixel16(int x, int y);
+unsigned int DgSurfCGetPixel16(DgSurf *S, int x, int y);
+void DgSurfCPutPixel16(DgSurf *S, int x, int y, int col);
 
 // Clipped lines
 void line16(int X1,int Y1,int X2,int Y2,int LgCol);
