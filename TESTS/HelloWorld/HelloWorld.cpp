@@ -209,17 +209,16 @@ void RenderWorkerFunc(void *, int ) {
 	// restore original Screen View
 	SetSurfRView(&CurSurf, &RendSurfOrgView);
 	ClearText();
-	char text[100];
+	#define SIZE_TEXT 127
+	char text[SIZE_TEXT + 1];
 	SetTextCol(0xffff);
 	if (avgFps!=0.0 && minFps!=0.0 && maxFps!=0.0)
-		sprintf(text,"MINFPS %i, MAXFPS %i, FPS %i\n",(int)(1.0/minFps),(int)(1.0/maxFps),(int)(1.0/avgFps));
+		OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "MINFPS %i, MAXFPS %i, FPS %i\n",(int)(1.0/minFps),(int)(1.0/maxFps),(int)(1.0/avgFps));
 	else
-		sprintf(text,"FPS ???\n");
-	OutText16Mode(text,AJ_RIGHT);
+		OutText16Mode("FPS ???\n", AJ_RIGHT);
 
 	ClearText();
-	sprintf(text,"Esc    Exit\nF5     Vertical Synch: %s\nSpace  Pause: %s", (SynchScreen)?"ON":"OFF", (pauseHello)?"ON":"OFF");
-	OutText16Mode(text,AJ_LEFT);
+	OutText16ModeFormat(AJ_LEFT, text, SIZE_TEXT, "Esc    Exit\nF5     Vertical Synch: %s\nSpace  Pause: %s", (SynchScreen)?"ON":"OFF", (pauseHello)?"ON":"OFF");
 
 	// update Hello world Resize View
 	if (!pauseHello) {
