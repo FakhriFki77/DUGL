@@ -74,7 +74,11 @@
 			<Add directory="../DUGL/bin/Release" />
 			<Add directory="C:/SDL2.0.12/lib" />
 		</Linker>
+		<Unit filename="AboutDlg.cpp" />
+		<Unit filename="AboutDlg.h" />
 		<Unit filename="EDCHRASM.ASM" />
+		<Unit filename="HelpDlg.cpp" />
+		<Unit filename="HelpDlg.h" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion>

@@ -10,6 +10,9 @@
 #include "DUGL.h"
 #include "DGUI.h"
 
+#include "HelpDlg.h"
+#include "AboutDlg.h"
+
 // fast asm function
 
 #ifdef __cplusplus
@@ -49,15 +52,22 @@ const int ScreenHeight = 480;
 FONT F1;
 KbMAP *KM; // kbmap
 
-
-
 int countLoops = 0;
-
+// main render func
+void RenderFunc();
 // asset data
-//DgSurf BackSurf;
+DgSurf BackSurf;
 DgSurf MsSurf;
+bool displayBackSurf = true;
+bool validBackSurf = false;
+bool previewCalc = false;
+int CalcTransparency = 10;
+int startXBackSurf = 0;
+int startYBackSurf = 0;
+int zstep=6;
+bool needRedrawGraphBoxs = false;
+int asciiCopyIdx = -1;
 // synch buffers
-char EventsLoopSynchBuff[SIZE_SYNCH_BUFF];
 char RenderSynchBuff[SIZE_SYNCH_BUFF];
 bool SynchScreen = true;
 // fps counter
@@ -67,11 +77,18 @@ DgView MsView;
 // effects
 bool blurSurf = false;
 bool debugInfo = false;
-// render DWorker
-unsigned int renderWorkerID = 0;
-void RenderWorkerFunc(void *, int );
 
 // data
+void ApplyCalcToCurCar();
+void CopyCar();
+void InsertCopiedCar();
+void ClearCurCar();
+void ReverseCurCar();
+void ShiftUpCurCar();
+void ShiftDownCurCar();
+void ShiftRightCurCar();
+void ShiftLeftCurCar();
+
 int  CalcSizeDataCar();
 int  CalcSizeData1Car(int Ascii);
 int  SaveCHR(char *FName);
@@ -81,15 +98,27 @@ void SetSnsLR(),SetSnsRL();
 const char *TSChrName[]={ "CHR Font file", "All Files(*.*)" };
 const char *TSChrMask[]={ "*.chr", "*.*" };
 ListString LSChrName(2,TSChrName),LSChrMask(2,TSChrMask);
-const char *TSImgName[]={ "GIF", "PCX", "BMP", "All Files(*.*)" };
-const char *TSImgMask[]={ "*.gif", "*.pcx", "*.bmp", "*.*" };
-ListString LSImgName(4,TSImgName),LSImgMask(4,TSImgMask);
+const char *TSImgName[]={ "GIF", "PCX", "BMP" };
+const char *TSImgMask[]={ "*.gif", "*.pcx", "*.bmp" };
+ListString LSImgName(3,TSImgName),LSImgMask(3,TSImgMask);
 int car[2][256*64];
 Caract InfCar[256];
-unsigned int CopyCar[2][64];
-Caract CopyInfCar;
+
+int copiedCar[2][64];
+Caract copiedInfCar;
 
 unsigned int OldTime,ExitNow=0;
+bool confirmExit = false;
+bool waitConfirmExit = false;
+void YesExit() {
+	confirmExit = true;
+	waitConfirmExit = false;
+}
+void CancelExit() {
+	confirmExit = false;
+	waitConfirmExit = false;
+}
+
 char FSens;
 // config global
 int newDefaultWidth = 16;
@@ -114,43 +143,49 @@ void GphBDrawCar(GraphBox *Me),ScanGphBMap(GraphBox *Me);
 void ChgdHeight(int val),ChgdWidth(int val),ChgdPlusX(int val);
 void ChgdPlusLn(int val);
 void ChgdSensFnt(char vtrue);
-// FOuvrImg --
-void ExitOuvrImg();
+void ChgdCalcTransparency(int val);
+void ChgdCalcVisibility(char vtrue);
+void ShowHelpDlg();
+void ShowAboutDlg();
+
 // Gestionnaire des fenˆtres
-WinHandler *WH;
+WinHandler *WH = nullptr;
 // windows -------------
-MainWin *FPrinc,*FOuvrImg;
+MainWin *FPrinc = nullptr;
+MainWin *HELPDlg = nullptr;
+MainWin *ABOUTDlg = nullptr;
 // FPrinc --
 Menu *Mn;
-Label *LbNmAscii,*LbAscii,*LbNmHeight,*LbHeight,*LbNmWidth,*LbWidth;
-Label *LbNmPlusX,*LbPlusX,*LbNmPlusLn,*LbPlusLn;
-HzSlider *HzSBAscii,*HzSBHeight,*HzSBWidth,*HzSBPlusX;
-VtScrollBar *VtSBPlusLn;
-ContBox *CtBSensFnt;
-OptionButt *OpBtSnsLR,*OpBtSnsRL;
-GraphBox *GphBCarMap,*GphBCarDraw;
-// FOuvrImg --
-Button *BtCancelOI,*BtOIOkOI,*BtSelCol,*BtSelMskCol;
+Label *LbAscii = nullptr,*LbNmHeight = nullptr,*LbHeight = nullptr,*LbNmWidth = nullptr,*LbWidth = nullptr;
+Label *LbNmPlusX = nullptr,*LbPlusX = nullptr,*LbNmPlusLn = nullptr,*LbPlusLn = nullptr;
+HzSlider *HzSBAscii = nullptr,*HzSBHeight = nullptr,*HzSBWidth = nullptr,*HzSBPlusX = nullptr;
+VtScrollBar *VtSBPlusLn = nullptr;
+ContBox *CtBCalc = nullptr;
+Button *BtApplyCalc = nullptr;
+CocheBox *CBxVisibleCalc = nullptr;
+HzSlider *HzSTransCalc = nullptr;
+ContBox *CtBSensFnt = nullptr;
+OptionButt *OpBtSnsLR = nullptr,*OpBtSnsRL = nullptr;
+GraphBox *GphBCarMap = nullptr,*GphBCarDraw = nullptr;
 
 // Menu -----------------
 NodeMenu TNM[]= {
   { "",	                    3,  &TNM[1], 1, NULL } ,
   { "File",                 6,  &TNM[4], 1, NULL } ,   // 1
-  { "Edit",                 5, &TNM[10], 1, NULL } ,
-  { "Help",                 2, &TNM[15], 1, NULL } ,
+  { "Edit",                 4, &TNM[10], 1, NULL } ,
+  { "Help",                 2, &TNM[14], 1, NULL } ,
   { "New",                  0,     NULL, 1, MenuNew } ,
   { "Open        F3",       0,     NULL, 1, MenuOpen } ,
   { "Save        F2",       0,     NULL, 1, MenuSave } ,
   { "Save as...",           0,     NULL, 1, MenuSaveAs } ,
   { "",                     0,     NULL, 1, NULL } ,
   { "Exit     Alt+X",       0,     NULL, 1, Exit } ,
-  { "Copy        Ctrl+Ins", 0,     NULL, 1, NULL } ,   // 10
-  { "Paste      Shift+Ins", 0,     NULL, 1, NULL } ,
+  { "Copy        Ctrl+Ins", 0,     NULL, 1, CopyCar } ,   // 10
+  { "Paste      Shift+Ins", 0,     NULL, 1, InsertCopiedCar } ,
   { "",                     0,     NULL, 1, NULL } ,
-  { "Load image        F4", 0,     NULL, 1, MenuLoadImage } ,
-  { "Import character  F5", 0,     NULL, 1, NULL } ,
-  { "Help   F1",            0,     NULL, 1, NULL } ,
-  { "About",                0,     NULL, 1, NULL }
+  { "Load Calc Image   F4", 0,     NULL, 1, MenuLoadImage } ,
+  { "Help   F1",            0,     NULL, 1, ShowHelpDlg } ,
+  { "About",                0,     NULL, 1, ShowAboutDlg }
   };
 
 
@@ -168,8 +203,6 @@ int main()
       printf("Error loading Mouseimg.gif\n"); exit(-1); }
 
     DgInit();
-
-    renderWorkerID = CreateDWorker(RenderWorkerFunc, nullptr);
 
 
     if (!DgInitMainWindowX(SLbFPrinc.StrPtr, ScreenWidth, ScreenHeight, 16, defaultWinX, defaultWinY, false, true, false))
@@ -193,87 +226,184 @@ int main()
     // GUI
     WH = new WinHandler(RendSurf.ResH,RendSurf.ResV,16,0x1f,0);
     FPrinc = new MainWin(RendSurf.MinX,RendSurf.MinY,RendSurf.ResH,RendSurf.ResV,SLbFPrinc.StrPtr,WH);
+	HELPDlg = CreateMainWinHelpDLG(WH);
+	ABOUTDlg = CreateMainWinAboutDLG(WH);
+
     FPrinc->AllowMove = false;
 //---- FPrinc
     Mn = new Menu(FPrinc,&TNM[0]);
-    LbNmAscii= new Label(5,5,50,25,FPrinc,"Ascii",AJ_LEFT);
-    LbAscii=new Label(50,5,80,25,FPrinc,"1",AJ_LEFT);
+    LbAscii=new Label(5,5,78,25,FPrinc,"1",AJ_RIGHT);
     HzSBAscii= new HzSlider(81,395,8,FPrinc,1,255);
     HzSBAscii->Changed=ChgdAscii;
-    LbNmPlusX= new Label(395,94,439,114,FPrinc,"PlusX",AJ_LEFT);
-    LbPlusX= new Label(439,94,467,114,FPrinc,"0",AJ_LEFT);
-    HzSBPlusX= new HzSlider(472,630,97,FPrinc,0,127);
+    CtBCalc=new ContBox(396,109,630,149,FPrinc,"Calc");
+    {
+    	CBxVisibleCalc = new CocheBox(1, 0, 75,1+FntHaut+6, FPrinc, CtBCalc, "Visible", 1);
+    	CBxVisibleCalc->Changed = ChgdCalcVisibility;
+    	HzSTransCalc = new HzSlider(80,177,3,FPrinc,1,30, CtBCalc);
+    	HzSTransCalc->Changed = ChgdCalcTransparency;
+    	HzSTransCalc->SetVal(CalcTransparency);
+    	BtApplyCalc = new Button(182,1,227,1+FntHaut+6, FPrinc, "Apply",0,0,CtBCalc);
+    	BtApplyCalc->Click = ApplyCalcToCurCar;
+    }
+    LbNmPlusX= new Label(395,87,439,107,FPrinc,"PlusX",AJ_LEFT);
+    LbPlusX= new Label(439,87,467,107,FPrinc,"0",AJ_LEFT);
+    HzSBPlusX= new HzSlider(472,630,90,FPrinc,0,127);
     HzSBPlusX->Changed=ChgdPlusX;
-    LbNmHeight= new Label(395,72,445,92,FPrinc,"Height",AJ_LEFT);
-    LbHeight= new Label(445,72,465,92,FPrinc,"1",AJ_LEFT);
-    HzSBHeight= new HzSlider(472,630,75,FPrinc,1,64);
+    LbNmHeight= new Label(395,65,445,85,FPrinc,"Height",AJ_LEFT);
+    LbHeight= new Label(445,65,465,85,FPrinc,"1",AJ_LEFT);
+    HzSBHeight= new HzSlider(472,630,68,FPrinc,1,64);
     HzSBHeight->Changed=ChgdHeight;
-    LbNmWidth= new Label(395,50,445,70,FPrinc,"Width",AJ_LEFT);
-    LbWidth= new Label(445,50,465,70,FPrinc,"1",AJ_LEFT);
-    HzSBWidth= new HzSlider(472,630,53,FPrinc,1,64);
+    LbNmWidth= new Label(395,43,445,63,FPrinc,"Width",AJ_LEFT);
+    LbWidth= new Label(445,43,465,63,FPrinc,"1",AJ_LEFT);
+    HzSBWidth= new HzSlider(472,630,46,FPrinc,1,64);
     HzSBWidth->Changed=ChgdWidth;
-    LbNmPlusLn=  new Label(500,143,560,163,FPrinc,"PlusLn",AJ_LEFT);
-    LbPlusLn=  new Label(561,143,600,163,FPrinc,"0",AJ_LEFT);
-    VtSBPlusLn= new VtScrollBar(483,144,421,FPrinc,-127,127);
+    LbNmPlusLn=  new Label(500,150,560,165,FPrinc,"PlusLn",AJ_LEFT);
+    LbPlusLn=  new Label(561,147,600,165,FPrinc,"0",AJ_LEFT);
+    VtSBPlusLn= new VtScrollBar(483,149,424,FPrinc,-127,127);
     VtSBPlusLn->SetVal(0); VtSBPlusLn->Changed=ChgdPlusLn;
-    CtBSensFnt=new ContBox(396,7,630,47,FPrinc,"Direction");
+    CtBSensFnt=new ContBox(396,5,630,42,FPrinc,"Direction");
     {
         OpBtSnsLR=new OptionButt(0,0,110,20,FPrinc,CtBSensFnt,"Left-Right",1);
         OpBtSnsLR->Changed=ChgdSensFnt;
         OpBtSnsRL=new OptionButt(110,0,220,20,FPrinc,CtBSensFnt,"Right-Left",0);
         OpBtSnsRL->Changed=ChgdSensFnt;
     }
-    GphBCarMap= new GraphBox(5,30,395,420,FPrinc,WH->m_GraphCtxt->WinGris);
+    GphBCarMap= new GraphBox(5,29,395,423,FPrinc,WH->m_GraphCtxt->WinGris);
     GphBCarMap->GraphBoxDraw=GphBDrawMap;
-    GphBCarMap->ScanGraphBox=ScanGphBMap; GphBCarMap->Redraw();
-    GphBCarDraw= new GraphBox(500,164,629,420,FPrinc,WH->m_GraphCtxt->WinGris);
-    GphBCarDraw->GraphBoxDraw=GphBDrawCar;  GphBCarDraw->Redraw();
+    GphBCarMap->ScanGraphBox=ScanGphBMap;
+    GphBCarDraw= new GraphBox(500,167,629,423,FPrinc,WH->m_GraphCtxt->WinGris);
+    GphBCarDraw->GraphBoxDraw=GphBDrawCar;
+    needRedrawGraphBoxs = true;
+
     // initialize
     MenuNew();
 
     //SetSurfView(&RendSurf, &clippedView);
 
-    InitSynch(EventsLoopSynchBuff, NULL, 250.0f);
     InitSynch(RenderSynchBuff, NULL, 60.0f);
-
-    //DgClear16(countLoops&0x1f);
 
     for (int countFrame = 0; ; countFrame++)
     {
-        WaitSynch(EventsLoopSynchBuff, NULL);
         // scan GUI events
+        DgCheckEvents();
         WH->Scan();
 		// render and update screen
-		RunDWorker(renderWorkerID, false);
-
-        DgCheckEvents();
-
-        if (WH->Key == KB_KEY_QWERTY_X && (WH->KeyFLAG & KB_ALT_PR)) // alt + x
-            break;
+		RenderFunc();
 
         switch (WH->Key)
         {
-            case KB_KEY_F2: // F2
+            case KB_KEY_F1:
+                ShowHelpDlg();
+                break;
+            case KB_KEY_F2:
                 MenuSave();
                 break;
-            case KB_KEY_F3: // F3
+            case KB_KEY_F3:
                 MenuOpen();
                 break;
-            case KB_KEY_F7: // F7
+            case KB_KEY_F4:
+                MenuLoadImage();
                 break;
-            case KB_KEY_F12: // F12
+            case KB_KEY_F7:
+                break;
+            case KB_KEY_F12:
                 debugInfo = !debugInfo;
                 break;
+			case KB_KEY_ESC:
+				ExitNow = 1;
+				break;
+			case KB_KEY_QWERTY_X: // alt + X => exit
+				if ((WH->KeyFLAG & KB_ALT_PR))
+					ExitNow = 1;
+				break;
+			case KB_KEY_ENTER:
+				if (FPrinc->Focus && validBackSurf && displayBackSurf) {
+					if ((WH->KeyFLAG & KB_ALT_PR) > 0) {
+						ApplyCalcToCurCar();
+						needRedrawGraphBoxs = true;
+					}
+				}
+				break;
+			case KB_KEY_RIGHT:
+			case KB_KEY_LEFT:
+			case KB_KEY_UP:
+			case KB_KEY_DOWN:
+				if (FPrinc->Focus && (WH->KeyFLAG & KB_CTRL_PR) > 0 && (WH->KeyFLAG & KB_ALT_PR) == 0 && GphBCarMap->Focus == 0) {
+					GphBCarMap->SetFocus();
+					GphBCarMap->Scan();
+				}
+				if (FPrinc->Focus && (WH->KeyFLAG & KB_CTRL_PR) == 0 && (WH->KeyFLAG & KB_ALT_PR) > 0 && HzSBAscii->Focus == 0) {
+					if (WH->Key == KB_KEY_LEFT)
+						HzSBAscii->SetVal(HzSBAscii->GetVal()-1);
+					if (WH->Key == KB_KEY_RIGHT)
+						HzSBAscii->SetVal(HzSBAscii->GetVal()+1);
+				}
+				break;
+
+			case KB_KEY_INSERT:
+				// copy
+				if (FPrinc->Focus && (WH->KeyFLAG&KB_CTRL_PR) > 0 && (WH->KeyFLAG&KB_SHIFT_PR) == 0) {
+					CopyCar();
+				}
+				// paste/insert
+				if (FPrinc->Focus && (WH->KeyFLAG&KB_CTRL_PR) == 0 && (WH->KeyFLAG&KB_SHIFT_PR) > 0) {
+					InsertCopiedCar();
+					needRedrawGraphBoxs = true;
+				}
+				break;
+
+
+			case KB_KEY_HOME:
+				if (FPrinc->Focus) {
+					if ((KbFLAG&KB_CTRL_PR) > 0) {
+					 startXBackSurf = 0;
+					 startYBackSurf = 0;
+					} else {
+					 ReverseCurCar();
+					}
+					needRedrawGraphBoxs = true;
+				}
+				break;
+			case KB_KEY_END:
+				if (FPrinc->Focus) {
+					ClearCurCar();
+					ReverseCurCar();
+					needRedrawGraphBoxs = true;
+				}
+				break;
+			case KB_KEY_DELETE:
+				if (FPrinc->Focus) {
+					ClearCurCar();
+					needRedrawGraphBoxs = true;
+				}
+				break;
             default:
                 break;
         }
-        if (IsKeyDown(KB_KEY_ESC) || ExitNow == 1) {
-			WaitDWorker(renderWorkerID);
-            break;
+        if (ExitNow == 1) {
+			confirmExit = false;
+			ExitNow = 0;
+			// if messageBox is already waiting for confirmation of exit
+			if (!waitConfirmExit) {
+				waitConfirmExit = true;
+				MessageBox(WH, "Warning", "Confirm exit from EDCHR2 ?", "Yes", YesExit, "Cancel", CancelExit, NULL, NULL);
+			}
         }
+		if (confirmExit) {
+            break;
+		}
     }
 
-    DestroyDWorker(renderWorkerID);
+    delete ABOUTDlg;
+    delete HELPDlg;
+    delete FPrinc;
+    delete WH;
+
+    ABOUTDlg = nullptr;
+    HELPDlg = nullptr;
+    FPrinc = nullptr;
+    WH = nullptr;
+
     UninstallMouse();
     DgUninstallTimer();
     UninstallKeyboard();
@@ -283,25 +413,20 @@ int main()
 }
 
 int ReadCHR(char *FName) {
+
    HeadCHR hchr;
    int i,j,k,l,h,BPtr;
    void *Buff;
    FILE *InCHR;
 
-   if ((InCHR=fopen(FName,"rb"))==NULL) {
+   if (fopen_s(&InCHR,FName,"rb")!=0) {
        MessageBox(WH,"can't open file", FName,
          "Ok", NULL, NULL, NULL, NULL, NULL);
        return 0;
    }
-/*   MessageBox(WH,"file exist", FName,
-         "Ok", NULL, NULL, NULL, NULL, NULL);
-*/
    fread(&hchr,sizeof(HeadCHR),1,InCHR);
    if (hchr.Sign!='RHCF') { fclose(InCHR); return 0; }
 
-/*   MessageBox(WH,"valid header", FName,
-         "Ok", NULL, NULL, NULL, NULL, NULL);
-*/
    for (i=0;i<256;i++) InfCar[i]=hchr.C[i];
    if (hchr.SizeDataCar!=CalcSizeDataCar())
    { fclose(InCHR); return 0; }
@@ -334,7 +459,7 @@ int SaveCHR(char *FName) {
    void *Buff;
    FILE *OutCHR;
 
-   if ((OutCHR=fopen(FName,"wb"))==NULL) return 0;
+   if (fopen_s(&OutCHR, FName,"wb")!=0) return 0;
    if ((Buff=malloc(Size=CalcSizeDataCar()))==NULL) {
 	  fclose(OutCHR); return 0;
    }
@@ -458,21 +583,73 @@ void FSaveCHR(String *S,int TypeSel) {
    }
 }
 //-------
+void LoadBackImage(String *filename, int selection) {
+	int res = 0;
+
+	if (validBackSurf && BackSurf.rlfb != 0) {
+		validBackSurf = false;
+		needRedrawGraphBoxs = true;
+		DestroySurf(&BackSurf);
+	}
+
+	switch (selection) {
+		case 0: // GIF
+			res = LoadGIF16(&BackSurf, filename->StrPtr);
+			break;
+		case 1: // PCX
+			res = LoadPCX16(&BackSurf, filename->StrPtr);
+			break;
+		case 2: // BMP
+			res = LoadBMP16(&BackSurf, filename->StrPtr);
+			break;
+	}
+	if (res) {
+		startXBackSurf = 0;
+		startYBackSurf = 0;
+		validBackSurf = true;
+		needRedrawGraphBoxs = true;
+	}
+}
 void MenuLoadImage() {
-   FilesBox(WH,"Load image", "Load", NULL, "Cancel", NULL, &LSImgName,
+   FilesBox(WH,"Load image", "Load", LoadBackImage, "Cancel", NULL, &LSImgName,
             &LSImgMask, 0);
+}
+
+void ChgdCalcTransparency(int val) {
+	CalcTransparency = val;
+	if (GphBCarMap!= nullptr)
+       needRedrawGraphBoxs = true;
+}
+
+void ChgdCalcVisibility(char vtrue) {
+	displayBackSurf = (vtrue > 0);
+	if (GphBCarMap!= nullptr)
+       needRedrawGraphBoxs = true;
+}
+
+void ShowHelpDlg() {
+	HELPDlg->ShowModal();
+}
+
+void ShowAboutDlg() {
+	ABOUTDlg->ShowModal();
 }
 //-------
 void ChgdAscii(int val) {
-   LbAscii->Text=val;
+   char displayAscii[128];
+   if (val>32 && val<127)
+	  sprintf(displayAscii,"[%c]: %03i", val, (char)val);
+   else
+	  sprintf(displayAscii,"%03i", val);
+   LbAscii->Text=displayAscii;
    HzSBHeight->SetVal(InfCar[val].Ht);
    HzSBWidth->SetVal(InfCar[val].Lg);
    HzSBPlusX->SetVal(abs(InfCar[val].PlusX));
    VtSBPlusLn->SetMinMaxVal(-127,127-InfCar[val].Ht);
    VtSBPlusLn->SetVal(InfCar[val].PlusLgn);
-   GphBCarMap->Redraw();
-   GphBCarDraw->Redraw();
+   needRedrawGraphBoxs = true;
 }
+
 void ChgdHeight(int val) {
    int curascii=HzSBAscii->GetVal();
    LbHeight->Text=val;
@@ -481,7 +658,7 @@ void ChgdHeight(int val) {
      VtSBPlusLn->SetMinMaxVal(-127,127-InfCar[curascii].Ht);
      if (InfCar[curascii].Ht+InfCar[curascii].PlusLgn>127)
        VtSBPlusLn->SetVal(127-InfCar[curascii].Ht);
-     GphBCarMap->Redraw();
+     needRedrawGraphBoxs = true;
    }
 }
 void ChgdWidth(int val) {
@@ -490,7 +667,7 @@ void ChgdWidth(int val) {
    if (InfCar[curascii].Lg!=val) {
      InfCar[curascii].Lg=val;
      HzSBPlusX->SetVal(val);
-     GphBCarMap->Redraw();
+     needRedrawGraphBoxs = true;
    }
 }
 void ChgdPlusX(int val) {
@@ -498,7 +675,7 @@ void ChgdPlusX(int val) {
    LbPlusX->Text=val;
    if (abs(InfCar[curascii].PlusX)!=val) {
      InfCar[curascii].PlusX=(OpBtSnsLR->True)?val:(-val);
-     GphBCarDraw->Redraw();
+     needRedrawGraphBoxs = true;
    }
 }
 void ChgdPlusLn(int val) {
@@ -506,27 +683,70 @@ void ChgdPlusLn(int val) {
    LbPlusLn->Text=val;
    if (InfCar[curascii].PlusLgn!=val) {
      InfCar[curascii].PlusLgn=val;
-     GphBCarDraw->Redraw();
+     needRedrawGraphBoxs = true;
    }
 }
 void GphBDrawMap(GraphBox *Me) {
-   int zstep=6;
-   int curascii=HzSBAscii->GetVal();
-   int LargChar=InfCar[curascii].Lg,HautChar=InfCar[curascii].Ht;
-   int LargRect=LargChar*zstep,HautRect=HautChar*zstep;
-   int MidX=(CurSurf.MaxX+CurSurf.MinX)/2,MidY=(CurSurf.MaxY+CurSurf.MinY)/2;
-   int DebX=MidX-LargRect/2,DebY=MidY-HautRect/2;
-   int i,j;
-   ClearSurf16(WH->m_GraphCtxt->WinGrisF);
-   for (i=0;i<HautChar;i++)
-     for (j=0;j<LargChar;j++)
-       if (car[j>>5][i+curascii*64]&(1<<(j&0x1f)))
-         WH->m_GraphCtxt->bar(DebX+j*zstep,DebY+i*zstep,
-             DebX+(j+1)*zstep-1,DebY+(i+1)*zstep-1,DrawCol);
-   WH->m_GraphCtxt->rect(DebX,DebY,DebX+LargRect,DebY+HautRect,WH->m_GraphCtxt->WinBlanc);
-   for (j=1;j<HautChar;j++)
-     for (i=1;i<LargChar;i++)
-       WH->m_GraphCtxt->cputpixel(DebX+i*zstep,DebY+j*zstep,WH->m_GraphCtxt->WinBleuF);
+	int curascii=HzSBAscii->GetVal();
+	int LargChar=InfCar[curascii].Lg,HautChar=InfCar[curascii].Ht;
+	int LargRect=LargChar*zstep,HautRect=HautChar*zstep;
+	int MidX=(CurSurf.MaxX+CurSurf.MinX)/2,MidY=(CurSurf.MaxY+CurSurf.MinY)/2;
+	int DebX=MidX-LargRect/2,DebY=MidY-HautRect/2;
+	int i,j;
+	ClearSurf16(WH->m_GraphCtxt->WinGrisF);
+	for (i=0;i<HautChar;i++)
+	 for (j=0;j<LargChar;j++)
+	   if (car[j>>5][i+curascii*64]&(1<<(j&0x1f)))
+		 WH->m_GraphCtxt->bar(DebX+j*zstep,DebY+i*zstep,
+			 DebX+(j+1)*zstep-1,DebY+(i+1)*zstep-1,DrawCol);
+	WH->m_GraphCtxt->rect(DebX,DebY,DebX+LargRect,DebY+HautRect,WH->m_GraphCtxt->WinBlanc);
+	for (j=1;j<HautChar;j++)
+		for (i=1;i<LargChar;i++)
+			WH->m_GraphCtxt->cputpixel(DebX+i*zstep,DebY+j*zstep,WH->m_GraphCtxt->WinBleuF);
+	if (validBackSurf && displayBackSurf) {
+		DgView saveView, saveBackView, backView, backSurfView;
+		GetSurfRView(&CurSurf, &saveView);
+		GetSurfRView(&CurSurf, &backView);
+		backView.MinX = DebX+1;
+		backView.MinY = DebY+1;
+		backView.MaxX = DebX+LargRect-1;
+		backView.MaxY = DebY+HautRect-1;
+		SetSurfRView(&CurSurf, &backView); // set the new view
+
+		GetSurfRView(&BackSurf, &backSurfView);
+		GetSurfRView(&BackSurf, &saveBackView);
+
+		// check if it's completely out
+		if (startXBackSurf <= backSurfView.MaxX && startYBackSurf <= backSurfView.MaxY) {
+			backSurfView.MinX = startXBackSurf;
+			backSurfView.MinY = startYBackSurf;
+			backSurfView.MaxX = startXBackSurf + (LargChar-1);
+			backSurfView.MaxY = startYBackSurf + (HautChar-1);
+			SetSurfRView(&BackSurf, &backSurfView); // clip view inside
+			if (BackSurf.MaxX < startXBackSurf + (LargChar-1)) { // clip the destination view ?
+				backView.MaxX -= ((startXBackSurf + (LargChar-1)) - BackSurf.MaxX) * zstep;
+				SetSurfRView(&CurSurf, &backView); // set the new view
+			}
+			if (BackSurf.MaxY < startYBackSurf + (HautChar-1)) { // clip the destination view ?
+				backView.MaxY -= ((startYBackSurf + (HautChar-1)) - BackSurf.MaxY) * zstep;
+				SetSurfRView(&CurSurf, &backView); // set the new view
+			}
+
+			if ((MsButton&MS_LEFT_BUTT) > 0 && (KbFLAG&KB_CTRL_PR) > 0 && Me->MsIn) {
+				WH->m_GraphCtxt->MaskBlndResizeViewSurf(&BackSurf, 0, 0, WH->m_GraphCtxt->WinBlanc | (CalcTransparency<<24));
+				previewCalc = true;
+			}
+			else {
+				WH->m_GraphCtxt->MaskTransResizeViewSurf(&BackSurf, 0, 0, CalcTransparency);
+				previewCalc = false;
+			}
+
+		}
+		// restore views
+		SetSurfRView(&CurSurf, &saveView);
+		SetSurfRView(&BackSurf, &saveBackView);
+	}
+
 }
 void GphBDrawCar(GraphBox *Me) {
    int i,j,curascii=HzSBAscii->GetVal(),plsx;
@@ -557,47 +777,46 @@ void OpenCHR(String *S,int TypeSel) {
    FPrinc->Label=SLbFPrinc+"  "+SCurFile;
    FPrinc->Redraw();
 }
+
 void ChgdSensFnt(char vtrue) {
    if (vtrue) {
      if (OpBtSnsLR->True)
        SetSnsLR();
      else
        SetSnsRL();
-     GphBCarDraw->Redraw();
+	 needRedrawGraphBoxs = true;
    }
 }
+
 void ScanGphBMap(GraphBox *Me) {
-   int zstep=6,redr=0;
+   //int redr=0;
    int curascii=HzSBAscii->GetVal();
    int LargChar=InfCar[curascii].Lg,HautChar=InfCar[curascii].Ht;
    int LargRect=LargChar*zstep,HautRect=HautChar*zstep;
    int MidX=(CurSurf.MaxX+CurSurf.MinX)/2,MidY=(CurSurf.MaxY+CurSurf.MinY)/2;
    int DebX=MidX-LargRect/2,DebY=MidY-HautRect/2;
    int x,y,mousex=Me->MouseX,mousey=Me->MouseY;
-   int i,j;
 
-   if (MsButton&1)
+   if (previewCalc){
+      needRedrawGraphBoxs = true;
+   }
+
+   if ((MsButton&MS_LEFT_BUTT) > 0)
      if ( mousex>=DebX && mousey>=DebY &&
         mousex<=(DebX+LargRect-1) && mousey<=(DebY+HautRect-1) ) {
        x=(mousex-DebX)/zstep;
        y=(mousey-DebY)/zstep;
-       if (WH->Ascii == 'D' && //BoutApp(32) &&     // D
-            (!( car[x>>5][y+curascii*64] & (1<<(x&0x1f)) )) ) {
-         if (x>0)
-	   for (i=x-1;i>=0;i--) {
-	     if (car[i>>5][y+curascii*64] & (1<<(i&0x1f))) break;
-	     car[i>>5][y+curascii*64] |= 1<<(i&0x1f);
-	   }
-         if (x<64)
-	   for (i=x+1;i<65;i++) {
-	     if (car[i>>5][y+curascii*64] & (1<<(i&0x1f))) break;
-	     car[i>>5][y+curascii*64] |= 1<<(i&0x1f);
-	   }
-         redr=1;
-       }
-       if (!( car[x>>5][y+curascii*64] & (1<<(x&0x1f)) )) {
-         car[x>>5][y+curascii*64] |= 1<<(x&0x1f);
-         redr=1;
+       if ((KbFLAG&KB_CTRL_PR) == 0 || !(validBackSurf && displayBackSurf)) {
+		   if (!( car[x>>5][y+curascii*64] & (1<<(x&0x1f)) )) {
+				car[x>>5][y+curascii*64] |= 1<<(x&0x1f);
+				needRedrawGraphBoxs = true;
+		   }
+       } else { // if CTRL pressed and a calc is displayed then set the mask color
+			unsigned int newmask = DgSurfCGetPixel16(&BackSurf, startXBackSurf+x, startYBackSurf+y);
+			if (newmask != 0xffffffff && BackSurf.Mask != newmask) {
+				BackSurf.Mask = newmask;
+				needRedrawGraphBoxs = true;
+			}
        }
      }
 
@@ -606,72 +825,194 @@ void ScanGphBMap(GraphBox *Me) {
           mousey<=(DebY+HautRect-1) ) {
        x=(Me->MouseX-DebX)/zstep;
        y=(Me->MouseY-DebY)/zstep;
-       if ( (WH->Ascii == 'D' || WH->Ascii == 'd') && //BoutApp(32) &&     // D
-          ( car[x>>5][y+curascii*64] & (1<<(x&0x1f)) ) ) {
-             if (x>0)
-               for (i=x-1;i>=0;i--) {
-                 if (!(car[i>>5][y+curascii*64] & (1<<(i&0x1f)))) break;
-                 car[i>>5][y+curascii*64] &= (1<<(i&0x1f))^0xffffffff;
-               }
-             if (x<64)
-               for (i=x+1;i<65;i++) {
-                 if (!(car[i>>5][y+curascii*64] & (1<<(i&0x1f)))) break;
-                 car[i>>5][y+curascii*64] &= (1<<(i&0x1f))^0xffffffff;
-               }
-             redr=1;
-       }
        if ( car[x>>5][y+curascii*64] & (1<<(x&0x1f)) ) {
          car[x>>5][y+curascii*64]&=(1<<(x&0x1f))^0xffffffff; // xor 1111b == NOT
-         redr=1;
+ 		 needRedrawGraphBoxs = true;
        }
      }
    if (Me->Focus) {
-     if (WH->Key==199) {    // 'Debut'  <28 Enter> <210 Ins>
-       redr=1;
-       for (i=0;i<64;i++)
-         for (j=0;j<2;j++)
-           car[j][i+curascii*64]^=0xffffffff;
+     if ((KbFLAG&KB_ALT_PR) == 0) {
+		 if ((WH->Key==KB_KEY_UP) || (WH->Key==0x48 && (!(KbFLAG|KB_NUM_ACT)))) {// up
+		   if ((KbFLAG&KB_CTRL_PR) > 0) {
+			 if ((KbFLAG&KB_SHIFT_PR) > 0) {
+			   if (startYBackSurf >= 4)
+				  startYBackSurf -= 4;
+			 } else {
+			   if (startYBackSurf > 0)
+				  startYBackSurf --;
+			 }
+		   } else {
+		   	  ShiftUpCurCar();
+		   }
+ 		   needRedrawGraphBoxs = true;
+		 }
+		 if ((WH->Key==KB_KEY_DOWN) || (WH->Key==0x50 && (!(KbFLAG|KB_NUM_ACT)))) {// down
+		   if ((KbFLAG&KB_CTRL_PR) > 0) {
+			 if ((KbFLAG&KB_SHIFT_PR) > 0) {
+				startYBackSurf += 4;
+			 } else {
+				startYBackSurf ++;
+			 }
+		   } else {
+		   	  ShiftDownCurCar();
+		   }
+ 		   needRedrawGraphBoxs = true;
+		 }
+		 if ((WH->Key==KB_KEY_RIGHT) || (WH->Key==0x4d && (!(KbFLAG|KB_NUM_ACT)))) {// right
+		   if ((KbFLAG&KB_CTRL_PR) > 0) {
+			 if ((KbFLAG&KB_SHIFT_PR) > 0) {
+			   if (startXBackSurf >= 4)
+				  startXBackSurf -= 4;
+			 } else {
+			   if (startXBackSurf > 0)
+				  startXBackSurf --;
+			 }
+		   } else {
+		   	  ShiftRightCurCar();
+		   }
+ 		   needRedrawGraphBoxs = true;
+		 }
+		 if ((WH->Key==KB_KEY_LEFT) || (WH->Key==0x4b && (!(KbFLAG|KB_NUM_ACT)))) {// left
+		   if ((KbFLAG&KB_CTRL_PR) > 0) {
+			 if ((KbFLAG&KB_SHIFT_PR) > 0) {
+				startXBackSurf += 4;
+			 } else {
+				startXBackSurf ++;
+			 }
+		   } else {
+		   	  ShiftLeftCurCar();
+		   }
+ 		   needRedrawGraphBoxs = true;
+		 }
      }
-     if (WH->Key==211) {    // 'Suppr'  <28 Enter>
-       redr=1;
-       for (i=0;i<64;i++)
-         for (j=0;j<2;j++)
-           car[j][i+curascii*64]=0;
-     }
-     if ((WH->Key==0xc8) || (WH->Key==0x48 && (!(KbFLAG|KB_NUM_ACT)))) {// up
-       redr=1;
-       for (i=62;i>=0;i--)
-         for (j=0;j<2;j++)
-           car[j][(i+1)+curascii*64]=car[j][i+curascii*64];
-       car[0][curascii*64]=0; car[1][curascii*64]=0;
-     }
-     if ((WH->Key==0xd0) || (WH->Key==0x50 && (!(KbFLAG|KB_NUM_ACT)))) {// down
-       redr=1;
-       for (i=0;i<63;i++)
-         for (j=0;j<2;j++)
-           car[j][i+curascii*64]=car[j][(i+1)+curascii*64];
-       car[0][63+curascii*64]=0; car[1][63+curascii*64]=0;
-     }
-     if ((WH->Key==0xcd) || (WH->Key==0x4d && (!(KbFLAG|KB_NUM_ACT)))) {// right
-       redr=1;
-       for (i=0;i<64;i++)
-         RightShiftLine(&car[0][i+curascii*64],&car[1][i+curascii*64]);
-     }
-     if ((WH->Key==0xcb) || (WH->Key==0x4b && (!(KbFLAG|KB_NUM_ACT)))) {// left
-       redr=1;
-       for (i=0;i<64;i++)
-         LeftShiftLine(&car[0][i+curascii*64],&car[1][i+curascii*64]);
-     }
-     // up = c8, down = d0, right = cd, left = cb
-     //      48         50          4d         4b
    }
-   if (redr) { GphBCarMap->Redraw(); GphBCarDraw->Redraw(); }
+
 }
-// FOuvrImg --
-void ExitOuvrImg() {
-   FOuvrImg->Hide();
-   FPrinc->Enable();
+
+void ApplyCalcToCurCar() {
+	int curascii=HzSBAscii->GetVal();
+	int LargChar=InfCar[curascii].Lg,HautChar=InfCar[curascii].Ht;
+	int i,j;
+    int calCol = 0;
+
+    // clear all
+    for (i=0;i<64;i++) {
+		for (j=0;j<2;j++) {
+			car[j][i+curascii*64]=0;
+		}
+    }
+
+	for (i=0;i<HautChar;i++) {
+		for (j=0;j<LargChar;j++) {
+			calCol = DgSurfCGetPixel16(&BackSurf, startXBackSurf+j, startYBackSurf+i);
+			if (calCol != 0xffffffff) {
+				if (calCol != BackSurf.Mask) { // set
+					car[j>>5][i+curascii*64] |= 1<<(j);
+				}
+			}
+		}
+	}
+	needRedrawGraphBoxs = true;
 }
+
+void CopyCar() {
+	int i,j;
+
+	asciiCopyIdx = HzSBAscii->GetVal();
+
+	// copy Info
+	copiedInfCar = InfCar[asciiCopyIdx];
+	// copy Data
+    for (i=0;i<64;i++) {
+		for (j=0;j<2;j++) {
+			copiedCar[j][i]=car[j][i+asciiCopyIdx*64];
+		}
+    }
+}
+
+void InsertCopiedCar() {
+	int curascii=HzSBAscii->GetVal();
+
+    int i,j;
+	if (asciiCopyIdx == -1)
+		return;
+
+	// copy Info
+	InfCar[curascii] = copiedInfCar;
+
+    // copy data
+    for (i=0;i<64;i++) {
+		for (j=0;j<2;j++) {
+			car[j][i+curascii*64]=copiedCar[j][i];
+		}
+    }
+    needRedrawGraphBoxs = true;
+}
+
+void ClearCurCar() {
+	int curascii=HzSBAscii->GetVal();
+    int i,j;
+
+    // clear all
+    for (i=0;i<64;i++) {
+		for (j=0;j<2;j++) {
+			car[j][i+curascii*64]=0;
+		}
+    }
+}
+
+
+
+void ReverseCurCar() {
+	int curascii=HzSBAscii->GetVal();
+    int i,j;
+
+	for (i=0;i<64;i++) {
+		for (j=0;j<2;j++)
+			car[j][i+curascii*64]^=0xffffffff;
+	}
+}
+
+void ShiftUpCurCar() {
+	int curascii=HzSBAscii->GetVal();
+    int i,j;
+
+	 for (i=62;i>=0;i--) {
+		for (j=0;j<2;j++)
+			car[j][(i+1)+curascii*64]=car[j][i+curascii*64];
+	 }
+	 car[0][curascii*64]=0; car[1][curascii*64]=0;
+}
+
+void ShiftDownCurCar() {
+	int curascii=HzSBAscii->GetVal();
+    int i,j;
+
+	for (i=0;i<63;i++) {
+	   for (j=0;j<2;j++)
+		 car[j][i+curascii*64]=car[j][(i+1)+curascii*64];
+	}
+	car[0][63+curascii*64]=0; car[1][63+curascii*64]=0;
+}
+
+void ShiftRightCurCar() {
+	int curascii=HzSBAscii->GetVal();
+    int i;
+
+	for (i=0;i<64;i++)
+		RightShiftLine(&car[0][i+curascii*64],&car[1][i+curascii*64]);
+
+}
+
+void ShiftLeftCurCar() {
+	int curascii=HzSBAscii->GetVal();
+    int i;
+
+	for (i=0;i<64;i++)
+		LeftShiftLine(&car[0][i+curascii*64],&car[1][i+curascii*64]);
+
+}
+
 
 // config.ini
 
@@ -734,7 +1075,7 @@ void LoadConfig()
 }
 
 
-void RenderWorkerFunc(void *, int ) {
+void RenderFunc() {
     int dx = 0;//-RendSurf.ResH / 2;
     int dy = 0;//-RendSurf.ResV / 2;
 
@@ -750,6 +1091,12 @@ void RenderWorkerFunc(void *, int ) {
 
 	DgSetCurSurf(&RendSurf);
 
+	if (needRedrawGraphBoxs) {
+		GphBCarMap->Redraw();
+		GphBCarDraw->Redraw();
+		needRedrawGraphBoxs = false;
+	}
+
 	WH->DrawSurf(&CurSurf);
 
 	if (debugInfo)
@@ -757,13 +1104,12 @@ void RenderWorkerFunc(void *, int ) {
 		barblnd16(0+dx,460+dy, 639+dx, 479+dy, 0xffff | (25<<24));
 
 		ClearText();
-		char text[124];
+		char text[125];
 		SetTextCol(0x0);
 		if (avgFps!=0.0)
-			sprintf(text,"KbFLAG %x  LastKey %x LastAscii '%c' -  FPS %i\n", KbFLAG, LastKey, (WH->Ascii != 0)? WH->Ascii : ' ', (int)(1.0/avgFps));
+			OutText16ModeFormat(AJ_RIGHT, text, 124, "Ms(x,y) (%i,%i)  KbFLAG %x  LastKey %x LastAscii '%c' -  FPS %i\n", MsX, MsY, KbFLAG, LastKey, (WH->Ascii != 0)? WH->Ascii : ' ', (int)(1.0/avgFps));
 		else
-			sprintf(text,"FPS ???\n");
-		OutText16Mode(text,AJ_RIGHT);
+			OutText16Mode("FPS ???\n", AJ_RIGHT);
 	}
 
 	if (MsInWindow)
@@ -776,3 +1122,4 @@ void RenderWorkerFunc(void *, int ) {
 
 	DgUpdateWindow();
 }
+
