@@ -535,7 +535,8 @@ String::~String() {	     // Destructeur
 int String::Changed() {
    int savChgd=Chgd;
    Chgd=0;
-   used = strlen(StrPtr) + 1;
+   if (savChgd)
+      used = strlen(StrPtr) + 1;
    return savChgd;
 }
 
@@ -583,6 +584,7 @@ unsigned int  String::AddCursChar(unsigned int PosCurs,char c,int Ins) {
      delete tmp;
    }
    StrPtr[pc]=c;
+   used++;
    Chgd=1;
    if (ExtChgd!=NULL) *ExtChgd=1;
    return pc+1;
@@ -602,6 +604,7 @@ unsigned int  String::DelCurs(unsigned int PosCurs) {
    memcpy(tmp,&StrPtr[pc+1],len-pc-1);
    memcpy(&StrPtr[pc],tmp,len-pc-1);
    StrPtr[len-1]='\0';
+   used--;
    delete tmp;
    return pc;
 }
@@ -618,6 +621,7 @@ unsigned int  String::BackDelCurs(unsigned int PosCurs) {
    memcpy(tmp,&StrPtr[pc],len-pc);
    memcpy(&StrPtr[pc-1],tmp,len-pc);
    StrPtr[len-1]='\0';
+   used--;
    delete tmp;
    return pc-1;
 }

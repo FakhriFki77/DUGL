@@ -232,6 +232,7 @@ public:
    void (*Clear)(int clrcol);
    void (*ClearSurf)(int clrcol);
    void (*bar)(int X1,int Y1,int X2,int Y2,int bcol);
+   void (*InBar)(int X1,int Y1,int X2,int Y2,int bcol);
    void (*line)(int X1,int Y1,int X2,int Y2,int LgCol);
    void (*cputpixel)(int X,int Y,int Col);
    void (*rectmap)(int X1,int Y1,int X2,int Y2,int rcol,unsigned int rmap);
@@ -255,7 +256,7 @@ public:
    void (*Poly)(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
    // low-level font
    void (*OutText)(const char *str);
-   int  (*RViewOutTextMode)(DgView *V,const char *str,int Mode);
+   int  (*ViewOutTextMode)(DgView *V,const char *str,int Mode);
    // data
    unsigned int WinNoir,WinBlanc,WinBleuF,WinGris,WinGrisF,WinGrisC,WinRougeF;
    int WinStopScan;

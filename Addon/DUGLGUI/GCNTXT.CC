@@ -57,6 +57,7 @@ CGraphContext::CGraphContext(int BitsPixel,void *PalBGR1024) {
      Clear=::DgClear16;
      ClearSurf=::ClearSurf16;
      bar=::bar16;
+     InBar=::InBar16;
      line=::line16;
      cputpixel=::DgCPutPixel16;
      rectmap=::rectmap16;
@@ -77,7 +78,7 @@ CGraphContext::CGraphContext(int BitsPixel,void *PalBGR1024) {
      MaskBlndResizeViewSurf=::MaskBlndResizeViewSurf16;
 
      OutText=::OutText16;
-     RViewOutTextMode=::RViewOutText16Mode;
+     ViewOutTextMode=::ViewOutText16Mode;
      Line=::Line16;
      Poly=::Poly16;
      break;
@@ -85,6 +86,7 @@ CGraphContext::CGraphContext(int BitsPixel,void *PalBGR1024) {
      Clear=NULL;
      ClearSurf=NULL;
      bar=NULL;
+     InBar=NULL;
      line=NULL;
      cputpixel=NULL;
      rectmap=NULL;

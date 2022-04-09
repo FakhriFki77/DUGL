@@ -277,13 +277,13 @@ void FlyListBox::Draw() {
    DgView V1,V2;
    m_GraphCtxt->bar(X1,Y1,X2,Y2,m_GraphCtxt->WinBlanc);
    m_GraphCtxt->rect(X1,Y1,X2,Y2,m_GraphCtxt->WinNoir);
-   GetSurfRView(&CurSurf,&V1);
+   GetSurfView(&CurSurf,&V1);
    V1.MinX=X1+3; V1.MinY=Y1+3;
    V1.MaxX=X2-3; V1.MaxY=Y2-3;
-   if (scrollact) GetSurfRView(&CurSurf,&V2);
-   SetSurfInRView(&CurSurf,&V1);
+   if (scrollact) GetSurfView(&CurSurf,&V2);
+   SetSurfInView(&CurSurf,&V1);
 
-   RViewClearText(&V1); FntY--;
+   ViewClearText(&V1); FntY--;
    for (i=FirstInd;i<FirstInd+MaxNbItem;i++) {
      if (i>=nb) break;
      if (i==PosCursor) {
@@ -301,10 +301,10 @@ void FlyListBox::Draw() {
      FntY-=(FntHaut+1); }
 
    if (scrollact) {
-     SetSurfRView(&CurSurf,&V2);
+     SetSurfView(&CurSurf,&V2);
      V2.MinX=X1; V2.MinY=Y1;
      V2.MaxX=X2; V2.MaxY=Y2;
-     SetSurfInRView(&CurSurf,&V2);
+     SetSurfInView(&CurSurf,&V2);
      m_GraphCtxt->DrawButtFHaut(xbth,ybth,etatbth);
      m_GraphCtxt->bar(xbtb,ybtb+13,xbth+12,ybth-1,m_GraphCtxt->WinGrisC);
      m_GraphCtxt->DrawButtFBas(xbtb,ybtb,etatbtb);
@@ -658,20 +658,20 @@ void ComBox::Draw() {
    m_GraphCtxt->bar(XC1,YC1,XC2,YC2,m_GraphCtxt->WinBlanc);
    m_GraphCtxt->CadBoxWin(XC1,YC1,XC2,YC2);
 
-   GetSurfRView(&CurSurf,&VS);
+   GetSurfView(&CurSurf,&VS);
    V1.OrgX=XC1+3+CurSurf.OrgX; V1.OrgY=YC1+3+CurSurf.OrgY;
    V1.MinX=V1.MinY=0;
    V1.MaxX=XC2-XC1-6; V1.MaxY=YC2-YC1-6;
-   SetSurfInRView(&CurSurf,&V1);
+   SetSurfInView(&CurSurf,&V1);
    if (Focus) {
      m_GraphCtxt->ClearSurf(m_GraphCtxt->WinRougeF);
      m_GraphCtxt->rectmap(CurSurf.MinX,CurSurf.MinY,CurSurf.MaxX,CurSurf.MaxY,m_GraphCtxt->WinBlanc,0xaaaaaaaa);
      FntCol=m_GraphCtxt->WinBlanc;
    }
    else FntCol=m_GraphCtxt->WinNoir;
-   FntY=RViewGetFntYMID(&V1);
-   if (Select!=-1) m_GraphCtxt->RViewOutTextMode(&V1,((*LStr)[Select])->StrPtr,AJ_SRC);
-   SetSurfRView(&CurSurf,&VS);
+   FntY=ViewGetFntYMID(&V1);
+   if (Select!=-1) m_GraphCtxt->ViewOutTextMode(&V1,((*LStr)[Select])->StrPtr,AJ_SRC);
+   SetSurfView(&CurSurf,&VS);
 
    m_GraphCtxt->bar(XC2-14,YC1+2,XC2-2,YC2-2,m_GraphCtxt->WinGris);
    m_GraphCtxt->DrawFBas(XC2-10,YC2-10,m_GraphCtxt->WinNoir);

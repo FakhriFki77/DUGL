@@ -165,7 +165,7 @@ void FilesBox(WinHandler *FilesBoxWH, const char *NmWin,
    DgView V1;
 
    SDL_memset(&FileBox, 0, sizeof(FilesBoxInfo));
-   GetSurfRView(&FilesBoxWH->S,&V1);
+   GetSurfView(&FilesBoxWH->S,&V1);
 
    FileBox.bSortFilesDirs = SortFilesDirs;
    FileBox.bSortAsc = sortAsc;
