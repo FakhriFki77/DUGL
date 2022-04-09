@@ -20,9 +20,9 @@
 ALIGN 32
 _PutSurf16:
 	ARG	SSN16, 4, XPSN16, 4, YPSN16, 4, PSType16, 4
-		MOVD    xmm5,ESI
-		PINSRD  xmm5,EDI,1
-		PINSRD  xmm5,EBX,2
+		PUSH	ESI
+		PUSH	EDI
+		PUSH	EBX
 
 		MOV		ESI,[EBP+SSN16]
 		MOV		EDI,_SrcSurf
@@ -396,9 +396,9 @@ _PutSurf16:
 		JMP     .IPutSurf
 
 .PasPutSurf:
-		MOVD        ESI,xmm5
-		PEXTRD      EDI,xmm5,1
-		PEXTRD      EBX,xmm5,2
+		POP			EBX
+		POP			EDI
+		POP			ESI
 		RETURN
 
 
@@ -409,9 +409,9 @@ ALIGN 32
 _PutMaskSurf16:
 	ARG	MSSN16, 4, MXPSN16, 4, MYPSN16, 4, MPSType16, 4
 
-		MOVD    xmm5,ESI
-		PINSRD  xmm5,EDI,1
-		PINSRD  xmm5,EBX,2
+		PUSH	ESI
+		PUSH	EDI
+		PUSH	EBX
 
 		MOV		ESI,[EBP+MSSN16]
 		MOV		EDI,Svlfb
@@ -860,136 +860,134 @@ _PutMaskSurf16:
 		JMP     .IPutSurf
 
 .PasPutSurf:
-		MOVD        ESI,xmm5
-		PEXTRD      EDI,xmm5,1
-		PEXTRD      EBX,xmm5,2
+		POP			EBX
+		POP			EDI
+		POP			ESI
 		RETURN
+
 
 ALIGN 32
 _SurfMaskCopy16:
 	ARG	PDstSrfMaskB, 4, PSrcSrfMaskB, 4
-		MOVD        xmm5,ESI
-		PINSRD      xmm5,EDI,1
-		PINSRD      xmm5,EBX,2
+			PUSH			ESI
+			PUSH			EDI
+			PUSH			EBX
 
-; prepare col blending
-		MOV			ESI,[EBP+PSrcSrfMaskB]
-		MOV			EDI,[EBP+PDstSrfMaskB]
-		MOVD			xmm0,[ESI+_Mask-_CurSurf]
+			MOV				ESI,[EBP+PSrcSrfMaskB]
+			MOV				EDI,[EBP+PDstSrfMaskB]
+			MOVD			xmm3,[ESI+_Mask-_CurSurf]
 
-		MOV			EBX,[ESI+_SizeSurf-_CurSurf]
-		PSHUFLW	   xmm0,xmm0,0
-		MOV			EDI,[EDI+_rlfb-_CurSurf]
-		PUNPCKLQDQ	xmm0,xmm0
-		SHR			EBX,1
-		MOVDQA      [DQ16Mask],xmm0
-		MOV			ESI,[ESI+_rlfb-_CurSurf]
-		MOVD			EBP,xmm0
-		XOR     		ECX,ECX
+			MOV				EBX,[ESI+_SizeSurf-_CurSurf]
+			PSHUFLW			xmm3,xmm3,0
+			MOV				EDI,[EDI+_rlfb-_CurSurf]
+			PUNPCKLQDQ		xmm3,xmm3
+			SHR				EBX,1
+			MOV				ESI,[ESI+_rlfb-_CurSurf]
+			MOVD			EBP,xmm3
+			XOR     		ECX,ECX
 
 .BcStBAv:
-		TEST			EDI,6		; dword aligned ?
-		JZ				.FPasStBAv
-		MOV			AX,[ESI]
-		CMP			AX,BP
-		LEA			ESI,[ESI+2]
-		JZ				.PasStBAv
-		STOSW
-		DEC			EBX
-		JZ				.FinSHLine
-		JMP			.BcStBAv
-
+			TEST			EDI,6		; dword aligned ?
+			JZ				.FPasStBAv
+			MOV				AX,[ESI]
+			CMP				AX,BP
+			LEA				ESI,[ESI+2]
+			JZ				.PasStBAv
+			STOSW
+			DEC				EBX
+			JZ				.FinSHLine
+			JMP				.BcStBAv
 .PasStBAv:
-		DEC			EBX
-		LEA		   EDI,[EDI+2]
-		JZ		    	.FinSHLine
-		JMP		   .BcStBAv
+			DEC				EBX
+			LEA				EDI,[EDI+2]
+			JZ				.FinSHLine
+			JMP				.BcStBAv
 .FPasStBAv:
 ;--------
-		TEST			EDI, 8
-		JZ				.PasStQAv
-		CMP			EBX,BYTE 4
-		JL				.StBAp
-		MOVQ			xmm2,[ESI]
-		MOVQ			xmm1,xmm2
-		MOVQ			xmm0,xmm2
-		MOVQ			xmm4,[EDI]
+			TEST			EDI, 8
+			JZ				.PasStQAv
+			CMP				EBX,BYTE 4
+			JL				.StBAp
+			MOVQ			xmm2,[ESI]
+			MOVQ			xmm1,xmm2
+			MOVQ			xmm0,xmm2
+			MOVQ			xmm4,[EDI]
 
-		PCMPEQW 		xmm2,[DQ16Mask]
-		PCMPEQW 		xmm1,[DQ16Mask]
-		PANDN   		xmm2,xmm0
-		PAND    		xmm4,xmm1
-		POR     		xmm2,xmm4
+			PCMPEQW 		xmm2,xmm3 ; [DQ16Mask]
+			PCMPEQW 		xmm1,xmm3 ; [DQ16Mask]
+			PANDN   		xmm2,xmm0
+			PAND    		xmm4,xmm1
+			POR     		xmm2,xmm4
 
-		SUB			EBX, BYTE 4
-		MOVQ			[EDI],xmm2
-		LEA			ESI,[ESI+8]
-		LEA			EDI,[EDI+8]
+			SUB				EBX, BYTE 4
+			MOVQ			[EDI],xmm2
+			LEA				ESI,[ESI+8]
+			LEA				EDI,[EDI+8]
 .PasStQAv:
 ;-------
-		SHLD    		ECX,EBX,29
-		JZ	    		.StBAp
+			SHLD    		ECX,EBX,29
+			JZ	    		.StBAp
 ;ALIGN 4
 .StoSSE:
-		MOVDQU		xmm2,[ESI]
-		MOVDQA		xmm4,[EDI]
-		MOVDQA		xmm1,xmm2
-		MOVDQA		xmm0,xmm2
+			MOVDQU			xmm2,[ESI]
+			MOVDQA			xmm4,[EDI]
+			MOVDQA			xmm1,xmm2
+			MOVDQA			xmm0,xmm2
 
-		PCMPEQW 		xmm1,[DQ16Mask]
-		PCMPEQW 		xmm2,[DQ16Mask]
-		PAND    		xmm4,xmm1
-		PANDN   		xmm2,xmm0
-		POR     		xmm2,xmm4
-		DEC			ECX
-		MOVDQA		[EDI],xmm2
-		LEA			ESI,[ESI+16]
-		LEA			EDI,[EDI+16]
-		JNZ			.StoSSE
+			PCMPEQW 		xmm1,xmm3 ; [DQ16Mask]
+			PCMPEQW 		xmm2,xmm3 ; [DQ16Mask]
+			PAND    		xmm4,xmm1
+			PANDN   		xmm2,xmm0
+			POR     		xmm2,xmm4
+			DEC				ECX
+			MOVDQA			[EDI],xmm2
+			LEA				ESI,[ESI+16]
+			LEA				EDI,[EDI+16]
+			JNZ				.StoSSE
 .StBAp:
-		AND			BL,BYTE 7
-		JZ				.FinSHLine
+			AND				BL,BYTE 7
+			JZ				.FinSHLine
 .StQAp:
-		TEST    		BL,4
-      JZ      		.PasStQAp
-		MOVQ			xmm2,[ESI]
-		MOVQ			xmm1,xmm2
-		MOVQ			xmm0,xmm2
-		MOVQ			xmm4,[EDI]
+			TEST    		BL,4
+			JZ      		.PasStQAp
+			MOVQ			xmm2,[ESI]
+			MOVQ			xmm1,xmm2
+			MOVQ			xmm0,xmm2
+			MOVQ			xmm4,[EDI]
 
-		PCMPEQW 		xmm2,[DQ16Mask]
-		PCMPEQW 		xmm1,[DQ16Mask]
-		PANDN   		xmm2,xmm0
-		PAND    		xmm4,xmm1
-		POR     		xmm2,xmm4
+			PCMPEQW 		xmm2,xmm3 ; [DQ16Mask]
+			PCMPEQW 		xmm1,xmm3 ; [DQ16Mask]
+			PANDN   		xmm2,xmm0
+			PAND    		xmm4,xmm1
+			POR     		xmm2,xmm4
 
-		MOVQ			[EDI],xmm2
-		LEA			ESI,[ESI+8]
-		LEA			EDI,[EDI+8]
+			MOVQ			[EDI],xmm2
+			LEA				ESI,[ESI+8]
+			LEA				EDI,[EDI+8]
 .PasStQAp:
-		AND			BL,BYTE 3
-		JZ				SHORT .FinSHLine
+			AND				BL,BYTE 3
+			JZ				SHORT .FinSHLine
 
 .BcStBAp:
-		MOV			AX,[ESI]
-		CMP         AX,BP
-		LEA		   ESI,[ESI+2]
-		JZ          .BPasStBAp
-		DEC			BL
-		STOSW
-		JNZ		   .BcStBAp
-		JMP         SHORT .FinSHLine
+			MOV				AX,[ESI]
+			CMP         	AX,BP
+			LEA		   		ESI,[ESI+2]
+			JZ          	.BPasStBAp
+			DEC				BL
+			STOSW
+			JNZ		   		.BcStBAp
+			JMP         	SHORT .FinSHLine
 .BPasStBAp:
-		DEC       	BL
-      LEA       	EDI,[EDI+2]
-		JNZ		   .BcStBAp
+			DEC       		BL
+			LEA       		EDI,[EDI+2]
+			JNZ				.BcStBAp
 .PasStBAp:
 .FinSHLine:
-		MOVD        ESI,xmm5
-		PEXTRD      EDI,xmm5,1
-		PEXTRD      EBX,xmm5,2
-		RETURN
+			POP				EBX
+			POP				EDI
+			POP				ESI
 
+		RETURN
 
 ; -------------------------------
 ; Put a Surf blended with a color
@@ -997,9 +995,9 @@ _SurfMaskCopy16:
 ALIGN 32
 _PutSurfBlnd16:
 	ARG	SSBN16, 4, XPSBN16, 4, YPSBN16, 4, PSBType16, 4, PSBCol16, 4
-		PUSH			EBX
-		PUSH			EDI
-		PUSH			ESI
+		PUSH	ESI
+		PUSH	EDI
+		PUSH	EBX
 
 		MOV			ESI,[EBP+SSBN16]
 		MOV			EDI,_SrcSurf
@@ -1239,12 +1237,12 @@ _PutSurfBlnd16:
 		LEA			EAX,[EAX+EDX*4] ; +=SScanLine*2
 		LEA			ESI,[ESI+EDX*2] ; +=SScanLine
 		MOV			[Plus],EAX
-		MOV     		EDX,[SResH]
+		MOV			EDX,[SResH]
 
 .IPutSurf:
-		XOR         ECX,ECX
+		XOR				ECX,ECX
 .IBcPutSurf:
-		MOV		   		EBX,EDX
+		MOV				EBX,EDX
 .IBcStBAv:
 		TEST			EDI,6
 		JZ				.IFPasStBAv
@@ -1256,26 +1254,26 @@ _PutSurfBlnd16:
 		DEC		   		EBX
 		PEXTRW			[EDI],xmm0,0
 		LEA				EDI,[EDI+2]
-		JZ		    	.IFinSHLine
-		JMP		   		.IBcStBAv
+		JZ				.IFinSHLine
+		JMP				.IBcStBAv
 .IFPasStBAv:
-		TEST	    	EDI, 8
-      JZ		    	.IPasStQAv
-      CMP		   EBX,BYTE 4
-      JL		    	.IPasStQAp
+		TEST			EDI, 8
+		JZ				.IPasStQAv
+		CMP				EBX,BYTE 4
+		JL				.IPasStQAp
 
-      SUB         ESI,BYTE 8
+		SUB				ESI,BYTE 8
 		MOVQ			xmm0,[ESI]
-		PSHUFLW		xmm0,xmm0,(0<<6) | (1<<4) | (2<<2) | (3) ; reverse order 11 10 01 00
-		SUB         EBX,BYTE 4
+		PSHUFLW			xmm0,xmm0,(0<<6) | (1<<4) | (2<<2) | (3) ; reverse order 11 10 01 00
+		SUB				EBX,BYTE 4
 		MOVQ			xmm1,xmm0
 		MOVQ			xmm2,xmm0
 		@SolidBlndQ
 		MOVQ			[EDI],xmm0
-		LEA		   EDI,[EDI+8]
+		LEA				EDI,[EDI+8]
 .IPasStQAv:
-		SHLD        ECX,EBX,29 ; ECX = EBX >> 3 : ECX should be zero
-		JZ		    	.IStBAp
+		SHLD			ECX,EBX,29 ; ECX = EBX >> 3 : ECX should be zero
+		JZ				.IStBAp
 ;ALIGN 4
 .IStoSSE:
 		SUB				ESI,BYTE 16
@@ -1283,17 +1281,17 @@ _PutSurfBlnd16:
 		MOVQ			xmm1,[ESI+8]
 		PSHUFLW			xmm0,xmm0,(0<<6) | (1<<4) | (2<<2) | (3) ; reverse order 11 10 01 00
 		PSHUFLW			xmm1,xmm1,(0<<6) | (1<<4) | (2<<2) | (3) ; reverse order 11 10 01 00
-		PUNPCKLQDQ  	xmm1,xmm0
+		PUNPCKLQDQ		xmm1,xmm0
 		DEC				ECX
 		MOVDQA			xmm0,xmm1
 		MOVDQA			xmm2,xmm1
 		@SolidBlndQ
 		MOVDQA			[EDI],xmm0
-		LEA		   		EDI,[EDI+16]
-		JNZ		   		.IStoSSE
+		LEA				EDI,[EDI+16]
+		JNZ				.IStoSSE
 .IStBAp:
 		AND				BL,BYTE 7
-		JZ		    	.IFinSHLine
+		JZ				.IFinSHLine
 		TEST        	BL,4
 		JZ          	.IPasStQAp
 		SUB       		ESI,BYTE 8
@@ -1407,10 +1405,10 @@ _PutSurfBlnd16:
 		ADD		EDI,[_vlfb]
 
 		MOVD	EDX,xmm0  ; DeltaX
-		TEST    BYTE [PType],1
-        JNZ     .CInvHzPSurf
+		TEST	BYTE [PType],1
+		JNZ		.CInvHzPSurf
 		ADD		[Plus],EAX
-		JMP     .PutSurf
+		JMP		.PutSurf
 
 .CInvHzPSurf:   ; clipped and inversed horizontally
 
@@ -1418,13 +1416,14 @@ _PutSurfBlnd16:
 		LEA		EAX,[EAX+EDX*2] ; add to jump to the end
 		LEA		ESI,[ESI+EDX*2] ; jump to the end
 		MOV		[Plus],EAX
-		JMP     .IPutSurf
+		JMP		.IPutSurf
 
 .PasPutSurf:
 
-		POP		ESI
-		POP		EDI
 		POP		EBX
+		POP		EDI
+		POP		ESI
+
 		RETURN
 
 ALIGN 32
