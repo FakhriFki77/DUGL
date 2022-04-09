@@ -428,11 +428,6 @@ void GetSurfView(DgSurf *S, DgView *V)
 	V->MinX=S->RMinX; V->MinY=S->RMinY;
 }
 
-
-void ClearSurf16(int clrcol) {
-	InBar16(MinX, MinY, MaxX, MaxY, clrcol);
-}
-
 void Bar16(void *Pt1,void *Pt2,int bcol) {
 	bar16(((int*)(Pt1))[0], ((int*)(Pt1))[1], ((int*)(Pt2))[0], ((int*)(Pt2))[1], bcol);
 }

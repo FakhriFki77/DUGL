@@ -22,13 +22,12 @@
 %include "DGUTILS.asm"
 
 ; GLOBAL Functions
-GLOBAL  _DgSetCurSurf, _DgSetSrcSurf, _DgGetCurSurf, _GetMaxResVSetSurf, _SurfCopy
-GLOBAL  _DgClear16, _InBar16, _DgPutPixel16, _DgCPutPixel16, _DgGetPixel16, _DgCGetPixel16, _DgSurfCGetPixel16, _DgSurfCPutPixel16
+GLOBAL  _DgSetCurSurf, _DgSetSrcSurf, _DgGetCurSurf, _GetMaxResVSetSurf
+GLOBAL  _DgClear16, _ClearSurf16, _InBar16, _DgPutPixel16, _DgCPutPixel16, _DgGetPixel16, _DgCGetPixel16, _DgSurfCGetPixel16, _DgSurfCPutPixel16
 
 GLOBAL	_line16,_Line16,_linemap16,_LineMap16,_lineblnd16,_LineBlnd16, _linemapblnd16,_LineMapBlnd16
-GLOBAL	_Poly16, _PutSurf16,_PutMaskSurf16,_PutSurfBlnd16,_PutMaskSurfBlnd16
-GLOBAL	_PutSurfTrans16,_PutMaskSurfTrans16
-GLOBAL	_SurfMaskCopy16, _SurfCopyBlnd16,_SurfMaskCopyBlnd16,_SurfCopyTrans16,_SurfMaskCopyTrans16
+GLOBAL	_Poly16, _PutSurf16,_PutMaskSurf16,_PutSurfBlnd16,_PutMaskSurfBlnd16,_PutSurfTrans16,_PutMaskSurfTrans16
+GLOBAL	_SurfCopy, _SurfMaskCopy16, _SurfCopyBlnd16,_SurfMaskCopyBlnd16,_SurfCopyTrans16,_SurfMaskCopyTrans16
 GLOBAL	_ResizeViewSurf16,_MaskResizeViewSurf16,_TransResizeViewSurf16,_MaskTransResizeViewSurf16,_BlndResizeViewSurf16,_MaskBlndResizeViewSurf16
 GLOBAL  _SetFONT, _GetFONT, _OutText16, _WidthText,_WidthPosText,_PosWidthText
 
@@ -345,9 +344,9 @@ _DgSurfCGetPixel16:
 _DgSurfCPutPixel16:
     ARG PSURFCPP, 4, SCPPPX, 4, SCPPPY, 4, SCPPCOL, 4
 
+		MOV			EAX,[EBP+PSURFCGP]
 		MOV			EDX,[EBP+SCPPPY]
 		MOV			ECX,[EBP+SCPPPX]
-		MOV			EAX,[EBP+PSURFCGP]
 		CMP         EDX,[EAX+_MaxY-_CurSurf]
 		JG          SHORT .Clip
 		CMP         ECX,[EAX+_MaxX-_CurSurf]
@@ -560,11 +559,9 @@ _OutText16:
 		PUSH		EDI
 		PUSH		ESI
 
-		MOV			EBX,[_FntPtr]
-		OR		   	EBX,EBX
-		JZ		   .FinOutText
 		MOV			ESI,[EBP+Str16]
 		XOR			EAX,EAX
+		MOV			EBX,[_FntPtr]
 .BcOutChar:
 		OR			AL,[ESI]
 		JZ			.FinOutText
@@ -840,6 +837,24 @@ _OutText16:
 		POP			EBX
 		RETURN
 
+_ClearSurf16:
+	ARG	ClearSurf16Col, 4
+
+		PUSH		ESI
+		PUSH		EBX
+		PUSH		EDI
+
+		MOVDQA		xmm1,[_MaxX] ; = MaxX | MaxY | MinX | MinY
+		MOVD		xmm0,[EBP+ClearSurf16Col]
+		PEXTRD		EDI,xmm1,3 ; MinY
+		PSHUFLW		xmm0,xmm0, 0 ; xmm0 = clr16 | clr16 | clr16 | clr16
+		PEXTRD      ESI,xmm1,1 ; MaxY
+		PUNPCKLQDQ	xmm0,xmm0
+		PEXTRD      ECX,xmm1,0 ; MaxX
+		PEXTRD		EBX,xmm1,2 ; _MinX
+		SUB         ESI,EDI ; = (_MaxY - MinY)
+		JMP			SHORT _InBar16.CommonInBar16
+
 _InBar16:
 	ARG	InRect16MinX, 4, InRect16MinY, 4, InRect16MaxX, 4, InRect16MaxY, 4, InRect16Col, 4
 
@@ -855,6 +870,7 @@ _InBar16:
 		MOV         ECX,[EBP+InRect16MaxX]
 		SUB         ESI,EDI ; = (_MaxY - MinY)
 		MOV         EBX,[EBP+InRect16MinX]
+.CommonInBar16:
 		IMUL        EDI,[_NegScanLine]
 		LEA			EBP,[ESI+1]
 		SUB			ECX,EBX
@@ -881,49 +897,6 @@ _InBar16:
 
     RETURN
 
-;ClearSurf16(int clrcol)
-;_ClearSurf16:
-;	ARG	ClearSurf16Col, 4
-;
-;		PUSH		ESI
-;		PUSH		EBX
-;		PUSH		EDI
-;
-;
-;		MOVD		xmm0,[EBP+ClearSurf16Col]
-;		MOV         EDI,[_MinY]
-;		PSHUFLW		xmm0,xmm0, 0 ; xmm0 = clr16 | clr16 | clr16 | clr16
-;		PUNPCKLQDQ	xmm0,xmm0
-;
-;		MOV         EBP,[_MaxY]
-;		MOV         ECX,[_MaxX]
-;		SUB         EBP,EDI ; = (_MaxY - MinY)
-;		MOV         EBX,[_MinX]
-;		INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
-;		IMUL        EDI,[_NegScanLine]
-;		SUB			ECX,EBX
-;		ADD         EDI,[_vlfb]
-;		INC         ECX
-;		LEA         EDI,[EDI+EBX*2]
-;		MOV			ESI,ECX ; ESI = dest hline size
-;		MOVD		EAX,xmm0
-;		MOV        	EBX,EDI ; EBX = start Hline dest
-;		XOR			ECX,ECX ; should be zero for @SolidHLineSSE16
-;.BcClear:
-;        MOV			EDI,EBX ; start hline
-;        MOV			EDX,ESI ; dest hline size
-;
-;		@SolidHLineSSE16
-;
-;        ADD       	EBX,[_NegScanLine] ; next hline
-;        DEC         EBP
-;        JNZ         .BcClear
-;
-;		POP			EDI
-;		POP			EBX
-;		POP			ESI
-;
-;    RETURN
 
 ; == xxxResizeViewSurf16 =====================================
 
