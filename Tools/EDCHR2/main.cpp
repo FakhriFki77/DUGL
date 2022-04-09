@@ -192,8 +192,8 @@ NodeMenu TNM[]= {
 int main()
 {
     // load font
-    if (!LoadFONT(&F1,"hello.chr")) {
-      printf("Error loading hello.chr\n"); exit(-1); }
+    if (!LoadFONT(&F1,"helloc.chr")) {
+      printf("Error loading helloc.chr\n"); exit(-1); }
     // load azerty kbmap
    if (!LoadKbMAP(&KM,"kbmap.map")) {
      printf("Error Loading kbmap.map\n"); exit(-1); }
@@ -231,6 +231,8 @@ int main()
 
     FPrinc->AllowMove = false;
 //---- FPrinc
+
+
     Mn = new Menu(FPrinc,&TNM[0]);
     LbAscii=new Label(5,5,78,25,FPrinc,"1",AJ_RIGHT);
     HzSBAscii= new HzSlider(81,395,8,FPrinc,1,255);
@@ -290,6 +292,8 @@ int main()
 		// render and update screen
 		RenderFunc();
 
+		bool homeEndArrowsKeyHolded = HzSBAscii->Focus || HzSTransCalc->Focus || HzSBPlusX->Focus || HzSBHeight->Focus || HzSBWidth->Focus || VtSBPlusLn->Focus;
+
         switch (WH->Key)
         {
             case KB_KEY_F1:
@@ -333,9 +337,9 @@ int main()
 					GphBCarMap->Scan();
 				}
 				if (FPrinc->Focus && (WH->KeyFLAG & KB_CTRL_PR) == 0 && (WH->KeyFLAG & KB_ALT_PR) > 0 && HzSBAscii->Focus == 0) {
-					if (WH->Key == KB_KEY_LEFT)
+					if (WH->Key == KB_KEY_LEFT && !homeEndArrowsKeyHolded)
 						HzSBAscii->SetVal(HzSBAscii->GetVal()-1);
-					if (WH->Key == KB_KEY_RIGHT)
+					if (WH->Key == KB_KEY_RIGHT && !homeEndArrowsKeyHolded)
 						HzSBAscii->SetVal(HzSBAscii->GetVal()+1);
 				}
 				break;
@@ -354,18 +358,20 @@ int main()
 
 
 			case KB_KEY_HOME:
-				if (FPrinc->Focus) {
-					if ((KbFLAG&KB_CTRL_PR) > 0) {
-					 startXBackSurf = 0;
-					 startYBackSurf = 0;
-					} else {
-					 ReverseCurCar();
-					}
-					needRedrawGraphBoxs = true;
-				}
+			    if (!homeEndArrowsKeyHolded) {
+                    if (FPrinc->Focus) {
+                        if ((KbFLAG&KB_CTRL_PR) > 0) {
+                         startXBackSurf = 0;
+                         startYBackSurf = 0;
+                        } else {
+                         ReverseCurCar();
+                        }
+                        needRedrawGraphBoxs = true;
+                    }
+			    }
 				break;
 			case KB_KEY_END:
-				if (FPrinc->Focus) {
+				if (FPrinc->Focus && !homeEndArrowsKeyHolded) {
 					ClearCurCar();
 					ReverseCurCar();
 					needRedrawGraphBoxs = true;
@@ -611,7 +617,7 @@ void LoadBackImage(String *filename, int selection) {
 	}
 }
 void MenuLoadImage() {
-   FilesBox(WH,"Load image", "Load", LoadBackImage, "Cancel", NULL, &LSImgName,
+   FilesBox(WH,"Load Calc Image", "Load", LoadBackImage, "Cancel", NULL, &LSImgName,
             &LSImgMask, 0);
 }
 
@@ -697,7 +703,7 @@ void GphBDrawMap(GraphBox *Me) {
 	for (i=0;i<HautChar;i++)
 	 for (j=0;j<LargChar;j++)
 	   if (car[j>>5][i+curascii*64]&(1<<(j&0x1f)))
-		 WH->m_GraphCtxt->bar(DebX+j*zstep,DebY+i*zstep,
+         WH->m_GraphCtxt->InBar(DebX+j*zstep,DebY+i*zstep,
 			 DebX+(j+1)*zstep-1,DebY+(i+1)*zstep-1,DrawCol);
 	WH->m_GraphCtxt->rect(DebX,DebY,DebX+LargRect,DebY+HautRect,WH->m_GraphCtxt->WinBlanc);
 	for (j=1;j<HautChar;j++)
@@ -705,16 +711,16 @@ void GphBDrawMap(GraphBox *Me) {
 			WH->m_GraphCtxt->cputpixel(DebX+i*zstep,DebY+j*zstep,WH->m_GraphCtxt->WinBleuF);
 	if (validBackSurf && displayBackSurf) {
 		DgView saveView, saveBackView, backView, backSurfView;
-		GetSurfRView(&CurSurf, &saveView);
-		GetSurfRView(&CurSurf, &backView);
+		GetSurfView(&CurSurf, &saveView);
+		GetSurfView(&CurSurf, &backView);
 		backView.MinX = DebX+1;
 		backView.MinY = DebY+1;
 		backView.MaxX = DebX+LargRect-1;
 		backView.MaxY = DebY+HautRect-1;
-		SetSurfRView(&CurSurf, &backView); // set the new view
+		SetSurfView(&CurSurf, &backView); // set the new view
 
-		GetSurfRView(&BackSurf, &backSurfView);
-		GetSurfRView(&BackSurf, &saveBackView);
+		GetSurfView(&BackSurf, &backSurfView);
+		GetSurfView(&BackSurf, &saveBackView);
 
 		// check if it's completely out
 		if (startXBackSurf <= backSurfView.MaxX && startYBackSurf <= backSurfView.MaxY) {
@@ -722,14 +728,14 @@ void GphBDrawMap(GraphBox *Me) {
 			backSurfView.MinY = startYBackSurf;
 			backSurfView.MaxX = startXBackSurf + (LargChar-1);
 			backSurfView.MaxY = startYBackSurf + (HautChar-1);
-			SetSurfRView(&BackSurf, &backSurfView); // clip view inside
+			SetSurfView(&BackSurf, &backSurfView); // clip view inside
 			if (BackSurf.MaxX < startXBackSurf + (LargChar-1)) { // clip the destination view ?
 				backView.MaxX -= ((startXBackSurf + (LargChar-1)) - BackSurf.MaxX) * zstep;
-				SetSurfRView(&CurSurf, &backView); // set the new view
+				SetSurfView(&CurSurf, &backView); // set the new view
 			}
 			if (BackSurf.MaxY < startYBackSurf + (HautChar-1)) { // clip the destination view ?
 				backView.MaxY -= ((startYBackSurf + (HautChar-1)) - BackSurf.MaxY) * zstep;
-				SetSurfRView(&CurSurf, &backView); // set the new view
+				SetSurfView(&CurSurf, &backView); // set the new view
 			}
 
 			if ((MsButton&MS_LEFT_BUTT) > 0 && (KbFLAG&KB_CTRL_PR) > 0 && Me->MsIn) {
@@ -743,8 +749,8 @@ void GphBDrawMap(GraphBox *Me) {
 
 		}
 		// restore views
-		SetSurfRView(&CurSurf, &saveView);
-		SetSurfRView(&BackSurf, &saveBackView);
+		SetSurfView(&CurSurf, &saveView);
+		SetSurfView(&BackSurf, &saveBackView);
 	}
 
 }
@@ -895,24 +901,33 @@ void ApplyCalcToCurCar() {
 	int i,j;
     int calCol = 0;
 
-    // clear all
-    for (i=0;i<64;i++) {
-		for (j=0;j<2;j++) {
-			car[j][i+curascii*64]=0;
+	if (validBackSurf && displayBackSurf) {
+		// clear all
+		for (i=0;i<64;i++) {
+			for (j=0;j<2;j++) {
+				car[j][i+curascii*64]=0;
+			}
 		}
-    }
 
-	for (i=0;i<HautChar;i++) {
-		for (j=0;j<LargChar;j++) {
-			calCol = DgSurfCGetPixel16(&BackSurf, startXBackSurf+j, startYBackSurf+i);
-			if (calCol != 0xffffffff) {
-				if (calCol != BackSurf.Mask) { // set
-					car[j>>5][i+curascii*64] |= 1<<(j);
+		for (i=0;i<HautChar;i++) {
+			for (j=0;j<LargChar;j++) {
+				calCol = DgSurfCGetPixel16(&BackSurf, startXBackSurf+j, startYBackSurf+i);
+				if (calCol != 0xffffffff) {
+					if (calCol != BackSurf.Mask) { // set
+						car[j>>5][i+curascii*64] |= 1<<(j);
+					}
 				}
 			}
 		}
+		needRedrawGraphBoxs = true;
+	} else {
+		if (!validBackSurf)
+			MessageBox(WH,"Error", "You need first to load a Calc Image!",
+				"Ok", NULL, NULL, NULL, NULL, NULL);
+		if (!displayBackSurf)
+			MessageBox(WH,"Error", "Calc Image should be visible to apply Calc",
+				"Ok", NULL, NULL, NULL, NULL, NULL);
 	}
-	needRedrawGraphBoxs = true;
 }
 
 void CopyCar() {
@@ -946,7 +961,12 @@ void InsertCopiedCar() {
 			car[j][i+curascii*64]=copiedCar[j][i];
 		}
     }
-    needRedrawGraphBoxs = true;
+
+    // refresh ui
+    HzSBPlusX->SetVal((int)copiedInfCar.PlusX);
+    HzSBHeight->SetVal((int)copiedInfCar.Ht);
+    HzSBWidth->SetVal((int)copiedInfCar.Lg);
+    VtSBPlusLn->SetVal((int)copiedInfCar.PlusLgn);
 }
 
 void ClearCurCar() {

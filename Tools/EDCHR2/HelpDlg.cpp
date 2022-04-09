@@ -50,6 +50,7 @@ void DrawHelpGBox(GraphBox *Me) {
 	OutText16Mode("Focus on Char View + arrows: Move char\n", AJ_MID);
 	OutText16Mode("Left Mouse Button on Char View: Set Pixel\n", AJ_MID);
 	OutText16Mode("Right Mouse Button on Char View: Unset Pixel\n", AJ_MID);
+	OutText16Mode("Ctrl+ Home: Reset Calc Image position to left/bottom corner\n", AJ_MID);
 	OutText16Mode("Ctrl+ Left Mouse Button on Char View: Set Calc Image Mask\n", AJ_MID);
 }
 
