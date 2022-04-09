@@ -46,12 +46,12 @@ void DestroyFONT(FONT *F);
 void SetFONT(FONT *F);
 void GetFONT(FONT *F);
 void ClearText(); // clear text position inside the CurSurf current View
-void RViewClearText(DgView *V); // // clear text position inside given RView
+void ViewClearText(DgView *V); // // clear text position inside given RView
 void SetTextAttrib(int TX,int TY,int TCol);
 void SetTextPos(int TX,int TY);
 void SetTextCol(int TCol); // set text color
 int  GetFntYMID();
-int  RViewGetFntYMID(DgView *V);
+int  ViewGetFntYMID(DgView *V);
 int  WidthText(const char *str); // text width in pixels
 int  WidthPosText(const char *str,int pos); // text width taking only Pos characters
 int  PosWidthText(const char *str,int width); // Position in *str if we progress by "width" pixels
@@ -61,10 +61,10 @@ int  OutText16Mode(const char *str,int Mode);
 void OutText16Format(char *midStr, unsigned int sizeMidStr, char *fmt, ...);
 void OutText16ModeFormat(int Mode, char *midStr, unsigned int sizeMidStr, char *fmt, ...);
 int  OutText16YMode(int TY,const char *str,int Mode);
-int  RViewOutText16Mode(DgView *V,const char *str,int Mode);
-int  RViewGetXOutTextMode(DgView *V,const char *str,int Mode);
-int  RViewOutText16YMode(DgView *V,int TY,const char *str,int Mode);
-int  RViewOutText16XY(DgView *V,int TX,int TY,const char *str);
+int  ViewOutText16Mode(DgView *V,const char *str,int Mode);
+int  ViewGetXOutTextMode(DgView *V,const char *str,int Mode);
+int  ViewOutText16YMode(DgView *V,int TY,const char *str,int Mode);
+int  ViewOutText16XY(DgView *V,int TX,int TY,const char *str);
 
 #ifdef __cplusplus
 		}  // extern "C" {

@@ -26,17 +26,13 @@
 ; SSE/SSE2
 		MOVDQU		xmm0,[ESI]
 		MOVDQU		xmm1,[ESI+32]
-		MOVDQU		xmm2,[ESI+64]
-		MOVDQU		xmm3,[ESI+16]
-		MOVDQU		xmm4,[ESI+48]
-		MOVDQU		xmm7,[ESI+80]
+		MOVDQU		xmm2,[ESI+16]
+		MOVDQU		xmm3,[ESI+48]
 
 		MOVDQU		[EDI],xmm0
 		MOVDQU		[EDI+32],xmm1
-		MOVDQU		[EDI+64],xmm2
-		MOVDQU		[EDI+16],xmm3
-		MOVDQU		[EDI+48],xmm4
-        MOVDQU		[EDI+80],xmm7
+		MOVDQU		[EDI+16],xmm2
+		MOVDQU		[EDI+48],xmm3
 %%NoCopySurf:
 %endmacro
 
@@ -46,17 +42,13 @@
 ; SSE/SSE2
 		MOVDQU		xmm0,[ESI]
 		MOVDQU		xmm1,[ESI+32]
-		MOVDQU		xmm2,[ESI+64]
-		MOVDQU		xmm3,[ESI+16]
-		MOVDQU		xmm4,[ESI+48]
-		MOVDQU		xmm7,[ESI+80]
+		MOVDQU		xmm2,[ESI+16]
+		MOVDQU		xmm3,[ESI+48]
 
 		MOVDQA		[EDI],xmm0
 		MOVDQA		[EDI+32],xmm1
-		MOVDQA		[EDI+64],xmm2
-		MOVDQA		[EDI+16],xmm3
-		MOVDQA		[EDI+48],xmm4
-        MOVDQA		[EDI+80],xmm7
+		MOVDQA		[EDI+16],xmm2
+		MOVDQA		[EDI+48],xmm3
 %%NoCopySurf:
 %endmacro
 
@@ -66,16 +58,12 @@
 ; SSE/SSE2
 		MOVDQA		xmm0,[ESI]
 		MOVDQA		xmm1,[ESI+32]
-		MOVDQA		xmm2,[ESI+64]
-		MOVDQA		xmm3,[ESI+16]
-		MOVDQA		xmm4,[ESI+48]
-		MOVDQA		xmm7,[ESI+80]
+		MOVDQA		xmm2,[ESI+16]
+		MOVDQA		xmm3,[ESI+48]
 
 		MOVDQU		[EDI],xmm0
 		MOVDQU		[EDI+32],xmm1
-		MOVDQU		[EDI+64],xmm2
-		MOVDQU		[EDI+16],xmm3
-		MOVDQU		[EDI+48],xmm4
-        MOVDQU		[EDI+80],xmm7
+		MOVDQU		[EDI+16],xmm2
+		MOVDQU		[EDI+48],xmm3
 %%NoCopySurf:
 %endmacro

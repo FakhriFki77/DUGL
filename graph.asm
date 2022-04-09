@@ -37,8 +37,8 @@ GLOBAL _TPolyAdDeb, _TPolyAdFin, _TexXDeb, _TexXFin, _TexYDeb, _TexYFin, _PColDe
 GLOBAL	_CurFONT, _FntPtr, _FntHaut, _FntDistLgn, _FntLowPos, _FntHighPos
 GLOBAL	_FntSens, _FntTab, _FntX, _FntY, _FntCol
 
-GLOBAL	_vlfb,_rlfb,_ResH,_ResV,_MaxX,_MaxY,_MinX,_MinY,_OrgY,_OrgX,_SizeSurf,_OffVMem,_RMaxX,_RMaxY_RMinX
-GLOBAL	_RMinY,_BitsPixel,_ScanLine,_Mask,_NegScanLine
+GLOBAL	_vlfb,_rlfb,_ResH,_ResV,_MaxX,_MaxY,_MinX,_MinY,_OrgY,_OrgX,_SizeSurf,_OffVMem
+GLOBAL	_BitsPixel,_ScanLine,_Mask,_NegScanLine
 
 GLOBAL _QBlue16Mask,_QGreen16Mask,_QRed16Mask
 
@@ -70,27 +70,27 @@ ALIGN 32
 _DgSetCurSurf:
 	ARG	S1, 4
 
-		PUSH		ESI
-		PUSH		EDI
+		PUSH			ESI
+		PUSH			EDI
 
-		MOV			ESI,[EBP+S1]
-		MOV			EAX,[ESI+_ResV-_CurSurf]
-		CMP			EAX,MaxResV
-		JG			.Error
-		MOV			EDI,_CurSurf
+		MOV				ESI,[EBP+S1]
+		MOV				EAX,[ESI+_ResV-_CurSurf]
+		CMP				EAX,MaxResV
+		JG				.Error
+		MOV				EDI,_CurSurf
 		CopySurfDA
-		OR			EAX,BYTE -1
-		JMP			SHORT .Ok
+		OR				EAX,BYTE -1
+		JMP				SHORT .Ok
 .Error:
-		XOR			EAX,EAX
+		XOR				EAX,EAX
 .Ok:
-		POP        EDI
-		POP		   ESI
+		POP        		EDI
+		POP		   		ESI
 
     RETURN
 
 _GetMaxResVSetSurf:
-		MOV			EAX,MaxResV
+		MOV				EAX,MaxResV
 		RET
 
 ALIGN 32
@@ -99,12 +99,12 @@ _DgSetSrcSurf:
 		PUSH			EDI
 		PUSH	    	ESI
 
-		MOV		 	ESI,[EBP+SrcS]
-		MOV		   EDI,Svlfb
+		MOV				ESI,[EBP+SrcS]
+		MOV				EDI,Svlfb
 		CopySurfDA
 
-		POP		   ESI
-		POP		   EDI
+		POP				ESI
+		POP		   		EDI
 
     RETURN
 
@@ -115,12 +115,13 @@ _DgGetCurSurf:
         PUSH            EDI
         PUSH            ESI
 
-        MOV		ESI,_CurSurf
-        MOV		EDI,[EBP+SGet]
+        MOV				ESI,_CurSurf
+        MOV				EDI,[EBP+SGet]
         CopySurfSA
 
         POP             ESI
         POP             EDI
+
     RETURN
 
 ALIGN 32
@@ -131,21 +132,21 @@ _SurfCopy:
 		PUSH		ESI
 		PUSH		EBX
 
-		MOV		ESI,[EBP+PSrcSrf]
-		MOV		EDI,[EBP+PDstSrf]
-		MOV		EBX,[ESI+_SizeSurf-_CurSurf]
+		MOV			ESI,[EBP+PSrcSrf]
+		MOV			EDI,[EBP+PDstSrf]
+		MOV			EBX,[ESI+_SizeSurf-_CurSurf]
 
-		MOV		EDI,[EDI+_rlfb-_CurSurf]
-		MOV		ESI,[ESI+_rlfb-_CurSurf]
-		XOR     ECX,ECX
+		MOV			EDI,[EDI+_rlfb-_CurSurf]
+		MOV			ESI,[ESI+_rlfb-_CurSurf]
+		XOR     	ECX,ECX
 		TEST		EDI,0x7
-		JZ		.CpyMMX
+		JZ			.CpyMMX
 .CopyBAv:
-        TEST	EDI,0x1
-		JZ		.PasCopyBAv
-		OR		EBX,EBX
-		JZ		.FinSurfCopy
-		DEC		EBX
+        TEST		EDI,0x1
+		JZ			.PasCopyBAv
+		OR			EBX,EBX
+		JZ			.FinSurfCopy
+		DEC			EBX
 		MOVSB
 .PasCopyBAv:
 .CopyWAv:
@@ -871,6 +872,7 @@ _InBar16:
 		SUB         ESI,EDI ; = (_MaxY - MinY)
 		MOV         EBX,[EBP+InRect16MinX]
 .CommonInBar16:
+		JLE			.EndInBar ; MinY >= MaxY ? exit
 		IMUL        EDI,[_NegScanLine]
 		LEA			EBP,[ESI+1]
 		SUB			ECX,EBX
@@ -891,6 +893,7 @@ _InBar16:
         DEC         EBP
         JNZ         .BcBar
 
+.EndInBar:
 		POP			EDI
 		POP			EBX
 		POP			ESI
@@ -1877,62 +1880,46 @@ SECTION	.bss   ALIGN=32
 _CurSurf:
 _vlfb					RESD    1
 _rlfb					RESD    1
-_ResH					RESD    1
-_ResV					RESD    1
+_OrgX					RESD    1
+_OrgY					RESD    1
 _MaxX					RESD    1
 _MaxY					RESD    1
 _MinX					RESD    1
 _MinY					RESD    1;-----------------------
 _Mask					RESD    1
-_OrgY					RESD    1
-_OrgX					RESD    1
+_ResH					RESD    1
+_ResV					RESD    1
 _SizeSurf			    RESD    1
 _ScanLine			    RESD    1
 _OffVMem				RESD    1
-_RMaxX				    RESD    1
-_RMaxY				    RESD    1;-----------------------
-_RMinX				    RESD    1
-_RMinY				    RESD    1
 _BitsPixel			    RESD    1
-_NegScanLine		    RESD    1
-_Resv2				    RESD    1
-_Resv3				    RESD    1
-_Resv4				    RESD    1
-_Resv5				    RESD    1;-----------------------
+_NegScanLine		    RESD    1;-----------------------
 ; source DgSurf mainly used to point to texture, sprites ..
 _SrcSurf:
 Svlfb					RESD    1
 Srlfb					RESD    1
-SResH					RESD    1
-SResV					RESD    1
+SOrgX					RESD    1
+SOrgY					RESD    1
 SMaxX					RESD    1
 SMaxY					RESD    1
 SMinX					RESD    1
 SMinY					RESD    1;-----------------------
 SMask					RESD    1
-SOrgY					RESD    1
-SOrgX					RESD    1
+SResH					RESD    1
+SResV					RESD    1
 SSizeSurf			    RESD    1
 SScanLine			    RESD    1
 SOffVMem				RESD    1
-SRMaxX				    RESD    1
-SRMaxY				    RESD    1;-----------------------
-SRMinX				    RESD    1
-SRMinY				    RESD    1
 SBitsPixel			    RESD    1
-SNegScanLine		    RESD    1
-SResv2				    RESD    1
-SResv3				    RESD    1
-SResv4				    RESD    1
-SResv5				    RESD    1;-----------------------
+SNegScanLine		    RESD    1;-----------------------
 XP1		        	    RESD	1
-YP1		        	    RESD		1
-XP2		        	    RESD		1
-YP2		        	    RESD		1
-XP3		        	    RESD		1
-YP3		        	    RESD		1
-Plus		    		RESD		1
-Temp0	        	    RESD		1;-----------------------
+YP1		        	    RESD	1
+XP2		        	    RESD	1
+YP2		        	    RESD	1
+XP3		        	    RESD	1
+YP3		        	    RESD	1
+Plus		    		RESD	1
+Temp0	        	    RESD	1;-----------------------
 XT1		        	    RESD	1
 YT1		        	    RESD	1
 XT2		        	    RESD	1
@@ -2010,8 +1997,8 @@ DQ16Mask	    		RESD	4 ;------------------------
 
 ; the main Surf 16bpp that DUGL will render to
 ;   user mostly has to set this as CurSurf unless other intermediate DgSurf
-_RendSurf:			RESD		24
-_RendFrontSurf		RESD		24
+_RendSurf:			RESD		16
+_RendFrontSurf		RESD		16
 
 ReversedPtrListPt	RESD		MaxDblSidePolyPts
 

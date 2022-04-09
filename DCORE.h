@@ -33,19 +33,14 @@ extern "C" {
 typedef struct
 {	int	vlfb;
 	int	rlfb;
-	int	ResH, ResV;
+	int	OrgX, OrgY;
 	int	MaxX, MaxY, MinX, MinY;
-	int	Mask, OrgY, OrgX;
+	int	Mask, ResH, ResV;
 	int	SizeSurf;
 	int	ScanLine;
 	int	OffVMem;
-	int	RMaxX, RMaxY, RMinX, RMinY;
 	int	BitsPixel;
 	int NegScanLine;
-	int Resv2;
-	int Resv3;
-	int Resv4;
-	int Resv5;
 } DgSurf;
 
 typedef struct
@@ -199,16 +194,12 @@ void PutMaskSurfTrans16(DgSurf *S,int X,int Y,int PType,int trans);
 
 // View or (clipped area) handling ===========
 
-// sets Real View port relatively DgSurf size limit ignoring DgSurf Origin
+// sets View port relatively to the new View Origin
 void SetSurfView(DgSurf *S, DgView *V);
-// sets View port relatively to DgSurf size limit and current Origin
-void SetSurfRView(DgSurf *S, DgView *V);
 // sets View port clipped inside current DgSurf view port
 void SetSurfInView(DgSurf *S, DgView *V);
-// sets Real View port clipped inside current DgSurf real view port
-void SetSurfInRView(DgSurf *S, DgView *V);
+// get current Surf view port
 void GetSurfView(DgSurf *S, DgView *V);
-void GetSurfRView(DgSurf *S, DgView *V);;
 
 #ifdef __cplusplus
 		}  // extern "C" {

@@ -127,7 +127,7 @@ typedef struct
 
 // GLOBAL vars
 extern int vlfb,rlfb,OffVMem,ResH,ResV,MaxX,MaxY,MinX,MinY,SizeSurf;
-extern int OrgX,OrgY,RMaxX,RMaxY,RMinX,RMinY,NegScanLine;
+extern int OrgX,OrgY,NegScanLine;
 
 
 // GLOBAL Events Handling
