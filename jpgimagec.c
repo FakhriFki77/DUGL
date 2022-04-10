@@ -55,7 +55,7 @@ my_error_exit (j_common_ptr cinfo)
   longjmp(myerr->setjmp_buffer, 1);
 }
 
-int GetJpegImg(DgSurf *S,j_decompress_ptr cinfo) {
+int GetJpegImg(DgSurf **S,j_decompress_ptr cinfo) {
    JSAMPROW row_pointer[1];
    int irow,iscan;
    short *outScan;
@@ -90,7 +90,7 @@ int GetJpegImg(DgSurf *S,j_decompress_ptr cinfo) {
      for (iscan=0;cinfo->output_scanline<cinfo->image_height;iscan++) {
 
        jpeg_read_scanlines(cinfo,row_pointer, 1);
-       outScan=(short*)(S->rlfb+(S->ScanLine*iscan));
+       outScan=(short*)((*S)->rlfb+((*S)->ScanLine*iscan));
        BfPos=0;
        // RGB 24 -> BGR 16 (565)
        for (irow=0;irow<(int)cinfo->image_width;irow++) {
@@ -106,7 +106,7 @@ int GetJpegImg(DgSurf *S,j_decompress_ptr cinfo) {
      for (iscan=0;cinfo->output_scanline<cinfo->image_height;iscan++) {
 
        jpeg_read_scanlines(cinfo,row_pointer, 1);
-       outScan=(short*)(S->rlfb+(S->ScanLine*iscan));
+       outScan=(short*)((*S)->rlfb+((*S)->ScanLine*iscan));
        // gray 8bpp -> BGR 16 (565)
        for (irow=0;irow<(int)cinfo->image_width;irow++) {
          cgray=ScanPtr[irow];
@@ -123,7 +123,7 @@ int GetJpegImg(DgSurf *S,j_decompress_ptr cinfo) {
 
 }
 
-int LoadJPG16(DgSurf *S,char *filename) {
+int LoadJPG16(DgSurf **S,char *filename) {
    FILE *jpgFile; // source
    int retGet;
    // init jpeg
@@ -132,8 +132,7 @@ int LoadJPG16(DgSurf *S,char *filename) {
    struct my_error_mgr jerr;
 
    // open jpeg file
-   jpgFile=fopen(filename,"rb");
-   if (jpgFile==NULL)
+   if (fopen_s(&jpgFile,filename,"rb")!=0)
      return 0;
 
    /* We set up the normal JPEG error routines, then override error_exit. */
@@ -159,7 +158,7 @@ int LoadJPG16(DgSurf *S,char *filename) {
 
 // LoadMemJpeg16 -------------------------------------
 
-int LoadMemJPG16(DgSurf *S,void *buffJpeg,int sizeBuff) {
+int LoadMemJPG16(DgSurf **S,void *buffJpeg,int sizeBuff) {
    // init jpeg
    struct jpeg_decompress_struct cinfo;
 //   struct jpeg_error_mgr jerr;
@@ -213,8 +212,7 @@ int SaveJPG16(DgSurf *S,char *filename,int quality) {
      return 0;
 
    // open jpeg file
-   jpgFile=fopen(filename,"wb");
-   if (jpgFile==NULL)
+   if (fopen_s(&jpgFile,filename,"wb")!=0)
      return 0;
 
    /* We set up the normal JPEG error routines, then override error_exit. */

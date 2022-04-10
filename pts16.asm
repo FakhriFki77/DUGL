@@ -414,7 +414,7 @@ _PutMaskSurf16:
 		PUSH	EBX
 
 		MOV		ESI,[EBP+MSSN16]
-		MOV		EDI,Svlfb
+		MOV		EDI,_SrcSurf
 
 		CopySurfDA	; copy surf
 
@@ -2859,7 +2859,7 @@ _PutMaskSurfTrans16:
 		PUSH		EBX
 
 		MOV			ESI,[EBP+SMSTN16]
-		MOV			EDI,Svlfb
+		MOV			EDI,_SrcSurf
 
 		CopySurfDA	; copy surf
 

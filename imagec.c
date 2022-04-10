@@ -30,7 +30,7 @@
 
 short BMPSign = 'MB';
 
-int  LoadBMP(DgSurf *S,const char *filename,void *PalBGR1024)
+int  LoadBMP(DgSurf **S,const char *filename,void *PalBGR1024)
 {
 	FILE *InBMP;
 	int j,padd;
@@ -73,7 +73,7 @@ int  LoadBMP(DgSurf *S,const char *filename,void *PalBGR1024)
 	// read data
 	padd=ibmp.ImgWidth&3;
 	for (j=ibmp.ImgHeight-1;j>=0;j--) {
-	  Linedata=(char*)(S->rlfb+(j*ibmp.ImgWidth));
+	  Linedata=(char*)((*S)->rlfb+(j*ibmp.ImgWidth));
 	  fread(Linedata,ibmp.ImgWidth,1,InBMP);
 	  if (padd) fseek(InBMP,4-padd,SEEK_CUR);
 	}
@@ -83,7 +83,7 @@ int  LoadBMP(DgSurf *S,const char *filename,void *PalBGR1024)
 }
 
 
-int  LoadMemBMP16(DgSurf *S,void *In,int SizeIn)
+int  LoadMemBMP16(DgSurf **S,void *In,int SizeIn)
 {
 	unsigned int irow,padd,CurInBMP,BfPos;
 	int j;
@@ -124,7 +124,7 @@ int  LoadMemBMP16(DgSurf *S,void *In,int SizeIn)
 	padd=(ibmp.ImgWidth*3)&3;
 	for (j=ibmp.ImgHeight-1;j>=0;j--) {
 	  if (CurInBMP+ibmp.ImgWidth*3>(unsigned int)SizeIn) break;
-	  Linedata=(unsigned short*)(S->rlfb+(j*ibmp.ImgWidth*2));
+	  Linedata=(unsigned short*)((*S)->rlfb+(j*ibmp.ImgWidth*2));
 	  tempLine=(unsigned char*)(((size_t)(In)+CurInBMP));
 	  BfPos=0;
 	  for (irow=0;irow<ibmp.ImgWidth;irow++) {
@@ -139,7 +139,7 @@ int  LoadMemBMP16(DgSurf *S,void *In,int SizeIn)
 
 	return 1;
 }
-int  LoadBMP16(DgSurf *S, char *filename)
+int  LoadBMP16(DgSurf **S, char *filename)
 {
 	FILE *InBMP;
 	unsigned int irow,padd,BfPos;
@@ -190,7 +190,7 @@ int  LoadBMP16(DgSurf *S, char *filename)
         padd=(ibmp.ImgWidth*3)&3;
         for (j = ibmp.ImgHeight-1; j >= 0; j--)
         {
-            Linedata = (short*)(S->rlfb+(j*ibmp.ImgWidth*2));
+            Linedata = (short*)((*S)->rlfb+(j*ibmp.ImgWidth*2));
             fread(tempLine, ibmp.ImgWidth*3, 1, InBMP);
             if (padd) fseek(InBMP, 4-padd, SEEK_CUR);
             BfPos = 0;
@@ -334,31 +334,30 @@ int  SizeSaveBMP16(DgSurf *S)
 }
 
 // load a 8bpp BMP and convert it to 16 bpp
-int LoadBMP8To16(DgSurf *S16,char *filename)
+int LoadBMP8To16(DgSurf **S16,char *filename)
 {
   char tmpBGRA[1024];
-  DgSurf SGIF8bpp;
+  DgSurf *SGIF8bpp;
   if (LoadBMP(&SGIF8bpp,filename,tmpBGRA)==0) return 0;
-  if (CreateSurf(S16,SGIF8bpp.ResH,SGIF8bpp.ResV,16)==0) {
-    DestroySurf(&SGIF8bpp);
+  if (CreateSurf(S16,SGIF8bpp->ResH,SGIF8bpp->ResV,16)==0) {
+    DestroySurf(SGIF8bpp);
     return 0;
   }
-  ConvSurf8ToSurf16Pal(S16,&SGIF8bpp,tmpBGRA);
-  DestroySurf(&SGIF8bpp);
+  ConvSurf8ToSurf16Pal(*S16,SGIF8bpp,tmpBGRA);
+  DestroySurf(SGIF8bpp);
   return 1;
 }
 
 
 // PCX
 
-int  LoadMemPCX(DgSurf *S,void *In,void *PalBGR1024,int SizeIn)
+int  LoadMemPCX(DgSurf **S,void *In,void *PalBGR1024,int SizeIn)
 {
     HeadPCX hpcx;
 	char PalRGB[768];
 	int ResHz,ResVt,i;
 
-	S->rlfb=S->vlfb=S->OffVMem=0;
-        memcpy(&hpcx,In,sizeof(HeadPCX));
+    memcpy(&hpcx,In,sizeof(HeadPCX));
 	if (hpcx.Sign!=0xa || hpcx.Ver<5 || hpcx.BitPixel!=8) return 0;
 	ResHz=hpcx.X2-hpcx.X1+1;
 	ResVt=hpcx.Y2-hpcx.Y1+1;
@@ -371,12 +370,12 @@ int  LoadMemPCX(DgSurf *S,void *In,void *PalBGR1024,int SizeIn)
 
 	if (CreateSurf(S,ResHz,ResVt,8)==0) return 0;
 	if (hpcx.Comp==1)
-	   InRLE((char*)(In)+sizeof(HeadPCX),(void*)(S->rlfb),S->SizeSurf);
+	   InRLE((char*)(In)+sizeof(HeadPCX),(void*)((*S)->rlfb),(*S)->SizeSurf);
 	else return 0;
 	return 1;
 }
 
-int  LoadPCX(DgSurf *S, char *Fname,void *PalBGR1024)
+int  LoadPCX(DgSurf **S, char *Fname,void *PalBGR1024)
 {
     FILE *InPCX;
 	HeadPCX hpcx;
@@ -384,7 +383,6 @@ int  LoadPCX(DgSurf *S, char *Fname,void *PalBGR1024)
 	char PalRGB[768];
 	int FinIn,ResHz,ResVt,i;
 
-	S->rlfb=S->vlfb=S->OffVMem=0;
 	if (fopen_s(&InPCX, Fname,"rb") != 0) return 0;
 	fread(&hpcx,sizeof(HeadPCX),1,InPCX);
 	if (hpcx.Sign!=0xa || hpcx.Ver<5 || hpcx.BitPixel!=8)
@@ -405,9 +403,9 @@ int  LoadPCX(DgSurf *S, char *Fname,void *PalBGR1024)
 	if (hpcx.Comp==1) {
 	  BuffIn=malloc(FinIn-sizeof(HeadPCX)+1);
 	  if (BuffIn==NULL)
-	    { DestroySurf(S); fclose(InPCX); return 0; }
+	    { DestroySurf(*S); fclose(InPCX); return 0; }
 	  fread(BuffIn,FinIn-sizeof(HeadPCX)+1,1,InPCX);
-	  InRLE(BuffIn,(void*)(S->rlfb),ResHz*ResVt);
+	  InRLE(BuffIn,(void*)((*S)->rlfb),ResHz*ResVt);
 	 }
 	 else {
 	   free(BuffIn);
@@ -419,41 +417,41 @@ int  LoadPCX(DgSurf *S, char *Fname,void *PalBGR1024)
 	return 1;
 }
 
-int LoadMemPCX16(DgSurf *S16,void *In,int SizeIn)
+int LoadMemPCX16(DgSurf **S16,void *In,int SizeIn)
 {
     char tmpBGRA[1024];
-    DgSurf SPCX8bpp;
+    DgSurf *SPCX8bpp;
     if (LoadMemPCX(&SPCX8bpp,In,tmpBGRA,SizeIn)==0) return 0;
-    if (CreateSurf(S16,SPCX8bpp.ResH,SPCX8bpp.ResV,16)==0)
+    if (CreateSurf(S16,SPCX8bpp->ResH,SPCX8bpp->ResV,16)==0)
     {
-        DestroySurf(&SPCX8bpp);
+        DestroySurf(SPCX8bpp);
         return 0;
     }
-    ConvSurf8ToSurf16Pal(S16,&SPCX8bpp,tmpBGRA);
-    DestroySurf(&SPCX8bpp);
+    ConvSurf8ToSurf16Pal(*S16,SPCX8bpp,tmpBGRA);
+    DestroySurf(SPCX8bpp);
 
     return 1;
 }
 
-int LoadPCX16(DgSurf *S16,char *filename)
+int LoadPCX16(DgSurf **S16,char *filename)
 {
     char tmpBGRA[1024];
-    DgSurf SPCX8bpp;
+    DgSurf *SPCX8bpp;
     if (LoadPCX(&SPCX8bpp, filename,tmpBGRA)==0) return 0;
-    if (CreateSurf(S16,SPCX8bpp.ResH,SPCX8bpp.ResV,16)==0)
+    if (CreateSurf(S16,SPCX8bpp->ResH,SPCX8bpp->ResV,16)==0)
     {
-        DestroySurf(&SPCX8bpp);
+        DestroySurf(SPCX8bpp);
         return 0;
     }
-    ConvSurf8ToSurf16Pal(S16,&SPCX8bpp,tmpBGRA);
-    DestroySurf(&SPCX8bpp);
+    ConvSurf8ToSurf16Pal(*S16,SPCX8bpp,tmpBGRA);
+    DestroySurf(SPCX8bpp);
 
     return 1;
 }
 
 // GIF
 
-int  LoadMemGIF(DgSurf *S,void *In,void *PalBGR1024,int SizeIn)
+int  LoadMemGIF(DgSurf **S,void *In,void *PalBGR1024,int SizeIn)
 {	HeadGIF hgif;
 	ExtBlock ExtBGif;
 	DescImgGIF descimg;
@@ -462,7 +460,6 @@ int  LoadMemGIF(DgSurf *S,void *In,void *PalBGR1024,int SizeIn)
 	unsigned char SizeExt,SizeBl;
 	int CurInGIF = 0, ResHz = 0, ResVt = 0, i = 0, bytesOutLZW = 0, bytesInLZW = 0;
 
-	S->rlfb=S->vlfb=S->OffVMem=0;
 	if ((size_t)(SizeIn)<sizeof(HeadGIF)) return 0;
 	memcpy(&hgif,In,sizeof(HeadGIF));
 	CurInGIF=sizeof(HeadGIF);
@@ -517,16 +514,16 @@ int  LoadMemGIF(DgSurf *S,void *In,void *PalBGR1024,int SizeIn)
 	   BuffS = &((char*)BuffS)[SizeBl];
 	   BuffD = &((char*)BuffD)[SizeBl];
 	}
-	bytesOutLZW = InLZW((char*)(BuffIn)+2,(void*)(S->rlfb), ResHz*ResVt);
+	bytesOutLZW = InLZW((char*)(BuffIn)+2,(void*)((*S)->rlfb), ResHz*ResVt);
 	free(BuffIn);
     if (bytesOutLZW < 0) {
-        DestroySurf(S);
+        DestroySurf(*S);
         return 0;
     }
 	return 1;
 }
 
-int  LoadGIF(DgSurf *S, char *Fname,void *PalBGR1024)
+int  LoadGIF(DgSurf **S, char *Fname,void *PalBGR1024)
 {	FILE *InGIF;
 	HeadGIF hgif;
 	ExtBlock ExtBGif;
@@ -535,7 +532,6 @@ int  LoadGIF(DgSurf *S, char *Fname,void *PalBGR1024)
 	char PalRGB[768];
 	unsigned char SizeExt,BuffExt[255],SizeBl;
 	int FinInGIF = 0, DebInGIF = 0, CurInGIF = 0, ResHz = 0, ResVt = 0,i = 0, bytesOutLZW = 0, bytesInLZW = 0;
-	S->rlfb=S->vlfb=S->OffVMem=0;
 	if (fopen_s(&InGIF, Fname,"rb") != 0) return 0;
 	fread(&hgif,sizeof(HeadGIF),1,InGIF);
 	if (hgif.Sign!='8FIG' || (hgif.IndicRes&7)!=7)
@@ -567,13 +563,14 @@ int  LoadGIF(DgSurf *S, char *Fname,void *PalBGR1024)
 	if (CreateSurf(S,ResHz,ResVt,8) ==0) {
 	    fclose(InGIF); return 0;
 	}
+
 	DebInGIF=ftell(InGIF);
 	fseek(InGIF,0,SEEK_END);
 	FinInGIF=ftell(InGIF);
 	fseek(InGIF,DebInGIF,SEEK_SET);
 	BuffIn=SDL_malloc(FinInGIF-DebInGIF+4);
 
-	if (BuffIn==NULL) { DestroySurf(S); fclose(InGIF); return 0; }
+	if (BuffIn==NULL) { DestroySurf(*S); fclose(InGIF); return 0; }
 	fread(BuffIn,FinInGIF-DebInGIF+1,1,InGIF);
 	SizeBl=((unsigned char*)BuffIn)[1];
     bytesInLZW+=(int)SizeBl;
@@ -587,43 +584,43 @@ int  LoadGIF(DgSurf *S, char *Fname,void *PalBGR1024)
 	   BuffS = &((char*)BuffS)[SizeBl];
 	   BuffD = &((char*)BuffD)[SizeBl];
 	}
-	bytesOutLZW = InLZW(&((char*)BuffIn)[2],(void*)S->rlfb, ResHz*ResVt);
+	bytesOutLZW = InLZW(&((char*)BuffIn)[2],(void*)(*S)->rlfb, ResHz*ResVt);
 	SDL_free(BuffIn);
 	fclose(InGIF);
     if (bytesOutLZW < 0) {
-        DestroySurf(S);
+        DestroySurf(*S);
         return 0;
     }
 	return 1;
 }
 
 // load from memory a 8bpp gif and convert it to 16 bpp
-int LoadMemGIF16(DgSurf *S16,void *In,int SizeIn) {
+int LoadMemGIF16(DgSurf **S16,void *In,int SizeIn) {
   char tmpBGRA[1024];
-  DgSurf SGIF8bpp;
+  DgSurf *SGIF8bpp = NULL;
   if (LoadMemGIF(&SGIF8bpp,In,tmpBGRA,SizeIn)==0) return 0;
-  if (CreateSurf(S16,SGIF8bpp.ResH,SGIF8bpp.ResV,16)==0) {
-    DestroySurf(&SGIF8bpp);
+  if (CreateSurf(S16,SGIF8bpp->ResH,SGIF8bpp->ResV,16)==0) {
+    DestroySurf(SGIF8bpp);
     return 0;
   }
-  ConvSurf8ToSurf16Pal(S16,&SGIF8bpp,tmpBGRA);
-  DestroySurf(&SGIF8bpp);
+  ConvSurf8ToSurf16Pal(*S16,SGIF8bpp,tmpBGRA);
+  DestroySurf(SGIF8bpp);
 
   return 1;
 }
 
 
 // load a 8bpp gif and convert it to 16 bpp
-int LoadGIF16(DgSurf *S16,char *filename) {
+int LoadGIF16(DgSurf **S16,char *filename) {
   char tmpBGRA[1024];
-  DgSurf SGIF8bpp;
+  DgSurf *SGIF8bpp;
   if (LoadGIF(&SGIF8bpp,filename,tmpBGRA)==0) return 0;
-  if (CreateSurf(S16,SGIF8bpp.ResH,SGIF8bpp.ResV,16)==0) {
-    DestroySurf(&SGIF8bpp);
+  if (CreateSurf(S16,SGIF8bpp->ResH,SGIF8bpp->ResV,16)==0) {
+    DestroySurf(SGIF8bpp);
     return 0;
   }
-  ConvSurf8ToSurf16Pal(S16,&SGIF8bpp,tmpBGRA);
-  DestroySurf(&SGIF8bpp);
+  ConvSurf8ToSurf16Pal(*S16,SGIF8bpp,tmpBGRA);
+  DestroySurf(SGIF8bpp);
 
   return 1;
 }

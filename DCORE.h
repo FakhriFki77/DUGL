@@ -25,22 +25,20 @@ extern "C" {
 
 #define DUGL_VERSION_MAJOR		1
 #define DUGL_VERSION_MINOR		0
-#define DUGL_VERSION_TYPE		a // a alpha, b beta, r release
-#define DUGL_VERSION_PATCH		1
+#define DUGL_VERSION_TYPE		'a' // a alpha, b beta, r release
+#define DUGL_VERSION_PATCH		2
 
-
-//  DUGL Main Structures
 typedef struct
-{	int	vlfb;
+{	int	ScanLine;
 	int	rlfb;
 	int	OrgX, OrgY;
 	int	MaxX, MaxY, MinX, MinY;
 	int	Mask, ResH, ResV;
-	int	SizeSurf;
-	int	ScanLine;
+	int vlfb;
+	int	NegScanLine;
 	int	OffVMem;
 	int	BitsPixel;
-	int NegScanLine;
+	int SizeSurf;
 } DgSurf;
 
 typedef struct
@@ -48,19 +46,10 @@ typedef struct
 	int	MaxX, MaxY, MinX, MinY;
 } DgView;
 
-//** FONT Structure ****************************
-typedef struct {
-	int  		FntPtr;
-	unsigned char	FntHaut,FntDistLgn;
-	char		FntLowPos, FntHighPos,FntSens;
-	unsigned char	FntTab,Fntrevb[2];
-	int		FntX, FntY, FntCol,FntBCol,FntDresv;
-} FONT;
-
 // DUGL Main global variables
 
-extern DgSurf   RendSurf; // main destination render
-extern DgSurf	RendFrontSurf; // currently displayed
+extern DgSurf   *RendSurf; // main destination render
+extern DgSurf	*RendFrontSurf; // currently displayed if double buffer enabled
 extern DgSurf   CurSurf; // The Surf that graphic functions will render to as DgClear16, Line16, Poly16 ...
 extern DgSurf   SrcSurf; // The source Surf used by graphic functions as Poly16, PutSurf16, ResizeViewSurf16 ..
 extern unsigned char DgWindowFocused;
@@ -91,7 +80,7 @@ void DgCheckEvents();
 void DgSetEnabledDoubleBuff(bool dblBuffEnabled);
 bool DgGetEnabledDoubleBuff();
 
-// DGSurf handling ========================
+// DgSurf handling ========================
 
 // Set Current DgSurf for rendering
 void DgSetCurSurf(DgSurf *S);
@@ -103,30 +92,24 @@ void DgSetSrcSurf(DgSurf *S);
 int  GetMaxResVSetSurf();
 // Set Origin of DgSurf
 void SetOrgSurf(DgSurf *S,int newOrgX,int newOrgY);
-// Create a DgSurf by allocating its buffer and initializing DgSurf, user is reponsible of allocating S
-int CreateSurf(DgSurf *S, int ResHz, int ResVt, char BitsPixel);
+// Create a DgSurf by allocating its buffer and initializing DgSurf, return new created DgSurf in *S
+int CreateSurf(DgSurf **S, int ResHz, int ResVt, char BitsPixel);
 // Destroy DgSurf created with CreateSurf
 void DestroySurf(DgSurf *S);
 // Create DgSurf from buffer
-// user is responsible of allocating S and Buff
-// return 1 if success 0 if fail
-int CreateSurfBuff(DgSurf *S, int ResHz, int ResVt, char BitsPixel, void *Buff);
-// brute copy pixels data from DgSurf src to dst without any verification of BitsPixel or size
-void SurfCopy(DgSurf *Sdst,DgSurf *Ssrc);
-void SurfMaskCopy16(DgSurf *Sdst,DgSurf *Ssrc);
-void SurfCopyBlnd16(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
-void SurfMaskCopyBlnd16(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
-void SurfCopyTrans16(DgSurf *S16Dst, DgSurf *S16Src,int trans);
-void SurfMaskCopyTrans16(DgSurf *S16Dst, DgSurf *S16Src,int trans);
-// resize SSrcSurf into CurSurf taking account of source and destination Views
-// call to those functions will change SrcSurf, SSrcSurf could be null if there is a valid SrcSurf
-void ResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt); // fast resize source view => into dest view
-void MaskResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt); // use SrcSurf::Mask to mask pixels
-void TransResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int transparency); // transparency 0->31 (31 completely opaq)
-void MaskTransResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int transparency); // Mask pixels with value Mask, transparency 0->31 (31 completely opaq)
-void BlndResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int colBlnd); // ColBnd =  color16 | (blend << 24),  blend 0->31 (31 color16)
-void MaskBlndResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int colBlnd); // ColBnd =  color16 | (blend << 24),  blend 0->31 (31 color16)
-// render functions =======================
+// return 1 if success 0 if fail, return new created DgSurf in *S if success
+int CreateSurfBuff(DgSurf **S, int ResHz, int ResVt, char BitsPixel, void *Buff);
+
+// View or (clipped area) handling ===========
+
+// sets View port relatively to the new View Origin
+void SetSurfView(DgSurf *S, DgView *V);
+// sets View port clipped inside current DgSurf view port
+void SetSurfInView(DgSurf *S, DgView *V);
+// get current Surf view port
+void GetSurfView(DgSurf *S, DgView *V);
+
+// Render functions ============================
 
 void DgClear16(int col); // clear all the CurSurf
 void ClearSurf16(int clrcol); // clear only current view port of CurSurf use InBar16
@@ -140,7 +123,6 @@ unsigned int DgGetPixel16(int x, int y);
 unsigned int DgCGetPixel16(int x, int y);
 unsigned int DgSurfCGetPixel16(DgSurf *S, int x, int y);
 void DgSurfCPutPixel16(DgSurf *S, int x, int y, int col);
-
 // Clipped lines
 void line16(int X1,int Y1,int X2,int Y2,int LgCol);
 void linemap16(int X1,int Y1,int X2,int Y2,int LgCol,unsigned int Map);
@@ -150,6 +132,45 @@ void Line16(void *Point1,void *Point2,int col);
 void LineMap16(void *Point1,void *Point2,int col,unsigned int Map);
 void LineBlnd16(void *Point1,void *Point2,int col);
 void LineMapBlnd16(void *Point1,void *Point2,int col,unsigned int Map);
+
+void InBar16(int minX,int minY,int maxX,int maxY,int rectCcol); // fast filled rectangle with coordinates inside the current View (no checking or clipping)
+void Bar16(void *Pt1,void *Pt2,int bcol);  // use Poly16 / clipped
+void bar16(int x1,int y1,int x2,int y2,int bcol);  // use Poly16  / clipped
+void BarBlnd16(void *Pt1,void *Pt2,int bcol);  // use Poly16  / clipped
+void barblnd16(int x1,int y1,int x2,int y2,int bcol);  // use Poly16  / clipped
+// draw empty rectangle
+void rect16(int x1,int y1,int x2,int y2,int rcol);
+void rectmap16(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
+void rectblnd16(int x1,int y1,int x2,int y2,int rcol);
+void rectmapblnd16(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
+
+// brute copy pixels data from DgSurf src to dst without any verification of BitsPixel or size
+void SurfCopy(DgSurf *Sdst,DgSurf *Ssrc);
+void SurfMaskCopy16(DgSurf *Sdst,DgSurf *Ssrc);
+void SurfCopyBlnd16(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
+void SurfMaskCopyBlnd16(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
+void SurfCopyTrans16(DgSurf *S16Dst, DgSurf *S16Src,int trans);
+void SurfMaskCopyTrans16(DgSurf *S16Dst, DgSurf *S16Src,int trans);
+
+// resize SSrcSurf into CurSurf taking account of source and destination Views
+// call to those functions will change SrcSurf, SSrcSurf could be null if there is a valid SrcSurf
+void ResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt); // fast resize source view => into dest view
+void MaskResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt); // use SrcSurf::Mask to mask pixels
+void TransResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int transparency); // transparency 0->31 (31 completely opaq)
+void MaskTransResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int transparency); // Mask pixels with value Mask, transparency 0->31 (31 completely opaq)
+void BlndResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int colBlnd); // ColBnd =  color16 | (blend << 24),  blend 0->31 (31 color16)
+void MaskBlndResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int colBlnd); // ColBnd =  color16 | (blend << 24),  blend 0->31 (31 color16)
+// 16bpp Surf blitting functions
+#define PUTSURF_NORM	0 // as it
+#define PUTSURF_INV_HZ  1 // reversed horizontally
+#define PUTSURF_INV_VT 	2 // reversed vertically
+// Blit the Source DgSurf into current DgSurf taking care of current views
+void PutSurf16(DgSurf *S,int X,int Y,int PType);
+void PutMaskSurf16(DgSurf *S,int X,int Y,int PType);
+void PutSurfBlnd16(DgSurf *S,int X,int Y,int PType,int colBlnd);
+void PutMaskSurfBlnd16(DgSurf *S,int X,int Y,int PType,int colBlnd);
+void PutSurfTrans16(DgSurf *S,int X,int Y,int PType,int trans);
+void PutMaskSurfTrans16(DgSurf *S,int X,int Y,int PType,int trans);
 
 // *ListPt FORMAT : [int CountVertices]|[Ptr * Point1] .. [Ptr * Point(CountVertices)]
 // Point FORMAT [int ScreenX][int ScreenY][int Z reserved][int U texture coordinate][int V texture coordinate]
@@ -166,40 +187,6 @@ void LineMapBlnd16(void *Point1,void *Point2,int col,unsigned int Map);
 #define POLY16_MAX_TYPE			15
 #define POLY16_FLAG_DBL_SIDED	0x80000000
 void Poly16(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
-
-// fast filled rectangle that with coordinate inside the current View (no checking or clipping)
-void InBar16(int minX,int minY,int maxX,int maxY,int rectCcol);
-void Bar16(void *Pt1,void *Pt2,int bcol);  // use Poly16
-void bar16(int x1,int y1,int x2,int y2,int bcol);  // use Poly16
-void BarBlnd16(void *Pt1,void *Pt2,int bcol);  // use Poly16
-void barblnd16(int x1,int y1,int x2,int y2,int bcol);  // use Poly16
-// draw empty rectangle
-void rect16(int x1,int y1,int x2,int y2,int rcol);
-void rectmap16(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
-void rectblnd16(int x1,int y1,int x2,int y2,int rcol);
-void rectmapblnd16(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
-
-// 16bpp Surf blitting functions
-#define PUTSURF_NORM	0 // as it
-#define PUTSURF_INV_HZ  1 // reversed horizontally
-#define PUTSURF_INV_VT 	2 // reversed vertically
-
-// Blit the Source DgSurf into current DgSurf taking care of current views
-void PutSurf16(DgSurf *S,int X,int Y,int PType);
-void PutMaskSurf16(DgSurf *S,int X,int Y,int PType);
-void PutSurfBlnd16(DgSurf *S,int X,int Y,int PType,int colBlnd);
-void PutMaskSurfBlnd16(DgSurf *S,int X,int Y,int PType,int colBlnd);
-void PutSurfTrans16(DgSurf *S,int X,int Y,int PType,int trans);
-void PutMaskSurfTrans16(DgSurf *S,int X,int Y,int PType,int trans);
-
-// View or (clipped area) handling ===========
-
-// sets View port relatively to the new View Origin
-void SetSurfView(DgSurf *S, DgView *V);
-// sets View port clipped inside current DgSurf view port
-void SetSurfInView(DgSurf *S, DgView *V);
-// get current Surf view port
-void GetSurfView(DgSurf *S, DgView *V);
 
 #ifdef __cplusplus
 		}  // extern "C" {

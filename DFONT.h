@@ -24,14 +24,23 @@
 extern "C" {
 #endif
 
+//** FONT Structure ****************************
+typedef struct {
+    int             FntPtr;
+    unsigned char   FntHaut,FntDistLgn;
+	char            FntLowPos, FntHighPos, FntSens;
+	unsigned char   FntTab,Fntrevb[2];
+    int             FntX, FntY, FntCol, FntBCol, FntDresv;
+} FONT;
+
 // FONT character loading, handling and drawing functions
 // of the DUGL CHR FONT FORMAT
 // ---------------------------------------------------------
 
-extern FONT		CurFONT;
-extern int		FntPtr, FntX, FntY, FntCol;
-extern unsigned char	FntHaut, FntDistLgn, FntTab;
-extern char		FntLowPos, FntHighPos,FntSens;
+extern FONT             CurFONT;
+extern int              FntPtr, FntX, FntY, FntCol;
+extern unsigned char    FntHaut, FntDistLgn, FntTab;
+extern char             FntLowPos, FntHighPos, FntSens;
 // Text drawing Mode
 #define AJ_CUR_POS	0 // draw starting from the current xy text position
 #define AJ_MID		1 // set the text on the middle of the current Surf View

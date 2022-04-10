@@ -47,13 +47,14 @@ int DgInit()
     }
 
     /* Initialize SDL */
-    if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER) != 0) {
+    if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init fail : %s\n", SDL_GetError());
         return 0;
     }
     SDL_memset4(&CurSurf, 0, sizeof(DgSurf) / 4);
-    SDL_memset4(&RendSurf, 0, sizeof(DgSurf) / 4);
-    SDL_memset4(&RendFrontSurf, 0, sizeof(DgSurf) / 4);
+    SDL_memset4(&SrcSurf, 0, sizeof(DgSurf) / 4);
+    RendSurf = NULL;
+    RendFrontSurf = NULL;
 
     SDL_AddEventWatch(SDLEventHandler, NULL);
     if (!InitDWorkers(0)) {
@@ -80,10 +81,14 @@ void DgQuit()
     DestroyDWorkers();
     if (window != NULL) {
 		SDL_DestroyWindow(window);
-		if (RendSurf.rlfb != 0)
-			DestroySurf(&RendSurf);
-		if (RendFrontSurf.rlfb != 0)
-			DestroySurf(&RendFrontSurf);
+		if (RendSurf!=NULL && RendSurf->rlfb != 0) {
+			DestroySurf(RendSurf);
+			RendSurf = NULL;
+		}
+		if (RendFrontSurf!=NULL && RendFrontSurf->rlfb != 0) {
+			DestroySurf(RendFrontSurf);
+			RendFrontSurf = NULL;
+		}
     }
     SDL_Quit();
 }
@@ -122,7 +127,6 @@ int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, i
 			FlagCreate |= SDL_WINDOW_RESIZABLE;
     }
 
-
     window = SDL_CreateWindow(title, posX, posY, ResHz, ResVt, FlagCreate);
     if (window == NULL)
     {
@@ -140,7 +144,7 @@ int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, i
         return 0;
 
     // create the render Surface 16bpp
-    surf16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendSurf.rlfb), ResHz, ResVt, 16, ResHz*2, SDL_PIXELFORMAT_RGB565);
+    surf16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendSurf->rlfb), ResHz, ResVt, 16, ResHz*2, SDL_PIXELFORMAT_RGB565);
     if (surf16bpp == NULL) {
         SDL_Log("SDL_CreateRGBSurfaceWithFormat() failed: %s", SDL_GetError());
         return 0;
@@ -149,7 +153,7 @@ int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, i
 		if (!CreateSurf(&RendFrontSurf, ResHz, ResVt, 16))
 			return 0;
 
-		surfFront16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendFrontSurf.rlfb), ResHz, ResVt, 16, ResHz*2, SDL_PIXELFORMAT_RGB565);
+		surfFront16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendFrontSurf->rlfb), ResHz, ResVt, 16, ResHz*2, SDL_PIXELFORMAT_RGB565);
 		if (surfFront16bpp == NULL) {
 			SDL_Log("SDL_CreateRGBSurfaceWithFormat() failed: %s", SDL_GetError());
 			return 0;
@@ -178,22 +182,22 @@ void DgCheckEvents() {
 void DgUpdateWindow()
 {
 	SDL_Surface *tmpSDLSurf = surf16bpp;
-	DgSurf tmpSurf;
+	DgSurf *tmpSurf;
 	surfaceW = SDL_GetWindowSurface(window);
 
-    if (RendSurf.rlfb != 0 && surfaceW != NULL)
+    if (RendSurf->rlfb != 0 && surfaceW != NULL)
     {
         SDL_BlitSurface( tmpSDLSurf, NULL, surfaceW, NULL );
 		SDL_UpdateWindowSurface(window);
 
 		if (enableDoubleBuff) {
-			SDL_memcpy4(&tmpSurf,&RendSurf, sizeof(DgSurf)/4);
+			tmpSurf = RendSurf;
 
 			surf16bpp = surfFront16bpp;
-			SDL_memcpy4(&RendSurf,&RendFrontSurf, sizeof(DgSurf)/4);
+			RendSurf = RendFrontSurf;
 
 			surfFront16bpp = tmpSDLSurf;
-			SDL_memcpy4(&RendFrontSurf,&tmpSurf, sizeof(DgSurf)/4);
+			RendFrontSurf = tmpSurf;
 		}
    }
 }
@@ -201,9 +205,9 @@ void DgUpdateWindow()
 void DgSetEnabledDoubleBuff(bool dblBuffEnabled) {
 	if (enableDoubleBuff && !dblBuffEnabled) { // disable
 		// destroy not required data
-		if (RendFrontSurf.rlfb != 0) {
-			DestroySurf(&RendFrontSurf);
-			SDL_memset4(&RendFrontSurf, 0, sizeof(DgSurf));
+		if (RendFrontSurf->rlfb != 0) {
+			DestroySurf(RendFrontSurf);
+			SDL_memset4(RendFrontSurf, 0, sizeof(DgSurf));
 		}
 		if (surfFront16bpp != NULL) {
 			SDL_FreeSurface(surfFront16bpp);
@@ -212,12 +216,12 @@ void DgSetEnabledDoubleBuff(bool dblBuffEnabled) {
 
 		enableDoubleBuff = false;
 	} else if (enableDoubleBuff && !dblBuffEnabled) { // enable
-		if (!CreateSurf(&RendFrontSurf, RendSurf.ResH, RendSurf.ResV, 16))
+		if (!CreateSurf(&RendFrontSurf, RendSurf->ResH, RendSurf->ResV, 16))
 			return; // failed to enable double buff
 
-		surfFront16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendFrontSurf.rlfb), RendSurf.ResH, RendSurf.ResV, 16, RendSurf.ResH*2, SDL_PIXELFORMAT_RGB565);
+		surfFront16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendFrontSurf->rlfb), RendSurf->ResH, RendSurf->ResV, 16, RendSurf->ResH*2, SDL_PIXELFORMAT_RGB565);
 		if (surfFront16bpp == NULL) {
-			DestroySurf(&RendFrontSurf);
+			DestroySurf(RendFrontSurf);
 			return; // failed 2
 		}
 
@@ -257,32 +261,34 @@ void SetOrgSurf(DgSurf *S,int LOrgX,int LOrgY)
         S->vlfb= S->rlfb+S->OrgX-(S->OrgY-(S->ResV-1))*S->ResH;
 }
 
-int CreateSurf(DgSurf *S, int ResHz, int ResVt, char BitsPixel)
+int CreateSurf(DgSurf **S, int ResHz, int ResVt, char BitsPixel)
 {
     int cvlfb;
     int pixelsize = GetPixelSize(BitsPixel);
 
-	S->vlfb=S->rlfb=S->OffVMem=0;
+    if ((*S = (DgSurf*)SDL_SIMDAlloc(sizeof(DgSurf))) == NULL)
+        return 0;
+
+    SDL_memset4(*S, 0, sizeof(DgSurf)/4);
 	if (pixelsize==0 || ResHz<=1 || ResVt<=1) return 0;
 	cvlfb = (int)SDL_SIMDAlloc(ResHz*ResVt*pixelsize);
     if (cvlfb != 0)
     {
-          S->vlfb=S->rlfb= cvlfb;
-          S->OffVMem= -1;
-          S->ResH= ResHz;
-          S->ResV= ResVt;
+          (*S)->vlfb=(*S)->rlfb= cvlfb;
+          (*S)->ResH= ResHz;
+          (*S)->ResV= ResVt;
 
-          S->MaxX= ResHz-1;
-          S->MaxY= S->MinX= 0;
-          S->MinY= -ResVt+1;      // Y axis ascendent
-          S->SizeSurf= ResHz*ResVt*pixelsize;
-          S->Mask= 0;
-          S->OrgX= 0;
-          S->OrgY= ResVt-1;
-          S->BitsPixel= BitsPixel;
-          S->ScanLine= ResHz *pixelsize;
-          S->NegScanLine = -(S->ScanLine);
-          SetOrgSurf(S, 0, 0);
+          (*S)->MaxX= ResHz-1;
+          (*S)->MaxY= (*S)->MinX= 0;
+          (*S)->MinY= -ResVt+1;      // Y axis ascendent
+          (*S)->SizeSurf= ResHz*ResVt*pixelsize;
+          (*S)->Mask= 0;
+          (*S)->OrgX= 0;
+          (*S)->OrgY= ResVt-1;
+          (*S)->BitsPixel= BitsPixel;
+          (*S)->ScanLine= ResHz *pixelsize;
+          (*S)->NegScanLine = -((*S)->ScanLine);
+          SetOrgSurf(*S, 0, 0);
           return 1;
 	}
 	return 0;
@@ -294,33 +300,33 @@ void DestroySurf(DgSurf *S)
     {
         SDL_SIMDFree((void*)S->rlfb);
         SDL_memset4(S, 0, sizeof(DgSurf)/4);
+        SDL_SIMDFree((void*)S);
 	}
 }
 
-int CreateSurfBuff(DgSurf *S, int ResHz, int ResVt, char BitsPixel, void *Buff)
+int CreateSurfBuff(DgSurf **S, int ResHz, int ResVt, char BitsPixel, void *Buff)
 {
-    if (S == NULL)
+    if ((*S = (DgSurf*)SDL_SIMDAlloc(sizeof(DgSurf))) == NULL)
         return 0;
-    SDL_memset4(S, 0, sizeof(DgSurf)/4);
+    SDL_memset4(*S, 0, sizeof(DgSurf)/4);
     int pixelsize=GetPixelSize(BitsPixel);
 
  	if (pixelsize == 0 || ResHz <= 1 || ResVt <= 1 || Buff == NULL)
         return 0;
-	S->vlfb = S->rlfb = (int)(Buff);
-	S->OffVMem= -1;
-	S->ResH= ResHz;
-	S->ResV= ResVt;
-	S->MaxX= ResHz-1;
-	S->MaxY= S->MinX= 0;
-	S->MinY= -ResVt+1;      //axis Y Up
-	S->SizeSurf= ResHz*ResVt*pixelsize;
-	S->OrgX= 0;
-	S->OrgY= ResVt-1;
-	S->BitsPixel= BitsPixel;
-	S->ScanLine= ResHz *pixelsize;
-	S->Mask= 0;
-	S->NegScanLine = -(S->ScanLine);
-	SetOrgSurf(S,0,0);
+	(*S)->vlfb = (*S)->rlfb = (int)(Buff);
+	(*S)->ResH= ResHz;
+	(*S)->ResV= ResVt;
+	(*S)->MaxX= ResHz-1;
+	(*S)->MaxY= (*S)->MinX= 0;
+	(*S)->MinY= -ResVt+1;      //axis Y Up
+	(*S)->SizeSurf= ResHz*ResVt*pixelsize;
+	(*S)->OrgX= 0;
+	(*S)->OrgY= ResVt-1;
+	(*S)->BitsPixel= BitsPixel;
+	(*S)->ScanLine= ResHz *pixelsize;
+	(*S)->Mask= 0;
+	(*S)->NegScanLine = -((*S)->ScanLine);
+	SetOrgSurf(*S,0,0);
 	return 1;
 }
 
@@ -386,7 +392,7 @@ void SetSurfInView(DgSurf *S, DgView *V)
 
 void GetSurfView(DgSurf *S, DgView *V)
 {
-    SDL_memcpy4(V, &S->OrgX, size(DgView)/4);
+    SDL_memcpy4(V, &S->OrgX, sizeof(DgView)/4);
 }
 
 void Bar16(void *Pt1,void *Pt2,int bcol) {
@@ -541,7 +547,7 @@ int LoadFONT(FONT *F,const char *FName)
 	int i,Size;
 	void *Buff;
 	FILE *InCHR;
-	if ((InCHR=fopen(FName,"rb"))==NULL) return 0;
+	if (fopen_s(&InCHR,FName,"rb")!=0) return 0;
 	if (fread(&hchr,sizeof(HeadCHR),1,InCHR)<1) { fclose(InCHR); return 0; }
 	if (hchr.Sign!='RHCF') { fclose(InCHR); return 0; }
 	for (Size=0,i=1;i<256;i++)

@@ -553,7 +553,7 @@ ClipFillSOLID_BLND16:
 ALIGN 32
 InFillTEXT_BLND16:
 		MOV		    ESI,[SSSurf] ; sauvegarde la surf Source
-		MOV		    EDI,Svlfb
+		MOV		    EDI,_SrcSurf
 		CopySurfDA  ; copy the source texture surface
 
 		@InCalcTextCnt
@@ -631,7 +631,7 @@ ClipFillTEXT_BLND16:
         @ClipCalcTextCnt
 
 		MOV		    ESI,[SSSurf] ; sauvegarde la surf Source
-		MOV		    EDI,Svlfb
+		MOV		    EDI,_SrcSurf
 		CopySurfDA  ; copy the source texture surface
 
 ; prepare blending
@@ -743,7 +743,7 @@ ClipFillTEXT_BLND16:
 ALIGN 32
 InFillMASK_TEXT_BLND16:
 		MOV		ESI,[SSSurf] ; sauvegarde la surf Source
-		MOV		EDI,Svlfb
+		MOV		EDI,_SrcSurf
 		CopySurfDA  ; copy the source texture surface
 
 		@InCalcTextCnt
@@ -826,7 +826,7 @@ ALIGN 32
 ClipFillMASK_TEXT_BLND16:
 
 		MOV			ESI,[SSSurf] ; sauvegarde la surf Source
-		MOV		    EDI,Svlfb
+		MOV		    EDI,_SrcSurf
 		CopySurfDA  ; copy the source texture surface
 
 ; prepare blending

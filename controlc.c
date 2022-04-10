@@ -867,7 +867,7 @@ int  LoadKbMAP(KbMAP **KMap,const char *Fname)
 	int Size,i;
 	unsigned int Buff;
 
-	if ((InKbMAP=fopen(Fname,"rb"))==NULL) return 0;
+	if (fopen_s(&InKbMAP,Fname,"rb")!=0) return 0;
 	if (fread(&KM,sizeof(KbMAP),1,InKbMAP)<1) { fclose(InKbMAP); return 0; }
 	fseek(InKbMAP,0,SEEK_END);
 	Size=ftell(InKbMAP);

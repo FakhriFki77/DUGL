@@ -18,23 +18,8 @@
 ;=============================================================================
 
 ; param ESI: source Surf, EDI: Dest Surf
-; use mm0, ... , mm7
+; use mm0, ... , mm3
 ; return no : surf copied
-%macro	CopySurf	0
-        OR          ESI,ESI
-        JZ          SHORT %%NoCopySurf
-; SSE/SSE2
-		MOVDQU		xmm0,[ESI]
-		MOVDQU		xmm1,[ESI+32]
-		MOVDQU		xmm2,[ESI+16]
-		MOVDQU		xmm3,[ESI+48]
-
-		MOVDQU		[EDI],xmm0
-		MOVDQU		[EDI+32],xmm1
-		MOVDQU		[EDI+16],xmm2
-		MOVDQU		[EDI+48],xmm3
-%%NoCopySurf:
-%endmacro
 
 %macro	CopySurfDA	0
         OR          ESI,ESI
@@ -65,5 +50,21 @@
 		MOVDQU		[EDI+32],xmm1
 		MOVDQU		[EDI+16],xmm2
 		MOVDQU		[EDI+48],xmm3
+%%NoCopySurf:
+%endmacro
+
+%macro	CopySurfSNA	0
+        OR          ESI,ESI
+        JZ          SHORT %%NoCopySurf
+; SSE/SSE2
+		MOVDQU		xmm0,[ESI]
+		MOVDQU		xmm1,[ESI+32]
+		MOVDQU		xmm2,[ESI+16]
+		MOVDQU		xmm3,[ESI+48]
+
+		MOVDQA		[EDI],xmm0
+		MOVDQA		[EDI+32],xmm1
+		MOVDQA		[EDI+16],xmm2
+		MOVDQA		[EDI+48],xmm3
 %%NoCopySurf:
 %endmacro

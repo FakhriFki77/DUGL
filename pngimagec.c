@@ -217,8 +217,7 @@ int LoadPNGFile(char *filename) {
    png_row_pointers = NULL;
 
    // open png file
-   pngFile=fopen(filename,"rb");
-   if (pngFile==NULL)
+   if (fopen_s(&pngFile,filename,"rb")!=0)
      return 0;
 
    fread(header, 1, 8, pngFile);
@@ -259,14 +258,14 @@ int LoadPNGFile(char *filename) {
    return resultDecode;
 }
 
-int ExtractPNG(DgSurf *S) {
+int ExtractPNG(DgSurf **S) {
    int irow,iscan;
    short *outScan;
    unsigned char *ScanPtr;
    int BfPos;
 
    // no mem ? no RGB ? no grayscale
-   if (S == NULL || CreateSurf(S,png_width,png_height,16)==0) {
+   if (CreateSurf(S,png_width,png_height,16)==0) {
      return 0;
    }
    // RGB
@@ -274,7 +273,7 @@ int ExtractPNG(DgSurf *S) {
      // get image scanlines
      for (iscan=0;iscan<png_height;iscan++) {
 
-       outScan=(short*)(S->rlfb+(S->ScanLine*iscan));
+       outScan=(short*)((*S)->rlfb+((*S)->ScanLine*iscan));
        ScanPtr=(unsigned char*)png_row_pointers[iscan];
        BfPos=0;
        // RGB 24 -> BGR 16 (565)
@@ -286,7 +285,7 @@ int ExtractPNG(DgSurf *S) {
    } else if (png_color_type==PNG_COLOR_TYPE_GRAY) { // GRAY
         // get image scanlines
         for (iscan=0;iscan<png_height;iscan++) {
-            outScan=(short*)(S->rlfb+(S->ScanLine*iscan));
+            outScan=(short*)((*S)->rlfb+((*S)->ScanLine*iscan));
             ScanPtr=(unsigned char*)png_row_pointers[iscan];
             // GRAY 8 -> BGR 16 (565)
             for (irow=0;irow<png_width;irow++) {
@@ -297,7 +296,7 @@ int ExtractPNG(DgSurf *S) {
         // get image scanlines
         for (iscan=0;iscan<png_height;iscan++) {
 
-            outScan=(short*)(S->rlfb+(S->ScanLine*iscan));
+            outScan=(short*)((*S)->rlfb+((*S)->ScanLine*iscan));
             ScanPtr=(unsigned char*)png_row_pointers[iscan];
             BfPos=0;
             // RGB 24 -> BGR 16 (565) or black if transparent
@@ -316,14 +315,14 @@ int ExtractPNG(DgSurf *S) {
 
 }
 
-int LoadMemPNG16(DgSurf *S, void *In, int SizeIn) {
+int LoadMemPNG16(DgSurf **S, void *In, int SizeIn) {
    if (LoadPNGMem(In, SizeIn) == 0)
      return 0;
 
    return ExtractPNG(S);
 }
 
-int LoadPNG16(DgSurf *S,char *filename) {
+int LoadPNG16(DgSurf **S,char *filename) {
    if (LoadPNGFile(filename) == 0)
      return 0;
 

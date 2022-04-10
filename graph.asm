@@ -78,7 +78,7 @@ _DgSetCurSurf:
 		CMP				EAX,MaxResV
 		JG				.Error
 		MOV				EDI,_CurSurf
-		CopySurfDA
+		CopySurfSNA
 		OR				EAX,BYTE -1
 		JMP				SHORT .Ok
 .Error:
@@ -100,7 +100,7 @@ _DgSetSrcSurf:
 		PUSH	    	ESI
 
 		MOV				ESI,[EBP+SrcS]
-		MOV				EDI,Svlfb
+		MOV				EDI,_SrcSurf
 		CopySurfDA
 
 		POP				ESI
@@ -1878,7 +1878,7 @@ SECTION	.bss   ALIGN=32
 ; Main DGSurf
 ; All graphic functions render on DGSurf pointed here
 _CurSurf:
-_vlfb					RESD    1
+_ScanLine				RESD    1
 _rlfb					RESD    1
 _OrgX					RESD    1
 _OrgY					RESD    1
@@ -1889,14 +1889,14 @@ _MinY					RESD    1;-----------------------
 _Mask					RESD    1
 _ResH					RESD    1
 _ResV					RESD    1
-_SizeSurf			    RESD    1
-_ScanLine			    RESD    1
+_vlfb					RESD    1
+_NegScanLine			RESD    1
 _OffVMem				RESD    1
 _BitsPixel			    RESD    1
-_NegScanLine		    RESD    1;-----------------------
+_SizeSurf				RESD    1;-----------------------
 ; source DgSurf mainly used to point to texture, sprites ..
 _SrcSurf:
-Svlfb					RESD    1
+SScanLine				RESD    1
 Srlfb					RESD    1
 SOrgX					RESD    1
 SOrgY					RESD    1
@@ -1907,11 +1907,11 @@ SMinY					RESD    1;-----------------------
 SMask					RESD    1
 SResH					RESD    1
 SResV					RESD    1
-SSizeSurf			    RESD    1
-SScanLine			    RESD    1
+Svlfb					RESD    1
+SNegScanLine			RESD    1
 SOffVMem				RESD    1
 SBitsPixel			    RESD    1
-SNegScanLine		    RESD    1;-----------------------
+SSizeSurf				RESD    1;-----------------------
 XP1		        	    RESD	1
 YP1		        	    RESD	1
 XP2		        	    RESD	1
@@ -1995,19 +1995,14 @@ QGreen16Blend		    RESD	4
 QRed16Blend			    RESD	4
 DQ16Mask	    		RESD	4 ;------------------------
 
-; the main Surf 16bpp that DUGL will render to
-;   user mostly has to set this as CurSurf unless other intermediate DgSurf
-_RendSurf:			RESD		16
-_RendFrontSurf		RESD		16
-
 ReversedPtrListPt	RESD		MaxDblSidePolyPts
 
 SECTION	.data   ALIGN=32
 
 PntInitCPTDbrd	DD	0,((1<<Prec)-1)
-MaskB_RGB16	    DD	0x1f	 ; blue bits 0->4
-MaskG_RGB16	    DD	0x3f<<5  ; green bits 5->10
-MaskR_RGB16	    DD	0x1f<<11 ; red bits 11->15
+MaskB_RGB16		DD	0x1f	 ; blue bits 0->4
+MaskG_RGB16		DD	0x3f<<5  ; green bits 5->10
+MaskR_RGB16		DD	0x1f<<11 ; red bits 11->15
 RGB16_PntNeg	DD	((1<<Prec)-1) ;----------
 Mask2B_RGB16	DD	0x1f,0x1f ; blue bits 0->4
 Mask2G_RGB16	DD	0x3f<<5,0x3f<<5  ; green bits 5->10 ;----------
@@ -2054,4 +2049,9 @@ ClFillPolyProc16:
 		DD	dummyFill16, dummyFill16, dummyFill16 ;ClipFillDEG_TEXT,ClipFillMASK_DEG_TEXT,ClipFillEFF_FDEG
 		DD	ClipFillTEXT_TRANS16, ClipFillMASK_TEXT_TRANS16
 		DD	ClipFillRGB16,ClipFillSOLID_BLND16,ClipFillTEXT_BLND16,ClipFillMASK_TEXT_BLND16
+
+; the main Surf 16bpp that DUGL will render to
+;   user mostly has to set this as CurSurf unless other intermediate DgSurf
+_RendSurf			DD		0
+_RendFrontSurf		DD		0
 
