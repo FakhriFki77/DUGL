@@ -44,8 +44,8 @@ int main (int argc, char ** argv)
     renderWorkerID = CreateDWorker(RenderWorkerFunc, nullptr);
 
     // load font
-    if (!LoadFONT(&F1,"../Asset/FONT/hello.chr")) {
-		printf("Error loading hello.chr\n"); exit(-1);
+    if (!LoadFONT(&F1,"../Asset/FONT/Helloc.chr")) {
+		printf("Error loading helloc.chr\n"); exit(-1);
 	}
 
     SetFONT(&F1);
@@ -73,10 +73,10 @@ int main (int argc, char ** argv)
     }
 
 	// set screen rendering Surf origin on the middle of the screen
-	SetOrgSurf(&RendSurf, RendSurf.ResH/2, RendSurf.ResV/2);
+	SetOrgSurf(RendSurf, RendSurf->ResH/2, RendSurf->ResV/2);
 
 	// both rendering and front RenderSurf should be cleared to avoid any garbage at start-up
-    DgSetCurSurf(&RendSurf);
+    DgSetCurSurf(RendSurf);
     DgClear16(0); // clear by black
     DgUpdateWindow();
 
@@ -118,7 +118,7 @@ int main (int argc, char ** argv)
 		// need screen shot
 		if (takeScreenShot) {
 			WaitDWorker(renderWorkerID); // wait image ready
-			SaveBMP16(&RendSurf,(char*)"Console.bmp");
+			SaveBMP16(RendSurf,(char*)"Console.bmp");
 			takeScreenShot = false;
 		}
 
@@ -143,7 +143,7 @@ void RenderWorkerFunc(void *, int ) {
 	if (finished)
 		return;
 
-	DgSetCurSurf(&RendSurf);
+	DgSetCurSurf(RendSurf);
 
 	// clear all the Surf
 	DgClear16(0);

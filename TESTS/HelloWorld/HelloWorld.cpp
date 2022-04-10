@@ -35,7 +35,7 @@ float avgFps, lastFps;
 float accTime = 0.0f;
 // Hello World DATA
 const char *sHelloWorld = "Hello World!";
-DgSurf HelloWorldSurf16;
+DgSurf *HelloWorldSurf16;
 DgView RendSurfOrgView, HelloWorldView, RendSurfCurView;
 bool directionGrowth = true;
 
@@ -52,8 +52,8 @@ int main (int argc, char ** argv)
     renderWorkerID = CreateDWorker(RenderWorkerFunc, nullptr);
 
     // load font
-    if (!LoadFONT(&F1,"../Asset/FONT/hello.chr")) {
-		printf("Error loading hello.chr\n"); exit(-1);
+    if (!LoadFONT(&F1,"../Asset/FONT/helloc.chr")) {
+		printf("Error loading helloc.chr\n"); exit(-1);
 	}
 
     SetFONT(&F1);
@@ -62,9 +62,9 @@ int main (int argc, char ** argv)
     if (CreateSurf(&HelloWorldSurf16, WidthText(sHelloWorld)+20, FntHaut+2, 16)==0) {
 		printf("no mem\n"); exit(-1);
     }
-	SetOrgSurf(&HelloWorldSurf16, HelloWorldSurf16.ResH/2, HelloWorldSurf16.ResV/2);
+	SetOrgSurf(HelloWorldSurf16, HelloWorldSurf16->ResH/2, HelloWorldSurf16->ResV/2);
 	// render Hello World Surf
-	DgSetCurSurf(&HelloWorldSurf16);
+	DgSetCurSurf(HelloWorldSurf16);
 	DgClear16(0x1f<<11); // red
 	ClearText(); // reset position of the text
 	SetTextCol(0x3f<<5);  // green
@@ -93,15 +93,15 @@ int main (int argc, char ** argv)
     }
 
 	// set screen rendering Surf origin on the middle of the screen
-	SetOrgSurf(&RendSurf, RendSurf.ResH/2, RendSurf.ResV/2);
+	SetOrgSurf(RendSurf, RendSurf->ResH/2, RendSurf->ResV/2);
 
-	GetSurfRView(&RendSurf, &RendSurfOrgView); // save current View
-	GetSurfRView(&HelloWorldSurf16, &HelloWorldView);
+	GetSurfView(RendSurf, &RendSurfOrgView); // save current View
+	GetSurfView(HelloWorldSurf16, &HelloWorldView);
 	HelloWorldView.OrgX = RendSurfOrgView.OrgX;
 	HelloWorldView.OrgY = RendSurfOrgView.OrgY;
 
 	// both rendering and front RenderSurf should be cleared to avoid any garbage at start-up
-    DgSetCurSurf(&RendSurf);
+    DgSetCurSurf(RendSurf);
     DgClear16(0); // clear by black
     DgUpdateWindow();
 
@@ -155,7 +155,7 @@ int main (int argc, char ** argv)
 		// need screen shot
 		if (takeScreenShot) {
 			WaitDWorker(renderWorkerID); // wait image ready
-			SaveBMP16(&RendSurf,(char*)"HelloWorld.bmp");
+			SaveBMP16(RendSurf,(char*)"HelloWorld.bmp");
 			takeScreenShot = false;
 		}
 
@@ -164,7 +164,7 @@ int main (int argc, char ** argv)
 
 	DestroyDWorker(renderWorkerID);
 	renderWorkerID = 0;
-	DestroySurf(&HelloWorldSurf16);
+	DestroySurf(HelloWorldSurf16);
     DgQuit();
     printf("See you!\n");
     return 0;
@@ -196,18 +196,18 @@ void RenderWorkerFunc(void *, int ) {
 	//float moveTime = accTime;
 	//accTime = 0.0f;
 
-	DgSetCurSurf(&RendSurf);
+	DgSetCurSurf(RendSurf);
 
-	SetSurfRView(&CurSurf, &RendSurfCurView);
+	SetSurfView(&CurSurf, &RendSurfCurView);
 
 	// clear all the Surf
 	DgClear16(0x1e|0x380);
 
 	// Blit Resized "Hello World !"
-	ResizeViewSurf16(&HelloWorldSurf16, 0, 0);
+	ResizeViewSurf16(HelloWorldSurf16, 0, 0);
 
 	// restore original Screen View
-	SetSurfRView(&CurSurf, &RendSurfOrgView);
+	SetSurfView(&CurSurf, &RendSurfOrgView);
 	ClearText();
 	#define SIZE_TEXT 127
 	char text[SIZE_TEXT + 1];
@@ -238,10 +238,10 @@ void RenderWorkerFunc(void *, int ) {
 			}
 		} else {
 			// detect overlap and reverse
-			if (RendSurfCurView.MaxX == HelloWorldSurf16.MaxX ||
-				RendSurfCurView.MinX == HelloWorldSurf16.MinX ||
-				RendSurfCurView.MaxY == HelloWorldSurf16.MaxY ||
-				RendSurfCurView.MinY == HelloWorldSurf16.MinY) {
+			if (RendSurfCurView.MaxX == HelloWorldSurf16->MaxX ||
+				RendSurfCurView.MinX == HelloWorldSurf16->MinX ||
+				RendSurfCurView.MaxY == HelloWorldSurf16->MaxY ||
+				RendSurfCurView.MinY == HelloWorldSurf16->MinY) {
 
 				directionGrowth = true;
 			} else {
