@@ -11,7 +11,7 @@
 #define EDCHR2_VERSION_MAJOR		1
 #define EDCHR2_VERSION_MINOR		0
 #define EDCHR2_VERSION_TYPE			'b' // a alpha, b beta, r release
-#define EDCHR2_VERSION_PATCH		1
+#define EDCHR2_VERSION_PATCH		2
 
 MainWin *CreateMainWinAboutDLG(WinHandler *WH);
 

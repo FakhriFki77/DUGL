@@ -45,7 +45,7 @@ void DrawHelpGBox(GraphBox *Me) {
 	OutText16Mode("Home: Reverse\n", AJ_MID);
 	OutText16Mode("End: Set All\n", AJ_MID);
 	OutText16Mode("Alt+(Left|Right) arrows: Decrease/Increase Ascii\n", AJ_MID);
-	OutText16Mode("Ctrl+ arrows: Move Calc Image\n", AJ_MID);
+	OutText16Mode("Ctrl+ arrows [+Shift bigger step]: Move Calc Image\n", AJ_MID);
 	OutText16Mode("Alt+ Enter: Apply Calc Image\n", AJ_MID);
 	OutText16Mode("Focus on Char View + arrows: Move char\n", AJ_MID);
 	OutText16Mode("Left Mouse Button on Char View: Set Pixel\n", AJ_MID);

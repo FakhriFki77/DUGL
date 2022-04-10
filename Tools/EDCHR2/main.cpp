@@ -56,8 +56,8 @@ int countLoops = 0;
 // main render func
 void RenderFunc();
 // asset data
-DgSurf BackSurf;
-DgSurf MsSurf;
+DgSurf *BackSurf;
+DgSurf *MsSurf;
 bool displayBackSurf = true;
 bool validBackSurf = false;
 bool previewCalc = false;
@@ -215,17 +215,17 @@ int main()
 
     LoadConfig();
 
-    GetSurfView(&RendSurf, &MsView);
+    GetSurfView(RendSurf, &MsView);
     SetMouseRView(&MsView);
     //SetMouseOrg(RendSurf.ResH / 2, RendSurf.ResV / 2);
 
     SetFONT(&F1);
 
-    SetOrgSurf(&MsSurf, 0, MsSurf.ResV - 1); // set org top left corner
+    SetOrgSurf(MsSurf, 0, MsSurf->ResV - 1); // set org top left corner
 
     // GUI
-    WH = new WinHandler(RendSurf.ResH,RendSurf.ResV,16,0x1f,0);
-    FPrinc = new MainWin(RendSurf.MinX,RendSurf.MinY,RendSurf.ResH,RendSurf.ResV,SLbFPrinc.StrPtr,WH);
+    WH = new WinHandler(RendSurf->ResH,RendSurf->ResV,16,0x1f,0);
+    FPrinc = new MainWin(RendSurf->MinX,RendSurf->MinY,RendSurf->ResH,RendSurf->ResV,SLbFPrinc.StrPtr,WH);
 	HELPDlg = CreateMainWinHelpDLG(WH);
 	ABOUTDlg = CreateMainWinAboutDLG(WH);
 
@@ -592,10 +592,10 @@ void FSaveCHR(String *S,int TypeSel) {
 void LoadBackImage(String *filename, int selection) {
 	int res = 0;
 
-	if (validBackSurf && BackSurf.rlfb != 0) {
+	if (validBackSurf && BackSurf->rlfb != 0) {
 		validBackSurf = false;
 		needRedrawGraphBoxs = true;
-		DestroySurf(&BackSurf);
+		DestroySurf(BackSurf);
 	}
 
 	switch (selection) {
@@ -719,8 +719,8 @@ void GphBDrawMap(GraphBox *Me) {
 		backView.MaxY = DebY+HautRect-1;
 		SetSurfView(&CurSurf, &backView); // set the new view
 
-		GetSurfView(&BackSurf, &backSurfView);
-		GetSurfView(&BackSurf, &saveBackView);
+		GetSurfView(BackSurf, &backSurfView);
+		GetSurfView(BackSurf, &saveBackView);
 
 		// check if it's completely out
 		if (startXBackSurf <= backSurfView.MaxX && startYBackSurf <= backSurfView.MaxY) {
@@ -728,29 +728,29 @@ void GphBDrawMap(GraphBox *Me) {
 			backSurfView.MinY = startYBackSurf;
 			backSurfView.MaxX = startXBackSurf + (LargChar-1);
 			backSurfView.MaxY = startYBackSurf + (HautChar-1);
-			SetSurfView(&BackSurf, &backSurfView); // clip view inside
-			if (BackSurf.MaxX < startXBackSurf + (LargChar-1)) { // clip the destination view ?
-				backView.MaxX -= ((startXBackSurf + (LargChar-1)) - BackSurf.MaxX) * zstep;
+			SetSurfView(BackSurf, &backSurfView); // clip view inside
+			if (BackSurf->MaxX < startXBackSurf + (LargChar-1)) { // clip the destination view ?
+				backView.MaxX -= ((startXBackSurf + (LargChar-1)) - BackSurf->MaxX) * zstep;
 				SetSurfView(&CurSurf, &backView); // set the new view
 			}
-			if (BackSurf.MaxY < startYBackSurf + (HautChar-1)) { // clip the destination view ?
-				backView.MaxY -= ((startYBackSurf + (HautChar-1)) - BackSurf.MaxY) * zstep;
+			if (BackSurf->MaxY < startYBackSurf + (HautChar-1)) { // clip the destination view ?
+				backView.MaxY -= ((startYBackSurf + (HautChar-1)) - BackSurf->MaxY) * zstep;
 				SetSurfView(&CurSurf, &backView); // set the new view
 			}
 
 			if ((MsButton&MS_LEFT_BUTT) > 0 && (KbFLAG&KB_CTRL_PR) > 0 && Me->MsIn) {
-				WH->m_GraphCtxt->MaskBlndResizeViewSurf(&BackSurf, 0, 0, WH->m_GraphCtxt->WinBlanc | (CalcTransparency<<24));
+				WH->m_GraphCtxt->MaskBlndResizeViewSurf(BackSurf, 0, 0, WH->m_GraphCtxt->WinBlanc | (CalcTransparency<<24));
 				previewCalc = true;
 			}
 			else {
-				WH->m_GraphCtxt->MaskTransResizeViewSurf(&BackSurf, 0, 0, CalcTransparency);
+				WH->m_GraphCtxt->MaskTransResizeViewSurf(BackSurf, 0, 0, CalcTransparency);
 				previewCalc = false;
 			}
 
 		}
 		// restore views
 		SetSurfView(&CurSurf, &saveView);
-		SetSurfView(&BackSurf, &saveBackView);
+		SetSurfView(BackSurf, &saveBackView);
 	}
 
 }
@@ -818,9 +818,9 @@ void ScanGphBMap(GraphBox *Me) {
 				needRedrawGraphBoxs = true;
 		   }
        } else { // if CTRL pressed and a calc is displayed then set the mask color
-			unsigned int newmask = DgSurfCGetPixel16(&BackSurf, startXBackSurf+x, startYBackSurf+y);
-			if (newmask != 0xffffffff && BackSurf.Mask != newmask) {
-				BackSurf.Mask = newmask;
+			unsigned int newmask = DgSurfCGetPixel16(BackSurf, startXBackSurf+x, startYBackSurf+y);
+			if (newmask != 0xffffffff && BackSurf->Mask != newmask) {
+				BackSurf->Mask = newmask;
 				needRedrawGraphBoxs = true;
 			}
        }
@@ -911,9 +911,9 @@ void ApplyCalcToCurCar() {
 
 		for (i=0;i<HautChar;i++) {
 			for (j=0;j<LargChar;j++) {
-				calCol = DgSurfCGetPixel16(&BackSurf, startXBackSurf+j, startYBackSurf+i);
+				calCol = DgSurfCGetPixel16(BackSurf, startXBackSurf+j, startYBackSurf+i);
 				if (calCol != 0xffffffff) {
-					if (calCol != BackSurf.Mask) { // set
+					if (calCol != BackSurf->Mask) { // set
 						car[j>>5][i+curascii*64] |= 1<<(j);
 					}
 				}
@@ -1109,7 +1109,7 @@ void RenderFunc() {
 	avgFps=SynchAverageTime(RenderSynchBuff);
 	lastFps=SynchLastTime(RenderSynchBuff);
 
-	DgSetCurSurf(&RendSurf);
+	DgSetCurSurf(RendSurf);
 
 	if (needRedrawGraphBoxs) {
 		GphBCarMap->Redraw();
@@ -1135,9 +1135,9 @@ void RenderFunc() {
 	if (MsInWindow)
 	{
 		int PUTSURF_FLAG = PUTSURF_NORM;
-		if (MsY - MsSurf.ResV < CurSurf.MinY) PUTSURF_FLAG |= PUTSURF_INV_VT;
-		if (MsX + MsSurf.ResH > CurSurf.MaxX) PUTSURF_FLAG |= PUTSURF_INV_HZ;
-		PutMaskSurf16(&MsSurf, MsX, MsY, PUTSURF_FLAG);
+		if (MsY - MsSurf->ResV < CurSurf.MinY) PUTSURF_FLAG |= PUTSURF_INV_VT;
+		if (MsX + MsSurf->ResH > CurSurf.MaxX) PUTSURF_FLAG |= PUTSURF_INV_HZ;
+		PutMaskSurf16(MsSurf, MsX, MsY, PUTSURF_FLAG);
 	}
 
 	DgUpdateWindow();
