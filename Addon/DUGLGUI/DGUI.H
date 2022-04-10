@@ -270,7 +270,7 @@ public:
 class WinHandler {
    friend class MainWin;
 public:
-   DgSurf S;
+   DgSurf *S;
    CGraphContext *m_GraphCtxt;
    ListWin *WinList;
    ListFly *FlyList;
@@ -314,7 +314,7 @@ public:
    Node *CurFocusNode,*DefNode,*EchapNode;
    int  X,Y,X2,Y2;
    int Width,Height;
-   DgSurf S;
+   DgSurf *S;
    DgView VActiv;
    unsigned int AsciiFLAG,KeyFLAG;
    unsigned char Ascii,Key;
