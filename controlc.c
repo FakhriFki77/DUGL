@@ -501,22 +501,25 @@ void DgInstallTimer(int Freq)
     // install new timer
     DgTimerInterval = 1000/TimeFreqs[nIdx];
     DgTime = 0;
-	 DgPerformanceCounterFreq = SDL_GetPerformanceFrequency();
-	 lastPerformanceCounterValue = SDL_GetPerformanceCounter();
-	 lastPerformanceCounterRest = 0;
+    DgPerformanceCounterFreq = SDL_GetPerformanceFrequency();
+	lastPerformanceCounterValue = SDL_GetPerformanceCounter();
+    lastPerformanceCounterRest = 0;
+    DgTimerFreq = TimeFreqs[nIdx];
     sdl_timer_id = SDL_AddTimer(DgTimerInterval, DgTimeHandler, NULL);
-    if (sdl_timer_id != 0)
-        DgTimerFreq = TimeFreqs[nIdx];
+    if (sdl_timer_id == 0) // failed ?
+        DgTimerFreq = 0;
 }
 
 Uint32 DgTimeHandler(Uint32 interval, void *param)
 {
-	newPerfCounter = SDL_GetPerformanceCounter();
-	deltaPerfCounter = (newPerfCounter - lastPerformanceCounterValue + lastPerformanceCounterRest) * (Uint64)(DgTimerFreq);
-	lastPerformanceCounterRest = (deltaPerfCounter % DgPerformanceCounterFreq)/(Uint64)(DgTimerFreq);
-	DgTime += (unsigned int)(deltaPerfCounter / DgPerformanceCounterFreq);
+	if (DgTimerFreq>0) {
+        newPerfCounter = SDL_GetPerformanceCounter();
+        deltaPerfCounter = (newPerfCounter - lastPerformanceCounterValue + lastPerformanceCounterRest) * (Uint64)(DgTimerFreq);
+        lastPerformanceCounterRest = (deltaPerfCounter % DgPerformanceCounterFreq)/(Uint64)(DgTimerFreq);
+        DgTime += (unsigned int)(deltaPerfCounter / DgPerformanceCounterFreq);
 
-	lastPerformanceCounterValue = newPerfCounter;
+        lastPerformanceCounterValue = newPerfCounter;
+	}
 	return interval;
 }
 
