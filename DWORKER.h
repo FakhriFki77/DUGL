@@ -37,7 +37,14 @@ void SetDWorkerFunction(unsigned int dworkerID, dworkerFunctionPointer workerFun
 void SetDWorkerPriority(int priority); // 0 highest - 3 lowest
 bool IsBusyDWorker(unsigned int dworkerID);
 void WaitDWorker(unsigned int dworkerID);
+bool WaitTimeOutDWorker(unsigned int dworkerID, unsigned int timeOut);
 void DestroyDWorker(unsigned int dworkerID);
+// Mutex
+void *CreateDMutex();
+void  DestroyDMutex(void *DMutexPtr);
+void  LockDMutex(void *DMutexPtr);
+void  UnlockDMutex(void *DMutexPtr);
+bool  TryLockDMutex(void *DMutexPtr);
 
 #ifdef __cplusplus
 		}  // extern "C" {

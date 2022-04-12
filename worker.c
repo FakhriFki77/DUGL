@@ -25,6 +25,9 @@
 #include "DUGL.h"
 #include "intrndugl.h"
 
+
+// DWorker /////////////////////////////////////////////////
+
 unsigned int countDWorker = 0;
 unsigned int MaxDWorkersCount = 0;
 unsigned int FirstFreeDWorkerID = 0;
@@ -212,22 +215,36 @@ void WaitDWorker(unsigned int dworkerID) {
 	while(conditionsDWorker[idx]) { SDL_Delay(0); };
 }
 
+bool WaitTimeOutDWorker(unsigned int dworkerID, unsigned int timeOut) {
+	unsigned int idx = dworkerID - 1;
+	Uint64 timeout = SDL_GetTicks64() + timeOut;
+
+	if (MaxDWorkersCount == 0 || dworkerID == 0 || dworkerID > MaxDWorkersCount)
+		return false; // invalid dworkerID
+
+	while (SDL_GetTicks64() < timeout) {
+		if (!conditionsDWorker[idx])
+			return true;
+		SDL_Delay(1);
+	}
+	return false; // timed out
+}
+
+
 void DestroyDWorker(unsigned int dworkerID) {
 	if (MaxDWorkersCount == 0 || dworkerID == 0 || dworkerID > MaxDWorkersCount)
 		return;
 	unsigned int idx = dworkerID - 1;
-	// wait finished
-	while(conditionsDWorker[idx]) { SDL_Delay(0); };
 
 	if (threadsDWorker[idx] != NULL) {
 		SDL_DetachThread(threadsDWorker[idx]);
-		if (condsDworker[idx] != NULL) {
-			SDL_DestroyCond(condsDworker[idx]);
-			condsDworker[idx] = NULL;
-		}
 		if (locksDworker[idx] != NULL) {
 			SDL_DestroyMutex(locksDworker[idx]);
 			locksDworker[idx] = NULL;
+		}
+		if (condsDworker[idx] != NULL) {
+			SDL_DestroyCond(condsDworker[idx]);
+			condsDworker[idx] = NULL;
 		}
 		countDWorker --;
 		if (idx < FirstFreeDWorkerID)
@@ -237,4 +254,52 @@ void DestroyDWorker(unsigned int dworkerID) {
 	funcsDWorker[idx] = NULL;
 	paramsDWorker[idx] = NULL;
 	conditionsDWorker[idx] = false;
+}
+
+
+// Mutex ///////////////////////////////////////////////////
+
+void *CreateDMutex() {
+	DMutex *mutex = (DMutex*)SDL_malloc(sizeof(DMutex));
+	if (mutex != NULL) {
+		mutex->Sign = 'XTMD'; // "DMTX"
+		mutex->mutex = SDL_CreateMutex();
+		if (mutex->mutex == NULL) {
+			SDL_free(mutex);
+			mutex = NULL;
+		}
+	}
+	return mutex;
+}
+
+void  DestroyDMutex(void *DMutexPtr) {
+	DMutex *mutex = (DMutex*)DMutexPtr;
+	if (mutex->Sign == 'XTMD') {
+		SDL_DestroyMutex(mutex->mutex);
+		mutex->Sign = 0;
+		mutex->mutex = NULL;
+		SDL_free(mutex);
+	}
+}
+
+void  LockDMutex(void *DMutexPtr) {
+	DMutex *mutex = (DMutex*)DMutexPtr;
+	if (mutex->Sign == 'XTMD') {
+		SDL_LockMutex(mutex->mutex);
+	}
+}
+
+void  UnlockDMutex(void *DMutexPtr) {
+	DMutex *mutex = (DMutex*)DMutexPtr;
+	if (mutex->Sign == 'XTMD') {
+		SDL_UnlockMutex(mutex->mutex);
+	}
+}
+
+bool  TryLockDMutex(void *DMutexPtr) {
+	DMutex *mutex = (DMutex*)DMutexPtr;
+	if (mutex->Sign == 'XTMD') {
+		return (SDL_TryLockMutex(mutex->mutex) == 0);
+	}
+	return false;
 }
