@@ -129,6 +129,12 @@ typedef struct
 extern int vlfb,rlfb,OffVMem,ResH,ResV,MaxX,MaxY,MinX,MinY,SizeSurf;
 extern int OrgX,OrgY,NegScanLine;
 
+// mutex
+
+typedef struct
+{	int	       	Sign;  		// = "DMTX"
+    SDL_mutex   *mutex;
+} DMutex;
 
 // GLOBAL Events Handling
 extern SDL_mutex *mutexEvents;
