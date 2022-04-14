@@ -29,6 +29,7 @@ char EventsLoopSynchBuff[SIZE_SYNCH_BUFF];
 char RenderSynchBuff[SIZE_SYNCH_BUFF];
 // render DWorker
 unsigned int renderWorkerID = 0;
+void *renderMutex = NULL;
 void RenderWorkerFunc(void *, int );
 // fps counter
 float avgFps, lastFps;
@@ -50,6 +51,7 @@ int main (int argc, char ** argv)
 
     // create rendering DWorker
     renderWorkerID = CreateDWorker(RenderWorkerFunc, nullptr);
+    renderMutex = CreateDMutex();
 
     // load font
     if (!LoadFONT(&F1,"../Asset/FONT/helloc.chr")) {
@@ -100,7 +102,7 @@ int main (int argc, char ** argv)
 	HelloWorldView.OrgX = RendSurfOrgView.OrgX;
 	HelloWorldView.OrgY = RendSurfOrgView.OrgY;
 
-	// both rendering and front RenderSurf should be cleared to avoid any garbage at start-up
+	// RenderSurf should be cleared to avoid any garbage at start-up
     DgSetCurSurf(RendSurf);
     DgClear16(0); // clear by black
     DgUpdateWindow();
@@ -110,6 +112,9 @@ int main (int argc, char ** argv)
     // init synchro
     InitSynch(EventsLoopSynchBuff, NULL, 250); // speed of events scan per second, this will be too the max fps detectable
     InitSynch(RenderSynchBuff, NULL, 60); // screen frequency
+	// lunch render DWorker
+	RunDWorker(renderWorkerID, false);
+
 	// main loop
 	for (int j=0;;j++) {
 		// synchronise event loop
@@ -119,8 +124,6 @@ int main (int argc, char ** argv)
 		// time synching ignored for simplicity
 		//accTime += SynchAverageTime(EventsLoopSynchBuff);
 
-		// render one frame in separate DWorker (Thread)
-		RunDWorker(renderWorkerID, false);
 
 		// get key
 		unsigned char keyCode;
@@ -149,21 +152,27 @@ int main (int argc, char ** argv)
 		// esc exit
         if (exitApp) {
         	// it's safer to wait the render DWorker to finish before exiting
-			WaitDWorker(renderWorkerID);
+			//WaitDWorker(renderWorkerID);
 			break;
         }
 		// need screen shot
 		if (takeScreenShot) {
-			WaitDWorker(renderWorkerID); // wait image ready
+			LockDMutex(renderMutex); // wait image ready
 			SaveBMP16(RendSurf,(char*)"HelloWorld.bmp");
 			takeScreenShot = false;
+			UnlockDMutex(renderMutex);
 		}
 
 		DgCheckEvents();
 	}
 
+	WaitDWorker(renderWorkerID); // wait render DWorker finish
+
 	DestroyDWorker(renderWorkerID);
 	renderWorkerID = 0;
+    DestroyDMutex(renderMutex);
+    renderMutex = NULL;
+
 	DestroySurf(HelloWorldSurf16);
     DgQuit();
     printf("See you!\n");
@@ -174,84 +183,91 @@ void RenderWorkerFunc(void *, int ) {
 
 	static float minFps = 0.0f;
 	static float maxFps = 0.0f;
-	// synchronise
-	if (SynchScreen)
-		WaitSynch(RenderSynchBuff, NULL);
-	else
-		Synch(RenderSynchBuff,NULL);
 
-	// synch screen display
-	avgFps=SynchAverageTime(RenderSynchBuff);
-	lastFps=SynchLastTime(RenderSynchBuff);
+	for(;!exitApp;) {
 
-	if (minFps == 0.0f && maxFps == 0.0f) {
-		minFps = avgFps;
-		maxFps = avgFps;
-	} else {
-		if (avgFps > minFps) minFps = avgFps;
-		if (avgFps < maxFps) maxFps = avgFps;
-	}
+		// synchronise
+		if (SynchScreen)
+			WaitSynch(RenderSynchBuff, NULL);
+		else
+			Synch(RenderSynchBuff,NULL);
 
-	// time synchro ignored for simplicity
-	//float moveTime = accTime;
-	//accTime = 0.0f;
+		// synch screen display
+		avgFps=SynchAverageTime(RenderSynchBuff);
+		lastFps=SynchLastTime(RenderSynchBuff);
 
-	DgSetCurSurf(RendSurf);
-
-	SetSurfView(&CurSurf, &RendSurfCurView);
-
-	// clear all the Surf
-	DgClear16(0x1e|0x380);
-
-	// Blit Resized "Hello World !"
-	ResizeViewSurf16(HelloWorldSurf16, 0, 0);
-
-	// restore original Screen View
-	SetSurfView(&CurSurf, &RendSurfOrgView);
-	ClearText();
-	#define SIZE_TEXT 127
-	char text[SIZE_TEXT + 1];
-	SetTextCol(0xffff);
-	if (avgFps!=0.0 && minFps!=0.0 && maxFps!=0.0)
-		OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "MINFPS %i, MAXFPS %i, FPS %i\n",(int)(1.0/minFps),(int)(1.0/maxFps),(int)(1.0/avgFps));
-	else
-		OutText16Mode("FPS ???\n", AJ_RIGHT);
-
-	ClearText();
-	OutText16ModeFormat(AJ_LEFT, text, SIZE_TEXT, "Esc    Exit\nF5     Vertical Synch: %s\nSpace  Pause: %s", (SynchScreen)?"ON":"OFF", (pauseHello)?"ON":"OFF");
-
-	// update Hello world Resize View
-	if (!pauseHello) {
-		if (directionGrowth) {
-			// detect overlap and reverse
-			if (RendSurfCurView.MaxX == RendSurfOrgView.MaxX ||
-				RendSurfCurView.MinX == RendSurfOrgView.MinX ||
-				RendSurfCurView.MaxY == RendSurfOrgView.MaxY ||
-				RendSurfCurView.MinY == RendSurfOrgView.MinY) {
-
-				directionGrowth = false;
-			} else {
-				RendSurfCurView.MaxX++;
-				RendSurfCurView.MinX--;
-				RendSurfCurView.MaxY++;
-				RendSurfCurView.MinY--;
-			}
+		if (minFps == 0.0f && maxFps == 0.0f) {
+			minFps = avgFps;
+			maxFps = avgFps;
 		} else {
-			// detect overlap and reverse
-			if (RendSurfCurView.MaxX == HelloWorldSurf16->MaxX ||
-				RendSurfCurView.MinX == HelloWorldSurf16->MinX ||
-				RendSurfCurView.MaxY == HelloWorldSurf16->MaxY ||
-				RendSurfCurView.MinY == HelloWorldSurf16->MinY) {
+			if (avgFps > minFps) minFps = avgFps;
+			if (avgFps < maxFps) maxFps = avgFps;
+		}
 
-				directionGrowth = true;
+		// time synchro ignored for simplicity
+		//float moveTime = accTime;
+		//accTime = 0.0f;
+		LockDMutex(renderMutex); // render lock
+
+		DgSetCurSurf(RendSurf);
+
+		// origin is the same, using ..Bounds for faster operation
+		SetSurfViewBounds(&CurSurf, &RendSurfCurView);
+
+		// clear all the Surf
+		DgClear16(0x1e|0x380);
+
+		// Blit Resized "Hello World !"
+		ResizeViewSurf16(HelloWorldSurf16, 0, 0);
+
+		// restore original Screen View
+		SetSurfViewBounds(&CurSurf, &RendSurfOrgView);
+		ClearText();
+		#define SIZE_TEXT 127
+		char text[SIZE_TEXT + 1];
+		SetTextCol(0xffff);
+		if (avgFps!=0.0 && minFps!=0.0 && maxFps!=0.0)
+			OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "MINFPS %i, MAXFPS %i, FPS %i\n",(int)(1.0/minFps),(int)(1.0/maxFps),(int)(1.0/avgFps));
+		else
+			OutText16Mode("FPS ???\n", AJ_RIGHT);
+
+		ClearText();
+		OutText16ModeFormat(AJ_LEFT, text, SIZE_TEXT, "Esc    Exit\nF5     Vertical Synch: %s\nSpace  Pause: %s", (SynchScreen)?"ON":"OFF", (pauseHello)?"ON":"OFF");
+
+		// update Hello world Resize View
+		if (!pauseHello) {
+			if (directionGrowth) {
+				// detect overlap and reverse
+				if (RendSurfCurView.MaxX == RendSurfOrgView.MaxX ||
+					RendSurfCurView.MinX == RendSurfOrgView.MinX ||
+					RendSurfCurView.MaxY == RendSurfOrgView.MaxY ||
+					RendSurfCurView.MinY == RendSurfOrgView.MinY) {
+
+					directionGrowth = false;
+				} else {
+					RendSurfCurView.MaxX++;
+					RendSurfCurView.MinX--;
+					RendSurfCurView.MaxY++;
+					RendSurfCurView.MinY--;
+				}
 			} else {
-				RendSurfCurView.MaxX--;
-				RendSurfCurView.MinX++;
-				RendSurfCurView.MaxY--;
-				RendSurfCurView.MinY++;
+				// detect overlap and reverse
+				if (RendSurfCurView.MaxX == HelloWorldSurf16->MaxX ||
+					RendSurfCurView.MinX == HelloWorldSurf16->MinX ||
+					RendSurfCurView.MaxY == HelloWorldSurf16->MaxY ||
+					RendSurfCurView.MinY == HelloWorldSurf16->MinY) {
+
+					directionGrowth = true;
+				} else {
+					RendSurfCurView.MaxX--;
+					RendSurfCurView.MinX++;
+					RendSurfCurView.MaxY--;
+					RendSurfCurView.MinY++;
+				}
 			}
 		}
-	}
 
-	DgUpdateWindow();
+		DgUpdateWindow();
+		UnlockDMutex(renderMutex);
+	}
 }
