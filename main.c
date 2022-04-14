@@ -19,8 +19,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "SDL.h"
+#include <SDL2/SDL.h>
 
 #include "DUGL.h"
 #include "intrndugl.h"
@@ -333,7 +332,7 @@ int CreateSurfBuff(DgSurf **S, int ResHz, int ResVt, char BitsPixel, void *Buff)
 // View or (clipped area) handling
 
 
-// sets DgSurf relative View
+// sets DgSurf View
 void SetSurfView(DgSurf *S, DgView *V)
 {
     int pixelsize = GetPixelSize(S->BitsPixel);
@@ -355,8 +354,22 @@ void SetSurfView(DgSurf *S, DgView *V)
         S->vlfb= S->rlfb+S->OrgX-(S->OrgY-(S->ResV-1))*S->ResH;
 }
 
+// sets DgSurf relative View Bounds (ignoring the new View Origin)
+void SetSurfViewBounds(DgSurf *S, DgView *V)
+{
+    // clip if required
+	int RMaxX= ((V->MaxX+S->OrgX)<S->ResH) ? V->MaxX+S->OrgX : S->ResH-1;
+	int RMaxY= ((V->MaxY+S->OrgY)<S->ResV) ? V->MaxY+S->OrgY : S->ResV-1;
+	int RMinX= ((V->MinX+S->OrgX)>=0) ? V->MinX+S->OrgX : 0;
+	int RMinY= ((V->MinY+S->OrgY)>=0) ? V->MinY+S->OrgY : 0;
 
-// sets Real View port clipped inside current DgSurf real view port
+	S->MaxX= RMaxX-S->OrgX;
+	S->MinX= RMinX-S->OrgX;
+	S->MaxY= RMaxY-S->OrgY;
+	S->MinY= RMinY-S->OrgY;
+}
+
+// sets View port clipped inside current DgSurf view port
 void SetSurfInView(DgSurf *S, DgView *V)
 {
 	int pixelsize = GetPixelSize(S->BitsPixel);
@@ -388,6 +401,33 @@ void SetSurfInView(DgSurf *S, DgView *V)
         S->vlfb= S->rlfb+(S->OrgX*pixelsize)-((S->OrgY-(S->ResV-1))*S->ResH*pixelsize);
     else
         S->vlfb= S->rlfb+S->OrgX-(S->OrgY-(S->ResV-1))*S->ResH;
+}
+
+// sets View port Bounds clipped inside current DgSurf view port (ignoring the new View Origin)
+void SetSurfInViewBounds(DgSurf *S, DgView *V)
+{
+    int RMaxX= S->MaxX+S->OrgX;
+    int RMaxY= S->MaxY+S->OrgY;
+    int RMinX= S->MinX+S->OrgX;
+    int RMinY= S->MinY+S->OrgY;
+
+    // clip View if required
+ 	if ((V->MaxX+S->OrgX)<RMaxX) {
+        RMaxX = V->MaxX+S->OrgX;
+ 	}
+    if ((V->MaxY+S->OrgY)<RMaxY) {
+        RMaxY= V->MaxY+S->OrgY;
+    }
+    if ((V->MinX+S->OrgX)>RMinX) {
+        RMinX= V->MinX+S->OrgX;
+    }
+    if ((V->MinY+S->OrgY)>RMinY) {
+        RMinY= V->MinY+S->OrgY;
+    }
+	S->MaxX= RMaxX-S->OrgX;
+	S->MaxY= RMaxY-S->OrgY;
+	S->MinX= RMinX-S->OrgX;
+	S->MinY= RMinY-S->OrgY;
 }
 
 void GetSurfView(DgSurf *S, DgView *V)

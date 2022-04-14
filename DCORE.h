@@ -104,15 +104,19 @@ int CreateSurfBuff(DgSurf **S, int ResHz, int ResVt, char BitsPixel, void *Buff)
 
 // sets View port relatively to the new View Origin
 void SetSurfView(DgSurf *S, DgView *V);
+// sets View port according to the current origin (ignore View origin for faster operation when no requirement to change it)
+void SetSurfViewBounds(DgSurf *S, DgView *V);
 // sets View port clipped inside current DgSurf view port
 void SetSurfInView(DgSurf *S, DgView *V);
+// sets View port according to the current origin clipped inside current DgSurf view port
+void SetSurfInViewBounds(DgSurf *S, DgView *V);
 // get current Surf view port
 void GetSurfView(DgSurf *S, DgView *V);
 
 // Render functions ============================
 
 void DgClear16(int col); // clear all the CurSurf
-void ClearSurf16(int clrcol); // clear only current view port of CurSurf use InBar16
+void ClearSurf16(int clrcol); // clear only current view port of CurSurf - use InBar16
 // PutPixel
 void DgPutPixel16(int x, int y, int col);
 // View port clipped PutPixel
