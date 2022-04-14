@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <jpeglib.h>
-#include "SDL.h"
+#include <SDL2/SDL.h>
 
 #include "DUGL.h"
 #include "intrndugl.h"

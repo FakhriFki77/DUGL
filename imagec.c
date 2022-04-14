@@ -20,7 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "SDL.h"
+#include <SDL2/SDL.h>
 
 #include "DUGL.h"
 #include "intrndugl.h"
