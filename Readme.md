@@ -31,9 +31,24 @@ Implement an ascending Y Axis, with origin at default at bottom/left Corner. All
 Implement a layer over **SDL** allowing a custom keyboard/mouse and events queue handling. 
 * **Timer**: Time synchronising functions.
 * **Images**: Implement image loader functions from file or memory supporting (**GIF**(8bits not interlaced ), **BMP**(8/16Bits not compressed), PCX(8Bits), **JPEG**(using libjpeg or libjpeg-Turbo), **PNG** (using libpng and zlib)
-* **Threading**: Implement a **DWorker** concept, a simple/flexible layer over **SDL** Threading functions, allowing to allocate sleeping threads and change dynamically their function/data/priority.
+* **Threading**: Implement **DMutex** and **DWorker** concept, a simple/flexible layer over **SDL** Threading functions, allowing to allocate sleeping threads (threads pool) and change dynamically their function/data/priority.
 * **Container**: Chained Chunks memory allocator, Fast Dictionnary (char\*,void\*), String separator(s) splitter, Threaded(DWorker) File Buffering.
 * **Math3D**: Support Matrix4x4, VEC4 and VEC2 (float or integer) implements a wide range of functions impelmented in SIMD assembly.
+
+### Building ###
+#####  Under Windows: #####
+Requirement:
+
+- **CodeBlocks IDE** (https://www.codeblocks.org)
+- **MinGW** Recommended version 8.1+  (currently using http://winlibs.com - gcc-9.4.0-mingw-w64-9.0.0-r2 32bits standalone)
+- **Nasm** Recommended the latest stable 2.15.05 (https://nasm.us/)
+- **LibSDL** use the latest SDL2-devel-xxx-mingw.tar.gz from website (https://libsdl.org)
+- **LibJpeg**, **LibPNG** and **ZLib** better download sources of each lib and compile with your current **MinGW** distribution for best compatibility.
+
+Compiling asm sources:
+
+**CodeBlocks** do not support compiling asm source files using nasm by default. 
+You need to (1) Go to **Global compilers Settings** => **Other settings** => **Advanced options..** (2) Add two new **Source ext** "asm" and "ASM" (3) Select the **Command** "Compile single file to object file" and (4) set the **Command line macro:** to "nasm $file -f win32 -Ox -o $object"
 
 
 ### Contact ###
