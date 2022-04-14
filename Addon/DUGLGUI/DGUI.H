@@ -8,7 +8,6 @@
 
 #define DGUI_H
 
-//#include <DUGL.H>
 #define DUGLGUI_VERSION_MAJOR		1
 #define DUGLGUI_VERSION_MINOR		0
 #define DUGLGUI_VERSION_TYPE		a // a alpha, b beta, r release

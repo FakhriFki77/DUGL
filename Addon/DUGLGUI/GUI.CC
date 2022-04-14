@@ -6,7 +6,8 @@
 #include <conio.h>
 #include <unistd.h>
 #include <string.h>
-#include "dugl.h"
+#include <dugl.h>
+
 #include "INTRNGUI.H"
 #include "dgui.h"
 

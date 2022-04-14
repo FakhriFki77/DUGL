@@ -6,6 +6,7 @@
 #include <conio.h>
 #include <unistd.h>
 #include <dugl.h>
+
 #include "dgui.h"
 
 #define RGB16(r,g,b) ((r>>3)|((g>>2)<<5)|((b>>3)<<11))

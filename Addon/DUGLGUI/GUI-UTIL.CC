@@ -8,8 +8,8 @@
 #include <string.h>
 #include <dir.h>
 #include <direct.h>
-#include <SDL.h>
 #include <dugl.h>
+
 #include "intrngui.h"
 #include "dgui.h"
 
@@ -37,7 +37,7 @@ void InitMsgBox(unsigned int MaxMsgBox) {
    }
    TbMsgBox= (MessageBoxInfo*)malloc(sizeof(MessageBoxInfo)*MaxMsgBox);
    if (TbMsgBox != nullptr)
-     SDL_memset(TbMsgBox, 0, sizeof(MessageBoxInfo)*MaxMsgBox);
+     memset(TbMsgBox, 0, sizeof(MessageBoxInfo)*MaxMsgBox);
    InitMsgBx=0; CptMsgBx=0; MaxMsgBx=MaxMsgBox;
 }
 
@@ -99,7 +99,7 @@ void MsgBoxClickOk() {
    if (TbMsgBox[CptMsgBx].LastCurWinNode) TbMsgBox[CptMsgBx].LastCurWinNode->Item->Enable();
    if (TbMsgBox[CptMsgBx].ClickOk) TbMsgBox[CptMsgBx].ClickOk();
    if (TbMsgBox[CptMsgBx].MsgBoxWin) TbMsgBox[CptMsgBx].MsgBoxWin->DeleteLater();
-   SDL_memset(&TbMsgBox[CptMsgBx], 0, sizeof(MessageBoxInfo));
+   memset(&TbMsgBox[CptMsgBx], 0, sizeof(MessageBoxInfo));
 }
 
 void MsgBoxClickNo() {
@@ -109,7 +109,7 @@ void MsgBoxClickNo() {
    if (TbMsgBox[CptMsgBx].LastCurWinNode) TbMsgBox[CptMsgBx].LastCurWinNode->Item->Enable();
    if (TbMsgBox[CptMsgBx].ClickNo) TbMsgBox[CptMsgBx].ClickNo();
    if (TbMsgBox[CptMsgBx].MsgBoxWin) TbMsgBox[CptMsgBx].MsgBoxWin->DeleteLater();
-   SDL_memset(&TbMsgBox[CptMsgBx], 0, sizeof(MessageBoxInfo));
+   memset(&TbMsgBox[CptMsgBx], 0, sizeof(MessageBoxInfo));
 }
 
 void MsgBoxClickCancel() {
@@ -119,7 +119,7 @@ void MsgBoxClickCancel() {
    if (TbMsgBox[CptMsgBx].LastCurWinNode) TbMsgBox[CptMsgBx].LastCurWinNode->Item->Enable();
    if (TbMsgBox[CptMsgBx].ClickCancel) TbMsgBox[CptMsgBx].ClickCancel();
    if (TbMsgBox[CptMsgBx].MsgBoxWin) TbMsgBox[CptMsgBx].MsgBoxWin->DeleteLater();
-   SDL_memset(&TbMsgBox[CptMsgBx], 0, sizeof(MessageBoxInfo));
+   memset(&TbMsgBox[CptMsgBx], 0, sizeof(MessageBoxInfo));
 }
 
 //****** FileBox **********************
@@ -164,7 +164,7 @@ void FilesBox(WinHandler *FilesBoxWH, const char *NmWin,
    char Drv[4]="a:/";
    DgView V1;
 
-   SDL_memset(&FileBox, 0, sizeof(FilesBoxInfo));
+   memset(&FileBox, 0, sizeof(FilesBoxInfo));
    GetSurfView(FilesBoxWH->S,&V1);
 
    FileBox.bSortFilesDirs = SortFilesDirs;
