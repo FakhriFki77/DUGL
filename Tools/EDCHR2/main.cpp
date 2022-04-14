@@ -717,7 +717,7 @@ void GphBDrawMap(GraphBox *Me) {
 		backView.MinY = DebY+1;
 		backView.MaxX = DebX+LargRect-1;
 		backView.MaxY = DebY+HautRect-1;
-		SetSurfView(&CurSurf, &backView); // set the new view
+		SetSurfViewBounds(&CurSurf, &backView); // set the new view
 
 		GetSurfView(BackSurf, &backSurfView);
 		GetSurfView(BackSurf, &saveBackView);
@@ -728,14 +728,14 @@ void GphBDrawMap(GraphBox *Me) {
 			backSurfView.MinY = startYBackSurf;
 			backSurfView.MaxX = startXBackSurf + (LargChar-1);
 			backSurfView.MaxY = startYBackSurf + (HautChar-1);
-			SetSurfView(BackSurf, &backSurfView); // clip view inside
+			SetSurfViewBounds(BackSurf, &backSurfView); // clip view inside
 			if (BackSurf->MaxX < startXBackSurf + (LargChar-1)) { // clip the destination view ?
 				backView.MaxX -= ((startXBackSurf + (LargChar-1)) - BackSurf->MaxX) * zstep;
-				SetSurfView(&CurSurf, &backView); // set the new view
+				SetSurfViewBounds(&CurSurf, &backView); // set the new view
 			}
 			if (BackSurf->MaxY < startYBackSurf + (HautChar-1)) { // clip the destination view ?
 				backView.MaxY -= ((startYBackSurf + (HautChar-1)) - BackSurf->MaxY) * zstep;
-				SetSurfView(&CurSurf, &backView); // set the new view
+				SetSurfViewBounds(&CurSurf, &backView); // set the new view
 			}
 
 			if ((MsButton&MS_LEFT_BUTT) > 0 && (KbFLAG&KB_CTRL_PR) > 0 && Me->MsIn) {
@@ -749,8 +749,8 @@ void GphBDrawMap(GraphBox *Me) {
 
 		}
 		// restore views
-		SetSurfView(&CurSurf, &saveView);
-		SetSurfView(BackSurf, &saveBackView);
+		SetSurfViewBounds(&CurSurf, &saveView);
+		SetSurfViewBounds(BackSurf, &saveBackView);
 	}
 
 }
