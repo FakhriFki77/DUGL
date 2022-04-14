@@ -44,7 +44,7 @@ GLOBAL _QBlue16Mask,_QGreen16Mask,_QRed16Mask
 
 
 ; GLOBAL Constants
-Prec					EQU	12
+Prec				EQU	12
 MaxResV				EQU	2048
 MaxDblSidePolyPts	EQU	128
 BlendMask			EQU	0x1f
@@ -52,7 +52,7 @@ CMaskB_RGB16		EQU	0x1f	 ; blue bits 0->4
 CMaskG_RGB16		EQU	0x3f<<5  ; green bits 5->10
 CMaskR_RGB16		EQU	0x1f<<11 ; red bits 11->15
 MaxDeltaDim			EQU	1<< (31-Prec)
-SurfUtilSize		EQU     80
+SurfUtilSize		EQU	80
 
 BITS 32
 
@@ -235,13 +235,13 @@ _DgClear16:
 		PUSH		EDI
 
 		MOVD		xmm0,[EBP+clrcol16]
-		MOV         EDX,[_SizeSurf]
-		PSHUFLW	    xmm0,xmm0,0
-		MOV         EDI,[_rlfb]
-		PUNPCKLQDQ  xmm0,xmm0
-		XOR         ECX,ECX
-		SHR         EDX,1
-		MOVD        EAX,xmm0
+		MOV			EDX,[_SizeSurf]
+		MOV			EDI,[_rlfb]
+		PSHUFLW		xmm0,xmm0,0
+		XOR			ECX,ECX
+		PUNPCKLQDQ	xmm0,xmm0
+		SHR			EDX,1
+		MOVD		EAX,xmm0
 
 		@SolidHLineSSE16
 
@@ -1878,124 +1878,121 @@ SECTION	.bss   ALIGN=32
 ; Main DGSurf
 ; All graphic functions render on DGSurf pointed here
 _CurSurf:
-_ScanLine				RESD    1
-_rlfb					RESD    1
-_OrgX					RESD    1
-_OrgY					RESD    1
-_MaxX					RESD    1
-_MaxY					RESD    1
-_MinX					RESD    1
-_MinY					RESD    1;-----------------------
-_Mask					RESD    1
-_ResH					RESD    1
-_ResV					RESD    1
-_vlfb					RESD    1
-_NegScanLine			RESD    1
-_OffVMem				RESD    1
-_BitsPixel			    RESD    1
-_SizeSurf				RESD    1;-----------------------
+_ScanLine				RESD	1
+_rlfb					RESD	1
+_OrgX					RESD	1
+_OrgY					RESD	1
+_MaxX					RESD	1
+_MaxY					RESD	1
+_MinX					RESD	1
+_MinY					RESD	1;-----------------------
+_Mask					RESD	1
+_ResH					RESD	1
+_ResV					RESD	1
+_vlfb					RESD	1
+_NegScanLine			RESD	1
+_OffVMem				RESD	1
+_BitsPixel			    RESD	1
+_SizeSurf				RESD	1;-----------------------
 ; source DgSurf mainly used to point to texture, sprites ..
 _SrcSurf:
-SScanLine				RESD    1
-Srlfb					RESD    1
-SOrgX					RESD    1
-SOrgY					RESD    1
-SMaxX					RESD    1
-SMaxY					RESD    1
-SMinX					RESD    1
-SMinY					RESD    1;-----------------------
-SMask					RESD    1
-SResH					RESD    1
-SResV					RESD    1
-Svlfb					RESD    1
-SNegScanLine			RESD    1
-SOffVMem				RESD    1
-SBitsPixel			    RESD    1
-SSizeSurf				RESD    1;-----------------------
-XP1		        	    RESD	1
-YP1		        	    RESD	1
-XP2		        	    RESD	1
-YP2		        	    RESD	1
-XP3		        	    RESD	1
-YP3		        	    RESD	1
-Plus		    		RESD	1
-Temp0	        	    RESD	1;-----------------------
-XT1		        	    RESD	1
-YT1		        	    RESD	1
-XT2		        	    RESD	1
-YT2		        	    RESD	1
-Col1	        		RESD	1
-Col2	        		RESD	1
-revCol	        	    RESD	1
-_CurViewVSurf		    RESD	1;-----------------------
-PMaxX		    		RESD	1
-PMaxY		    		RESD	1
-PMinX		    		RESD	1
-PMinY		    		RESD	1
-NbPPoly		    	    RESD	1
-DebYPoly	    		RESD	1
-FinYPoly	    		RESD	1
-PType		    		RESD	1;-----------------------
-PType2		    	    RESD	1
-PPtrListPt	    	    RESD	1
-PntPlusX	    		RESD	1
-PntPlusY	    		RESD	1
-PlusX		    		RESD	1
-PlusY				    RESD	1
-SSSurf		    	    RESD	1
-Plus2		    	    RESD	1;-----------------------
+SScanLine				RESD	1
+Srlfb					RESD	1
+SOrgX					RESD	1
+SOrgY					RESD	1
+SMaxX					RESD	1
+SMaxY					RESD	1
+SMinX					RESD	1
+SMinY					RESD	1;-----------------------
+SMask					RESD	1
+SResH					RESD	1
+SResV					RESD	1
+Svlfb					RESD	1
+SNegScanLine			RESD	1
+SOffVMem				RESD	1
+SBitsPixel			    RESD	1
+SSizeSurf				RESD	1;-----------------------
+XP1						RESD	1
+YP1						RESD	1
+XP2						RESD	1
+YP2						RESD	1
+XP3						RESD	1
+YP3						RESD	1
+Plus					RESD	1
+Temp0					RESD	1;-----------------------
+XT1						RESD	1
+YT1						RESD	1
+XT2						RESD	1
+YT2						RESD	1
+Col1					RESD	1
+Col2					RESD	1
+revCol					RESD	1
+_CurViewVSurf			RESD	1;-----------------------
+PMaxX					RESD	1
+PMaxY					RESD	1
+PMinX					RESD	1
+PMinY					RESD	1
+NbPPoly					RESD	1
+DebYPoly				RESD	1
+FinYPoly				RESD	1
+PType					RESD	1;-----------------------
+PType2					RESD	1
+PPtrListPt				RESD	1
+PntPlusX				RESD	1
+PntPlusY				RESD	1
+PlusX					RESD	1
+PlusY					RESD	1
+SSSurf					RESD	1
+Plus2					RESD	1;-----------------------
 ; poly16 array
-_TPolyAdDeb     	    RESD    MaxResV
-_TPolyAdFin     	    RESD    MaxResV
-_TexXDeb        	    RESD    MaxResV
-_TexXFin        	    RESD    MaxResV
-_TexYDeb        	    RESD    MaxResV
-_TexYFin        	    RESD    MaxResV
-_PColDeb        	    RESD    MaxResV
-_PColFin        	    RESD    MaxResV
+_TPolyAdDeb				RESD	MaxResV
+_TPolyAdFin				RESD	MaxResV
+_TexXDeb				RESD	MaxResV
+_TexXFin				RESD	MaxResV
+_TexYDeb				RESD	MaxResV
+_TexYFin				RESD	MaxResV
+_PColDeb				RESD	MaxResV
+_PColFin				RESD	MaxResV
 
 _CurFONT:
-_FntPtr				    RESD    1
-_FntHaut	    		RESB	1
-_FntDistLgn	    	    RESB	1
-_FntLowPos	    	    RESB	1
-_FntHighPos	    	    RESB	1
-_FntSens	    		RESB	1
-_FntTab		    	    RESB	3 ; 2 DB reserved
-_FntX		    		RESD	1
-_FntY		    		RESD	1
-_FntCol		    	    RESD	1
-FntResv		    	    RESD	2 ;---------------------
-ChHaut		    	    RESD	1
-ChLarg		    	    RESD	1
-ChPlus		    	    RESD	1
-ChPlusX		    	    RESD	1
-ChPlusLgn	    	    RESD	1
-ChAvPlus	    		RESD	1
-ChApPlus	    		RESD	1
-ChAvDecal	    	    RESB	1
-ChNbBitDat	    	    RESB	1
-ChResvW		    	    RESW	1;-----------------------
-QMulSrcBlend		    RESD	4
-QMulDstBlend		    RESD	4;--------------
-WBGR16Blend     	    RESD	4
-clr                     RESD    1
-Temp		    		RESD	1
-Temp2		    		RESD	1
-PlusCol		    	    RESD	1 ;-----------
-PtrTbDegCol	    	    RESD	1
-_PtrTbColConv		    RESD	1
-Temp3           	    RESD    2
-PutSurfMaxX	    	    RESD	1
-PutSurfMaxY	    	    RESD	1
-PutSurfMinX	    	    RESD	1
-PutSurfMinY	    	    RESD	1 ;------------------------
-QBlue16Blend		    RESD	4
-QGreen16Blend		    RESD	4
-QRed16Blend			    RESD	4
-DQ16Mask	    		RESD	4 ;------------------------
+_FntPtr					RESD	1
+_FntHaut				RESB	1
+_FntDistLgn				RESB	1
+_FntLowPos				RESB	1
+_FntHighPos				RESB	1
+_FntSens				RESB	1
+_FntTab					RESB	3 ; 2 DB reserved
+_FntX					RESD	1
+_FntY					RESD	1
+_FntCol					RESD	1
+FntResv					RESD	2 ;---------------------
+ChHaut					RESD	1
+ChLarg					RESD	1
+ChPlus					RESD	1
+ChPlusX					RESD	1
+ChPlusLgn				RESD	1
+ChAvPlus				RESD	1
+ChApPlus				RESD	1
+ChAvDecal				RESB	1
+ChNbBitDat				RESB	1
+ChResvW					RESW	1;-----------------------
+QMulSrcBlend			RESD	4
+QMulDstBlend			RESD	4;--------------
+WBGR16Blend 			RESD	4
+clr						RESD	1
+Temp					RESD	1
+PlusCol					RESD	1
+PtrTbDegCol				RESD	1 ;-----------
+PutSurfMaxX				RESD	1
+PutSurfMaxY				RESD	1
+PutSurfMinX				RESD	1
+PutSurfMinY				RESD	1 ;------------------------
+QBlue16Blend			RESD	4
+QGreen16Blend			RESD	4
+QRed16Blend				RESD	4
+DQ16Mask				RESD	4 ;------------------------
 
-ReversedPtrListPt	RESD		MaxDblSidePolyPts
+ReversedPtrListPt		RESD	MaxDblSidePolyPts
 
 SECTION	.data   ALIGN=32
 
@@ -2032,8 +2029,8 @@ _QGreen16Mask	DW	CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16
 Q2Green16Mask	DW	CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16
 _QRed16Mask		DW	CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16
 Q2Red16Mask		DW	CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16
-WBGR16Mask      DW	CMaskB_RGB16,CMaskG_RGB16,CMaskR_RGB16,CMaskR_RGB16
-W2BGR16Mask     DW	CMaskB_RGB16,CMaskG_RGB16,CMaskR_RGB16,CMaskR_RGB16
+WBGR16Mask		DW	CMaskB_RGB16,CMaskG_RGB16,CMaskR_RGB16,CMaskR_RGB16
+W2BGR16Mask		DW	CMaskB_RGB16,CMaskG_RGB16,CMaskR_RGB16,CMaskR_RGB16
 
 ;* 16bpp poly proc****
 InFillPolyProc16:
