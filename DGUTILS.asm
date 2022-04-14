@@ -25,10 +25,10 @@
         OR          ESI,ESI
         JZ          SHORT %%NoCopySurf
 ; SSE/SSE2
-		MOVDQU		xmm0,[ESI]
-		MOVDQU		xmm1,[ESI+32]
-		MOVDQU		xmm2,[ESI+16]
-		MOVDQU		xmm3,[ESI+48]
+		MOVDQA		xmm0,[ESI]
+		MOVDQA		xmm1,[ESI+32]
+		MOVDQA		xmm2,[ESI+16]
+		MOVDQA		xmm3,[ESI+48]
 
 		MOVDQA		[EDI],xmm0
 		MOVDQA		[EDI+32],xmm1
