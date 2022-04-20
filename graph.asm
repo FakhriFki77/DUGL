@@ -18,7 +18,7 @@
 ;=============================================================================
 
 
-%include "param.asm"
+%include "PARAM.asm"
 %include "DGUTILS.asm"
 
 ; GLOBAL Functions
@@ -52,13 +52,12 @@ CMaskB_RGB16		EQU	0x1f	 ; blue bits 0->4
 CMaskG_RGB16		EQU	0x3f<<5  ; green bits 5->10
 CMaskR_RGB16		EQU	0x1f<<11 ; red bits 11->15
 MaxDeltaDim			EQU	1<< (31-Prec)
-SurfUtilSize		EQU	80
 
 BITS 32
 
 SECTION .text  ALIGN=32
 
-%include "poly.asm"
+%include "Poly.asm"
 %include "poly16.asm"
 %include "fasthzline16.asm"
 %include "hzline16.asm"
@@ -74,8 +73,7 @@ _DgSetCurSurf:
 		PUSH			EDI
 
 		MOV				ESI,[EBP+S1]
-		MOV				EAX,[ESI+_ResV-_CurSurf]
-		CMP				EAX,MaxResV
+		CMP				DWORD [ESI+_ResV-_CurSurf], MaxResV
 		JG				.Error
 		MOV				EDI,_CurSurf
 		CopySurfSNA

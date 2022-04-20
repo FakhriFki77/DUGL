@@ -47,9 +47,8 @@ int png_number_of_passes;
 png_bytep * png_row_pointers;
 
 void CloseOpenPNG() {
-  int y = 0;
   if (png_row_pointers!=NULL) {
-     for (y=0; y<png_height; y++) {
+     for (int y=0; y<png_height; y++) {
        if (png_row_pointers[y]!=NULL) {
          free(png_row_pointers[y]); png_row_pointers[y] = NULL;
        }

@@ -608,9 +608,9 @@ _LineMap16:
 		MOV		EAX,[XP1]
 		MOV		EBP,[_ScanLine] ; plus
 		CMP		EAX,[XP2]
-		JL			.PasSwap1
-      PSHUFD	xmm0,[XP1],(1<<6) | (0<<4) | (3<<2) | (2) ; swap (XP1, YP1) and (XP2, YP2)
-      MOVDQA	[XP1],xmm0
+		JL		.PasSwap1
+        PSHUFD	xmm0,[XP1],(1<<6) | (0<<4) | (3<<2) | (2) ; swap (XP1, YP1) and (XP2, YP2)
+        MOVDQA	[XP1],xmm0
 .PasSwap1:
 		MOV		ESI,[XP2]
 		MOV		EAX,[YP2]
@@ -627,19 +627,19 @@ _LineMap16:
 		SHL		EAX,Prec
 		INC		ESI ; deltaX + 1
 		CDQ
-		IDIV		ESI
-		MOV     	ECX,[XP1]
-		IMUL		EDI,[YP1]
+		IDIV	ESI
+		MOV    	ECX,[XP1]
+		IMUL	EDI,[YP1]
 		MOV		EDX,EAX ; EDX = pnt
-		LEA     	EDI,[EDI+ECX*2] ; += XP1 * 2  (as 16bpp)
+		LEA     EDI,[EDI+ECX*2] ; += XP1 * 2  (as 16bpp)
 		MOV		EAX,[clr]
 		MOV		ECX,ESI ; ECX = deltaX = number pixels
 		ADD		EDI,[_vlfb]
 		MOV		ESI,1 << Prec ; EBX = cpt Dbrd
 ALIGN 4
 .lp_line1:
-		TEST		BL,1
-		JZ		.PasDrl1
+        BT		EBX,0
+        JNC		SHORT .PasDrl1
 		MOV		[EDI],AX
 .PasDrl1:
 		SUB		ESI,EDX
@@ -700,28 +700,28 @@ ALIGN 4
 		LEA		EDI,[EDI+EBP*2]
 		XOR		EBX,EBX ; accum in EBX
 		ADD		EDI,[_vlfb]
-		OR			EDX,EDX
+		OR		EDX,EDX
 		JNS		.line2_pstvPnt
 		MOV		EBX,((1<<Prec)-1)
 .line2_pstvPnt:
 		; draw color
-		MOV		EBP,[clr]
-      MOV		EAX,[Plus2] ; Line Map
+		MOV     EBP,[clr]
+        MOV     EAX,[Plus2] ; Line Map
 ALIGN 4
 .lp_line2:
 		MOV		ESI,EBX
-      SAR		ESI,Prec
-      ADD		EBX,EDX ; + pnt
-      TEST		AL,1
-      JZ			.PasDrPx2
-		MOV		[EDI+ESI*2],BP
+        SAR		ESI,Prec
+        ADD		EBX,EDX ; + pnt
+        BT		EAX,0
+        JNC		SHORT .PasDrPx2
+        MOV     [EDI+ESI*2],BP
 .PasDrPx2:
-      ROR		EAX,1
-      SUB		EDI,[_ScanLine]	  ;  Axe Y Montant -ResH
-      DEC		ECX
-      JNZ		.lp_line2
+        ROR		EAX,1
+        SUB		EDI,[_ScanLine]	  ;  Axe Y Montant -ResH
+        DEC		ECX
+        JNZ		SHORT .lp_line2
 
-      JMP		.FinLine
+        JMP		.FinLine
 ;*******CAS 3 :  (DX=0)*****************************************************
 ;*******CAS 4 :  (DY=0)*****************************************************
 .cas4:
@@ -756,8 +756,9 @@ ALIGN 4
 		MOV		EAX,[clr]
 		ADD		EDI,[_vlfb]
 		LEA		EDI,[EDI+EBP*2]
-.lp4:	TEST		CL,1
-		JZ			.PasDrl4
+.lp4:
+		BT		ECX,0
+		JNC		SHORT .PasDrl4
 		MOV		[EDI],AX
 .PasDrl4:
 		ROR		ECX,1
@@ -1027,12 +1028,12 @@ _LineBlnd16:
             JB     		.cas2
 ;*********CAS 1:  (DX > DY)***************************************************
 .cas1:
-            MOV		EAX,[XP1]
-            MOV		EBP,[_ScanLine] ; plus
-            CMP		EAX,[XP2]
-            JL		.PasSwap1
-            PSHUFD	xmm0,[XP1],(1<<6) | (0<<4) | (3<<2) | (2) ; swap (XP1, YP1) and (XP2, YP2)
-            MOVDQA	[XP1],xmm0
+                MOV		EAX,[XP1]
+                MOV		EBP,[_ScanLine] ; plus
+                CMP		EAX,[XP2]
+                JL		.PasSwap1
+                PSHUFD	xmm0,[XP1],(1<<6) | (0<<4) | (3<<2) | (2) ; swap (XP1, YP1) and (XP2, YP2)
+                MOVDQA	[XP1],xmm0
 .PasSwap1:
 				MOV		ESI,[XP2]
 				MOV		EAX,[YP2]
@@ -1061,23 +1062,22 @@ _LineBlnd16:
 				MOV		ESI,1 << Prec
 ALIGN 4
 .lp_line1:
-				SUB		EBX,EDX
-				MOV		AX,[EDI]
-				MOVD		xmm0,EAX ; B
-				MOVD		xmm1,EAX ; G
-				MOVD		xmm2,EAX  ; R
-				@SolidBlndQ
-				MOVD		EAX,xmm0
-				MOV		[EDI],AX
-				JA		.no_debor1 ; EDI >0
-				ADD		EBX,ESI ; +  (1 << Prec)
-				ADD		EDI,EBP	 ; EDI + = directional ScanLine
-.no_debor1:
-				DEC		ECX
-				LEA		EDI,[EDI+2]	; EDI + 2
-				JNZ		.lp_line1
 
-				JMP		.FinLine
+				PINSRW      xmm0,[EDI],0
+				SUB		    EBX,EDX
+				MOVDQA		xmm1,xmm0 ; B
+				MOVDQA		xmm2,xmm0  ; R
+				@SolidBlndQ
+				PEXTRW      [EDI],xmm0,0
+				JA		    .no_debor1 ; EDI >0
+				ADD		    EBX,ESI ; +  (1 << Prec)
+				ADD		    EDI,EBP	 ; EDI + = directional ScanLine
+.no_debor1:
+				DEC		    ECX
+				LEA		    EDI,[EDI+2]	; EDI + 2
+				JNZ		    .lp_line1
+
+				JMP		    .FinLine
 ;*********CAS 2:  (DY > DX)***************************************************
 .cas2:
 			OR			EDI,EDI
@@ -1133,21 +1133,19 @@ ALIGN 4
 .line2_pstvPnt:
 ALIGN 4
 .lp_line2:
-			MOV		ESI,EBX
-			SAR		ESI,Prec
-			ADD		EBX,EDX ; + pnt
-			MOV		AX,[EDI+ESI*2]
-			MOVD		xmm0,EAX ; B
-			MOVD		xmm1,EAX ; G
-			MOVD		xmm2,EAX  ; R
+			MOV		    ESI,EBX
+			SAR		    ESI,Prec
+			ADD		    EBX,EDX ; + pnt
+			PINSRW      xmm0,[EDI+ESI*2],0 ; B
+			MOVDQA		xmm1,xmm0 ; G
+			MOVDQA		xmm2,xmm0  ; R
 			@SolidBlndQ
-			MOVD		EAX,xmm0
-			MOV		[EDI+ESI*2],AX
-			DEC		ECX
-			LEA		EDI,[EDI+EBP]	  ;  Axe Y Montant -ResH
-			JNZ		SHORT .lp_line2
+			PEXTRW      [EDI+ESI*2],xmm0,0
+			DEC		    ECX
+			LEA		    EDI,[EDI+EBP]	  ;  Axe Y Montant -ResH
+			JNZ		    SHORT .lp_line2
 
-			JMP		.FinLine
+			JMP         .FinLine
 ;*******CAS 3 :  (DX=0)*****************************************************
 ;*******CAS 4 :  (DY=0)*****************************************************
 .cas4:
@@ -1165,42 +1163,35 @@ ALIGN 4
 			JLE		.sava41
 			MOV		[XP1],EAX
 .sava41:
-			MOV		EAX,[_MaxX]
-			CMP		EAX,[XP2]
-			JGE		.sava42
-			MOV		[XP2],EAX
+			MOV         EAX,[_MaxX]
+			CMP		    EAX,[XP2]
+			JGE		    .sava42
+			MOV		    [XP2],EAX
 .sava42:
-			MOV		ESI,[XP2]
-			SUB		ESI,[XP1]
+			MOV		    ESI,[XP2]
+			SUB		    ESI,[XP1]
 			OR			ESI,ESI
 			JZ			.cas5
-			MOV		EDI,[YP1]
-			INC		ESI
+			MOV		    EDI,[YP1]
+			INC		    ESI
 			IMUL		EDI,[_NegScanLine]
 			MOV     	EBP,[XP1]
-		;MOV		EAX,[clr]
-			ADD		EDI,[_vlfb]
+			ADD		    EDI,[_vlfb]
 			XOR     	ECX,ECX
-			LEA		EDI,[EDI+EBP*2]
-		;MOV		EBX,EAX ; save firt 2 bytes color 16bpp
-		;SHL		EAX,16  ; shift high
-		;OR		AX,BX ; assign the 16bpp color to the low
+			LEA		    EDI,[EDI+EBP*2]
 			@SolidBlndHLine16
-		;@SolidHLine16
-			JMP		.FinLine
+			JMP		    .FinLine
 ;********CAS 5 : (DX=0, DY=0)***********************************************
 .cas5:
-			MOV		EDI,[_NegScanLine]
+			MOV		    EDI,[_NegScanLine]
 			IMUL		EDI,[YP1]
-			MOV		EDX,[XP1]
-			ADD		EDI,[_vlfb]
-			MOV		AX,[EDI+EDX*2]
-			MOVD		xmm0,EAX ; B
-			MOVD		xmm1,EAX ; G
-			MOVD		xmm2,EAX	  ; R
+			MOV		    EDX,[XP1]
+			ADD		    EDI,[_vlfb]
+			PINSRW		xmm0,[EDI+EDX*2],0 ; B
+			MOVDQA		xmm1,xmm0 ; G
+			MOVDQA		xmm2,xmm0  ; R
 			@SolidBlndQ
-			MOVD		EAX,xmm0
-			MOV      [EDI+EDX*2],AX
+			PEXTRW      [EDI+EDX*2],xmm0,0
 
 .FinLine:
 		POP		ESI

@@ -66,10 +66,10 @@ bool InitDWorkers(unsigned int MAX_DWorkers) {
 }
 
 void DestroyDWorkers() {
-	unsigned int idx = 0;
+	//unsigned int idx = 0;
 	// destroy all current DWorkers
 	if (countDWorker > 0) {
-		for (idx = 1; countDWorker > 0 && idx <= MaxDWorkersCount; idx++)
+		for (int idx = 1; countDWorker > 0 && idx <= MaxDWorkersCount; idx++)
 			DestroyDWorker(idx);
 	}
 	// free allocated mem
@@ -254,7 +254,6 @@ void DestroyDWorker(unsigned int dworkerID) {
 	paramsDWorker[idx] = NULL;
 	conditionsDWorker[idx] = false;
 }
-
 
 // Mutex ///////////////////////////////////////////////////
 

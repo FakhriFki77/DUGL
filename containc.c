@@ -438,7 +438,7 @@ void TrimGlobStringDSplitString(DSplitString *splitString) {
 	if (splitString->globLen == 0)
 		return;
 	// remove from space,tabs,\n and \r the end
-	for (sdx = splitString->globLen-1; sdx >=0 ; sdx--) {
+	for (sdx = splitString->globLen-1; sdx >0 ; sdx--) {
 		if ((c = splitString->globStr[sdx]) == ' ' || c == '\t' || c == '\n' || c == '\r') {
 			splitString->globStr[sdx] = '\0';
 			splitString->globLen--;
@@ -475,7 +475,7 @@ void TrimStringsDSplitString(DSplitString *splitString) {
 		if (lenCurString == 0)
 			continue;
 		// remove from space,tabs,\n and \r the end
-		for (sdx = lenCurString-1; sdx >=0 ; sdx--) {
+		for (sdx = lenCurString-1; sdx >0 ; sdx--) {
 			if ((c = splitString->ListStrings[idx][sdx]) == ' ' || c == '\t' || c == '\n' || c == '\r')
 				splitString->ListStrings[idx][sdx] = '\0';
 			else
