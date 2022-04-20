@@ -4,7 +4,6 @@
 /*  23 march 2022 : first release */
 
 #include <stdio.h>
-#include <conio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "DUGL.h"
@@ -24,6 +23,7 @@ bool SynchScreen=false;
 bool pauseHello=false;
 bool exitApp=false;
 bool takeScreenShot=false;
+bool requestRenderMutex=false;
 // synch buffers
 char EventsLoopSynchBuff[SIZE_SYNCH_BUFF];
 char RenderSynchBuff[SIZE_SYNCH_BUFF];
@@ -78,6 +78,7 @@ int main (int argc, char ** argv)
         DgQuit();
         exit(-1);
     }
+
 
     // install timer and keyborad handler
     DgInstallTimer(500);
@@ -151,13 +152,16 @@ int main (int argc, char ** argv)
 
 		// esc exit
         if (exitApp) {
-        	// it's safer to wait the render DWorker to finish before exiting
-			//WaitDWorker(renderWorkerID);
 			break;
         }
 		// need screen shot
 		if (takeScreenShot) {
-			LockDMutex(renderMutex); // wait image ready
+            // first try to lock renderMutex,
+            // if fail, wait until rendering DWorker set requestRenderMutex to false, and execute a DelayMs(10) to free the renderMutex
+            if(!TryLockDMutex(renderMutex)) {
+                for (requestRenderMutex = true;requestRenderMutex;);
+                LockDMutex(renderMutex);
+            }
 			SaveBMP16(RendSurf,(char*)"HelloWorld.bmp");
 			takeScreenShot = false;
 			UnlockDMutex(renderMutex);
@@ -166,7 +170,7 @@ int main (int argc, char ** argv)
 		DgCheckEvents();
 	}
 
-	WaitDWorker(renderWorkerID); // wait render DWorker finish
+	WaitDWorker(renderWorkerID); // wait render DWorker finish before exiting
 
 	DestroyDWorker(renderWorkerID);
 	renderWorkerID = 0;
@@ -183,6 +187,7 @@ void RenderWorkerFunc(void *, int ) {
 
 	static float minFps = 0.0f;
 	static float maxFps = 0.0f;
+	unsigned int frames = 0;
 
 	for(;!exitApp;) {
 
@@ -227,9 +232,11 @@ void RenderWorkerFunc(void *, int ) {
 		char text[SIZE_TEXT + 1];
 		SetTextCol(0xffff);
 		if (avgFps!=0.0 && minFps!=0.0 && maxFps!=0.0)
-			OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "MINFPS %i, MAXFPS %i, FPS %i\n",(int)(1.0/minFps),(int)(1.0/maxFps),(int)(1.0/avgFps));
+			OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "MINFPS %i, MAXFPS %i, FPS %i\n", (int)(1.0/minFps),(int)(1.0/maxFps),(int)(1.0/avgFps));
 		else
 			OutText16Mode("FPS ???\n", AJ_RIGHT);
+
+		OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "Frames %u, AVG FPS %0.3f\n", frames,(float)(frames)/SynchAccTime(RenderSynchBuff));
 
 		ClearText();
 		OutText16ModeFormat(AJ_LEFT, text, SIZE_TEXT, "Esc    Exit\nF5     Vertical Synch: %s\nSpace  Pause: %s", (SynchScreen)?"ON":"OFF", (pauseHello)?"ON":"OFF");
@@ -269,5 +276,10 @@ void RenderWorkerFunc(void *, int ) {
 
 		DgUpdateWindow();
 		UnlockDMutex(renderMutex);
+		if (requestRenderMutex) {
+            requestRenderMutex = false;
+            DelayMs(10); // wait for 10 ms to allow the renderMutex to be token by another thread or DWorker
+		}
+		frames++;
 	}
 }
