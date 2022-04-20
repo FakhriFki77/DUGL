@@ -136,6 +136,16 @@ typedef struct
     SDL_mutex   *mutex;
 } DMutex;
 
+// DSound
+
+typedef struct DSoundState {
+    DSound              *sound;
+    unsigned int        volume;
+    unsigned int        position;
+    bool                paused;
+    bool                loop;
+} DSoundState;
+
 // GLOBAL Events Handling
 extern SDL_mutex *mutexEvents;
 void DgScanEvents(SDL_Event *event);

@@ -64,6 +64,7 @@
 		<Compiler>
 			<Add option="-march=pentium-m" />
 		</Compiler>
+		<Unit filename="DAUDIO.h" />
 		<Unit filename="DCONTAIN.h" />
 		<Unit filename="DCONV.h" />
 		<Unit filename="DCORE.h" />
@@ -88,6 +89,9 @@
 		<Unit filename="Poly.asm">
 			<Option compile="0" />
 			<Option link="0" />
+		</Unit>
+		<Unit filename="audioc.c">
+			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="containc.c">
 			<Option compilerVar="CC" />

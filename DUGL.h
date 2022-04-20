@@ -31,6 +31,7 @@
 #include "DMATH3D.h"
 #include "DWORKER.h"
 #include "DCONTAIN.h"
+#include "DAUDIO.h"
 
 #endif // DUGL_H_INCLUDED
 
