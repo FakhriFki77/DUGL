@@ -57,8 +57,8 @@ int DgInit()
 
     SDL_AddEventWatch(SDLEventHandler, NULL);
     if (!InitDWorkers(0)) {
-		return 0;
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "failed to init DWorkers\n");
+		return 0;
     }
     enableDoubleBuff = DEFAULT_DBLBUFF_ENABLED;
 
@@ -214,7 +214,7 @@ void DgSetEnabledDoubleBuff(bool dblBuffEnabled) {
 		}
 
 		enableDoubleBuff = false;
-	} else if (enableDoubleBuff && !dblBuffEnabled) { // enable
+	} else if (!enableDoubleBuff && dblBuffEnabled) { // enable
 		if (!CreateSurf(&RendFrontSurf, RendSurf->ResH, RendSurf->ResV, 16))
 			return; // failed to enable double buff
 
@@ -265,12 +265,14 @@ int CreateSurf(DgSurf **S, int ResHz, int ResVt, char BitsPixel)
     int cvlfb;
     int pixelsize = GetPixelSize(BitsPixel);
 
-    if ((*S = (DgSurf*)SDL_SIMDAlloc(sizeof(DgSurf))) == NULL)
+	if (pixelsize==0 || ResHz<=1 || ResVt<=1) return 0;
+
+    if ((*S = (DgSurf*)SDL_SIMDAlloc(sizeof(DgSurf)+(ResHz*ResVt*pixelsize))) == NULL)
         return 0;
 
     SDL_memset4(*S, 0, sizeof(DgSurf)/4);
-	if (pixelsize==0 || ResHz<=1 || ResVt<=1) return 0;
-	cvlfb = (int)SDL_SIMDAlloc(ResHz*ResVt*pixelsize);
+
+	cvlfb = (int)(&((char*)(*S))[sizeof(DgSurf)]);
     if (cvlfb != 0)
     {
           (*S)->vlfb=(*S)->rlfb= cvlfb;
@@ -297,7 +299,6 @@ void DestroySurf(DgSurf *S)
 {
     if (S->rlfb!=0)
     {
-        SDL_SIMDFree((void*)S->rlfb);
         SDL_memset4(S, 0, sizeof(DgSurf)/4);
         SDL_SIMDFree((void*)S);
 	}
