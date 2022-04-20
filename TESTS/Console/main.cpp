@@ -39,7 +39,6 @@ int main (int argc, char ** argv)
 		printf("DUGL init error\n"); exit(-1);
 	}
 
-
     // create rendering DWorker
     renderWorkerID = CreateDWorker(RenderWorkerFunc, nullptr);
 
@@ -82,18 +81,20 @@ int main (int argc, char ** argv)
 
     // init synchro
     InitSynch(EventsLoopSynchBuff, NULL, 250); // speed of events scan per second, this will be too the max fps detectable
+    // render one frame in separate DWorker (Thread)
+	RunDWorker(renderWorkerID, false);
+
 	// main loop
 	for (int j=0;;j++) {
 		// synchronise event loop
 		// WaitSynch should be used as Synch will cause scan events by milions or bilions time per sec !
 		WaitSynch(EventsLoopSynchBuff, NULL);
 
-		// render one frame in separate DWorker (Thread)
-		RunDWorker(renderWorkerID, false);
-
 		// get key
 		unsigned char keyCode;
 		unsigned int keyFLAG;
+
+		DgCheckEvents();
 
 		GetKey(&keyCode, &keyFLAG);
 		switch (keyCode) {
@@ -112,17 +113,16 @@ int main (int argc, char ** argv)
 		// esc exit
         if (exitApp) {
         	// it's safer to wait the render DWorker to finish before exiting
-			WaitDWorker(renderWorkerID);
+        	if (IsBusyDWorker(renderWorkerID))
+                WaitDWorker(renderWorkerID);
 			break;
         }
 		// need screen shot
 		if (takeScreenShot) {
-			WaitDWorker(renderWorkerID); // wait image ready
 			SaveBMP16(RendSurf,(char*)"Console.bmp");
 			takeScreenShot = false;
 		}
 
-		DgCheckEvents();
 	}
 
 	DestroyDWorker(renderWorkerID);
@@ -224,4 +224,5 @@ void RenderWorkerFunc(void *, int ) {
 	DgUpdateWindow();
 
 	finished = true;
+	for(;!exitApp;) DelayMs(10);
 }
