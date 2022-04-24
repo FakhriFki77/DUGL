@@ -33,11 +33,13 @@ int ListPtTree[] =
 
 // Forest Scene parameters ///////////////
 // trees parameters
+#define ROAD_WIDTH  180 // width of the road on the middle
+#define FOREST_SPACE 300
 #define NUMBER_TREES 15000 //
-#define ROAD_WIDTH  300 // width of the road on the middle
-int TreeYPos=-300; // height of the camera from the ground
+
+int TreeYPos=-130; // height of the camera from the ground
 // tree sorting data
-float TreesSpeed=150.0;//800.0; // speed of the progress of the trees
+float TreesSpeed=1500.0f;//150.0f;//800.0; // speed of the progress of the trees
 // fog parameter
 #define FOG_COLOR RGB16(128,128,128) // grey
 float fogDistance=5000.0;
@@ -53,6 +55,13 @@ typedef struct {
 } Ground;
 
 Ground TGround[256];
+
+// Road
+typedef struct {
+  float z;
+} Road;
+
+Road TRoad[16];
 
 // trees
 typedef struct {
@@ -71,7 +80,7 @@ DgSurf *blurSurf16;
 DgSurf *srcBlurSurf16;
 
 // texture Surf
-DgSurf *TreeSurf16=NULL,*Tree2Surf16=NULL,*Ground1Surf16=NULL,*BackSky16=NULL;
+DgSurf *TreeSurf16=NULL,*Tree2Surf16=NULL,*Ground1Surf16=NULL,*AsphaltSurf16=NULL,*BackSky16=NULL;
 
 //******************
 // FONT
@@ -81,6 +90,7 @@ DgView MsV;
 // display parameters
 bool SynchScreen=false,SmoothDisplay=false,EnableFog=true;
 bool ExitApp = false;
+bool PauseMove = false;
 bool takeScreenShot=false;
 bool requestRenderMutex=false;
 // synch buffers
@@ -151,6 +161,10 @@ int main (int argc, char ** argv)
     if (LoadPNG16(&Ground1Surf16,"../Asset/PICS/groundhd.png")==0) {
 		printf("error loading groundhd.gif\n"); exit(-1);
     }
+    if (LoadPNG16(&AsphaltSurf16,"../Asset/PICS/asphalt2.png")==0) {
+		printf("error loading asphalt2.png\n"); exit(-1);
+    }
+
     if (LoadGIF16(&Tree2Surf16,"../Asset/PICS/tree2.gif")==0) {
 		printf("error loading tree.gif\n"); exit(-1);
     }
@@ -165,6 +179,7 @@ int main (int argc, char ** argv)
     }
 
 	// set Surf origin on the middle of the screen
+
 	SetOrgSurf(RendSurf, RendSurf->ResH/2, RendSurf->ResV/2);
 
     DgSetCurSurf(RendSurf);
@@ -179,14 +194,19 @@ int main (int argc, char ** argv)
 		TGround[i].width=512; TGround[i].height=512;
     }
 
+    // init road
+    for (int i=0;i<16;i++) {
+		TRoad[i].z=512.0*(float)(i);
+    }
+
     // Init Table of Trees
 
     float zTree=8191.0;
     for (int i=0;i<NUMBER_TREES;i++) {
 		if ((rand()%2)==1)
-            TTrees[i].x=(rand()%(2048-200)+ROAD_WIDTH/2);
+            TTrees[i].x=(rand()%(2048-200)+FOREST_SPACE/2);
         else
-            TTrees[i].x=-(rand()%(2048-200)+ROAD_WIDTH/2);
+            TTrees[i].x=-(rand()%(2048-200)+FOREST_SPACE/2);
 
 		TTrees[i].y=TreeYPos;
 		TTrees[i].z=zTree;
@@ -219,13 +239,16 @@ int main (int argc, char ** argv)
 		GetKey(&keyCode, &keyFLAG);
 		switch (keyCode) {
 			case KB_KEY_F5: // F5 vertical synch e/d
-				SynchScreen=(SynchScreen)?false:true;
+				SynchScreen=!SynchScreen;
 				break;
 			case KB_KEY_F6: // F6 blur
-				SmoothDisplay=(SmoothDisplay)?false:true;
+				SmoothDisplay=!SmoothDisplay;
 				break;
 			case KB_KEY_F7 : // F7 fog
-				EnableFog=(EnableFog)?false:true;
+				EnableFog=!EnableFog;
+				break;
+			case KB_KEY_SPACE : // F7 fog
+				PauseMove=!PauseMove;
 				break;
             case KB_KEY_ESC:
                 ExitApp = true;
@@ -289,8 +312,8 @@ int GetFog(float Z) {
 }
 
 void GroundRectRender(Ground *grnd) {
-	if (grnd->z<1.0) {
-		grnd->z+=8191.0;
+	if (grnd->z<-256.0) {
+		grnd->z+=8192.0;
 //		return;
 	}
     int ColorBlnd=GetFog(grnd->z+(float)(grnd->height/2));
@@ -318,9 +341,9 @@ void GroundRectRender(Ground *grnd) {
         TreePts[3].xt=Ground1Surf16->MaxX; TreePts[3].yt=Ground1Surf16->MaxY;
 
         if (EnableFog)
-            Poly16(ListPtTree, Ground1Surf16, POLY16_TEXT_BLND, ColorBlnd);
+            Poly16(ListPtTree, NULL, POLY16_TEXT_BLND, ColorBlnd);
         else
-            Poly16(ListPtTree, nullptr, POLY16_TEXT, 0);
+            Poly16(ListPtTree, NULL, POLY16_TEXT, 0);
     } else {
         // render near grounds by splitting to 4 to avoid ugly not perspective corrected texturing
         float heightStep = (float)(grnd->height)/4.0;
@@ -349,9 +372,79 @@ void GroundRectRender(Ground *grnd) {
                 TreePts[3].xt=Ground1Surf16->MaxX; TreePts[3].yt=TreePts[2].yt;
 
                 if (EnableFog)
-                    Poly16(ListPtTree, Ground1Surf16, POLY16_TEXT_BLND, ColorBlnd);
+                    Poly16(ListPtTree, NULL, POLY16_TEXT_BLND, ColorBlnd);
                 else
-                    Poly16(ListPtTree, nullptr, POLY16_TEXT, 0);
+                    Poly16(ListPtTree, NULL, POLY16_TEXT, 0);
+            }
+        }
+    }
+
+}
+
+void RoadRectRender(Road *rd) {
+	if (rd->z<-256.0) {
+		rd->z+=8192.0;
+//		return;
+	}
+    int ColorBlnd=(rd->z > 20.0) ? GetFog(rd->z) : 0;
+    // render far ground
+    if (rd->z>20.0f+(512.0f*3.0f)) {
+        TreePts[0].z=(int)rd->z;
+        TreePts[0].x=-((ROAD_WIDTH/2)*ScrResH)/TreePts[0].z;
+        TreePts[0].y=(TreeYPos*ScrResV)/TreePts[0].z;
+
+        TreePts[1].z=(int)rd->z;
+        TreePts[1].x=((ROAD_WIDTH/2)*ScrResH)/TreePts[1].z;
+        TreePts[1].y=(TreeYPos*ScrResV)/TreePts[1].z;
+
+        TreePts[2].z=(int)rd->z+512;
+        TreePts[2].x=((ROAD_WIDTH/2)*ScrResH)/TreePts[2].z;
+        TreePts[2].y=(TreeYPos*ScrResV)/TreePts[2].z;
+
+        TreePts[3].z=(int)rd->z+512;
+        TreePts[3].x=-((ROAD_WIDTH/2)*ScrResH)/TreePts[3].z;
+        TreePts[3].y=(TreeYPos*ScrResV)/TreePts[3].z;
+
+        TreePts[0].xt=AsphaltSurf16->MaxX; TreePts[0].yt=AsphaltSurf16->MinY;
+        TreePts[1].xt=AsphaltSurf16->MinX; TreePts[1].yt=AsphaltSurf16->MinY;
+        TreePts[2].xt=AsphaltSurf16->MinX; TreePts[2].yt=AsphaltSurf16->MaxY;
+        TreePts[3].xt=AsphaltSurf16->MaxX; TreePts[3].yt=AsphaltSurf16->MaxY;
+
+        if (EnableFog)
+            Poly16(ListPtTree, NULL, POLY16_MASK_TEXT_BLND, ColorBlnd);
+        else
+            Poly16(ListPtTree, NULL, POLY16_MASK_TEXT, 0);
+    } else {
+        // render near grounds by splitting to 4 to avoid ugly not perspective corrected texturing
+        float heightStep = 512.0f/4.0f;
+        float tyStep = (float)(AsphaltSurf16->MaxY-AsphaltSurf16->MinY)/4.0f;
+        for (int i=0;i<4;i++) {
+            TreePts[0].z=(int)rd->z+(int)((float)(i)*heightStep);
+            if (TreePts[0].z > 1.0f) {
+                TreePts[0].x=-((ROAD_WIDTH/2)*ScrResH)/TreePts[0].z;
+                TreePts[0].y=(TreeYPos*ScrResV)/TreePts[0].z;
+
+                TreePts[1].z= TreePts[0].z;
+                TreePts[1].x=((ROAD_WIDTH/2)*ScrResH)/TreePts[1].z;
+                TreePts[1].y=(TreeYPos*ScrResV)/TreePts[1].z;
+
+                TreePts[2].z=(int)rd->z+(int)((float)(i+1)*heightStep);
+                TreePts[2].x=((ROAD_WIDTH/2)*ScrResH)/TreePts[2].z;
+                TreePts[2].y=(TreeYPos*ScrResV)/TreePts[2].z;
+
+                TreePts[3].z=TreePts[2].z;
+                TreePts[3].x=-((ROAD_WIDTH/2)*ScrResH)/TreePts[3].z;
+                TreePts[3].y=(TreeYPos*ScrResV)/TreePts[3].z;
+
+                TreePts[0].xt=AsphaltSurf16->MaxX; TreePts[0].yt=AsphaltSurf16->MinY+(int)((float)(i)*tyStep);
+                TreePts[1].xt=AsphaltSurf16->MinX; TreePts[1].yt=TreePts[0].yt;
+                TreePts[2].xt=AsphaltSurf16->MinX; TreePts[2].yt=AsphaltSurf16->MinY+(int)((float)(i+1)*tyStep);
+                TreePts[3].xt=AsphaltSurf16->MaxX; TreePts[3].yt=TreePts[2].yt;
+
+                if (EnableFog)
+                    Poly16(ListPtTree, NULL, POLY16_MASK_TEXT_BLND, ColorBlnd);
+                else
+                    Poly16(ListPtTree, NULL, POLY16_MASK_TEXT, 0);
             }
         }
     }
@@ -359,24 +452,24 @@ void GroundRectRender(Ground *grnd) {
 }
 
 // poly Gen
-void PtsRectGenerate(PolyPt *Pts4,DgSurf *S16, int xRect,
-      int yRect,int wRect,int hRect, int rev) {
+void PtsRectGenerate(DgSurf *S16, int xRect,
+      int yRect,int x2Rect,int y2Rect, int rev) {
 
-	Pts4[0].x=xRect; Pts4[0].y=yRect;
-	Pts4[1].x=xRect+wRect; Pts4[1].y=yRect;
-	Pts4[2].x=xRect+wRect; Pts4[2].y=yRect+(hRect);//*2/3);
-	Pts4[3].x=xRect; Pts4[3].y=yRect+hRect;
+	TreePts[0].x=xRect; TreePts[0].y=yRect;
+	TreePts[1].x=x2Rect; TreePts[1].y=yRect;
+	TreePts[2].x=x2Rect; TreePts[2].y=y2Rect;//*2/3);
+	TreePts[3].x=xRect; TreePts[3].y=y2Rect;
 	if (rev) {
-		Pts4[0].xt=S16->MaxX; Pts4[0].yt=S16->MinY;
-		Pts4[1].xt=S16->MinX; Pts4[1].yt=S16->MinY;
-		Pts4[2].xt=S16->MinX; Pts4[2].yt=S16->MaxY;
-		Pts4[3].xt=S16->MaxX; Pts4[3].yt=S16->MaxY;
+		TreePts[0].xt=S16->MaxX; TreePts[0].yt=S16->MinY;
+		TreePts[1].xt=S16->MinX; TreePts[1].yt=S16->MinY;
+		TreePts[2].xt=S16->MinX; TreePts[2].yt=S16->MaxY;
+		TreePts[3].xt=S16->MaxX; TreePts[3].yt=S16->MaxY;
 	}
 	else {
-		Pts4[0].xt=S16->MinX; Pts4[0].yt=S16->MinY;
-		Pts4[1].xt=S16->MaxX; Pts4[1].yt=S16->MinY;
-		Pts4[2].xt=S16->MaxX; Pts4[2].yt=S16->MaxY;
-		Pts4[3].xt=S16->MinX; Pts4[3].yt=S16->MaxY;
+		TreePts[0].xt=S16->MinX; TreePts[0].yt=S16->MinY;
+		TreePts[1].xt=S16->MaxX; TreePts[1].yt=S16->MinY;
+		TreePts[2].xt=S16->MaxX; TreePts[2].yt=S16->MaxY;
+		TreePts[3].xt=S16->MinX; TreePts[3].yt=S16->MaxY;
 	}
 }
 
@@ -402,6 +495,8 @@ void RenderWorkerFunc(void *, int ) {
         avgFps=SynchAverageTime(RenderSynchBuff);
         lastFps=SynchLastTime(RenderSynchBuff);
 
+        if (PauseMove)
+            accTime = 0.0f;
         float moveTime = accTime;
         accTime = 0.0f;
 
@@ -417,7 +512,10 @@ void RenderWorkerFunc(void *, int ) {
         DgClear16(0);
 
         // render ///////////////////
-        ResizeViewSurf16(BackSky16, 0, 0);
+        if (EnableFog)
+            BlndResizeViewSurf16(BackSky16, 0, 0, FOG_COLOR | (25<<24));
+        else
+            ResizeViewSurf16(BackSky16, 0, 0);
         CurSurf.MinY = oldDMinY;
         BackSky16->MinY = oldSMinY;
 
@@ -429,24 +527,34 @@ void RenderWorkerFunc(void *, int ) {
 
         float zstep = TreesSpeed*moveTime;
         // ground rendering
+        DgSetSrcSurf(Ground1Surf16);
         for (int i=0;i<256;i++) {
             GroundRectRender(&TGround[i]);
             TGround[i].z-=zstep;
         }
+        // road rendering
+        DgSetSrcSurf(AsphaltSurf16);
+        for (int i=0;i<16;i++) {
+            RoadRectRender(&TRoad[i]);
+            TRoad[i].z-=zstep;
+        }
 
         // trees rendering
         int nextidxLAstTree=idxLAstTree;
+        char text[100];
         bool treeToBack=false;
 
         for (int i=0;i<NUMBER_TREES;i++) {
+
             // curid is the starting point of the ring buffer list of the tree
             int curid=(idxLAstTree+i)%NUMBER_TREES; // defaul at startup
+
             // if the tree is back the camera then push it to the end of the list
             if (TTrees[curid].z<=20.0) {
                 if ((rand()%2)==1)
-                    TTrees[i].x=(rand()%(2048-200)+ROAD_WIDTH/2);
+                    TTrees[curid].x=(rand()%(2048-200)+FOREST_SPACE/2);
                 else
-                    TTrees[i].x=-(rand()%(2048-200)+ROAD_WIDTH/2);
+                    TTrees[curid].x=-(rand()%(2048-200)+FOREST_SPACE/2);
                 TTrees[curid].y=TreeYPos;
                 TTrees[curid].z=8191.0;
                 TTrees[curid].width=rand()%50+30;
@@ -455,6 +563,7 @@ void RenderWorkerFunc(void *, int ) {
                 if (!treeToBack) { nextidxLAstTree=curid; treeToBack=true; }
                 continue;
             }
+
             // compute tree rectangle parameters
             int treeX=(TTrees[curid].x*ScrResH)/(int)(TTrees[curid].z),
                 treeY=(TTrees[curid].y*ScrResV)/(int)(TTrees[curid].z),
@@ -471,7 +580,6 @@ void RenderWorkerFunc(void *, int ) {
                 FullView = true;
             }
 
-            TTrees[curid].z-=zstep;
 
             // completely out of the view ?
             if (!(treeX > orgView.MaxX || treeY > orgView.MaxY || treeX2 < orgView.MinX || treeY2 < orgView.MinY)) {
@@ -488,13 +596,21 @@ void RenderWorkerFunc(void *, int ) {
                     }
 
                     // generate the quad of the tree
-                    PtsRectGenerate(TreePts, imgTree,
-                      treeX, treeY, treeWidth, treeHeight,  TTrees[curid].rev);
+                    PtsRectGenerate(imgTree,
+                      treeX, treeY, treeX2, treeY2,  TTrees[curid].rev);
 
                     if (EnableFog)
                         Poly16(ListPtTree, imgTree, POLY16_MASK_TEXT_BLND, ColorBlnd);
                     else
                         Poly16(ListPtTree, imgTree, POLY16_MASK_TEXT, ColorBlnd);
+                    /*Line16(&TreePts[0], &TreePts[1], 0xffff);
+                    Line16(&TreePts[1], &TreePts[2], 0xffff);
+                    Line16(&TreePts[2], &TreePts[3], 0xffff);
+                    Line16(&TreePts[0], &TreePts[3], 0xffff);
+                    FntX = treeX; FntY = treeY;
+                    SetTextCol(0xfff0);
+                    OutText16ModeFormat(AJ_CUR_POS,text,100,"%03i",curid);*/
+
                 } else {
                     treeView.MinX = treeX;
                     treeView.MinY = treeY;
@@ -509,6 +625,7 @@ void RenderWorkerFunc(void *, int ) {
                 }
 
             }
+            TTrees[curid].z-=zstep;
         }
 
         if (!FullView) {
@@ -530,18 +647,14 @@ void RenderWorkerFunc(void *, int ) {
         }
 
         ClearText();
-        char text[100];
         SetTextCol(0xffff);
         if (avgFps!=0.0)
-        sprintf(text,"FPS %i\n",(int)(1.0/avgFps));
+            OutText16ModeFormat(AJ_RIGHT,text,100,"FPS %i\n",(int)(1.0/avgFps));
         else
-        sprintf(text,"FPS ???\n");
-        OutText16Mode(text,AJ_RIGHT);
-        sprintf(text,"Trees Count %i",NUMBER_TREES);
-        OutText16Mode(text,AJ_RIGHT);
+            OutText16Mode("FPS ???\n",AJ_RIGHT);
+        OutText16ModeFormat(AJ_RIGHT,text,100,"Trees Count %i",NUMBER_TREES);
         ClearText();
-        sprintf(text,"Esc Exit\nF5  Vertical Synch: %s\nF6  Smooth: %s\nF7  Fog: %s\n", (SynchScreen)?"ON":"OFF", (SmoothDisplay)?"ON":"OFF", (EnableFog)? "ON":"OFF");
-        OutText16Mode(text,AJ_LEFT);
+        OutText16ModeFormat(AJ_LEFT,text,100,"Esc   Exit\nF5    Vertical Synch: %s\nF6    Smooth: %s\nF7    Fog: %s\nSpace Pause: %s\n", (SynchScreen)?"ON":"OFF", (SmoothDisplay)?"ON":"OFF", (EnableFog)? "ON":"OFF", (PauseMove)? "ON":"OFF");
 
         DgUpdateWindow();
 
