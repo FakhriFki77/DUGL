@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="keybmap" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="./keybmap" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="./" />
+				<Option object_output="obj/Debug/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-march=pentium4" />
+					<Add option="-m32" />
+					<Add option="-g" />
+					<Add directory="../../" />
+					<Add directory="../../Addon/DUGLGUI/" />
+				</Compiler>
+				<Linker>
+					<Add option="-static-libstdc++" />
+					<Add option="-static-libgcc" />
+					<Add option="-static" />
+					<Add option="-m32" />
+					<Add library="mingw32" />
+					<Add library="DUGL" />
+					<Add library="DUGLGUI" />
+					<Add library="SDL2Main" />
+					<Add library="SDL2.dll" />
+					<Add directory="../../bin/Debug" />
+					<Add directory="../../Addon/DUGLGUI/bin/Debug" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="./keybmap" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="./" />
+				<Option object_output="obj/Release/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-march=corei7" />
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-O3" />
+					<Add option="-m32" />
+					<Add option="-mwindows" />
+					<Add directory="../../" />
+					<Add directory="../../Addon/DUGLGUI/" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add option="-static-libstdc++" />
+					<Add option="-static-libgcc" />
+					<Add option="-static" />
+					<Add option="-m32" />
+					<Add library="mingw32" />
+					<Add library="DUGL" />
+					<Add library="DUGLGUI" />
+					<Add library="SDL2Main" />
+					<Add library="SDL2.dll" />
+					<Add directory="../../bin/Release" />
+					<Add directory="../../Addon/DUGLGUI/bin/Release" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+			<Add directory="../DUGL" />
+			<Add directory="../DUGLGUI" />
+		</Compiler>
+		<Linker>
+			<Add directory="../DUGL/bin/Release" />
+			<Add directory="C:/SDL2.0.12/lib" />
+		</Linker>
+		<Unit filename="KEYBMAP.cpp" />
+		<Extensions>
+			<code_completion>
+				<search_path add="..\..\DUGL" />
+				<search_path add="..\..\DUGLGUI" />
+			</code_completion>
+			<debugger>
+				<search_path add="bin\Release" />
+			</debugger>
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
