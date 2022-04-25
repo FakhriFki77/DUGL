@@ -11,8 +11,8 @@
 
 // screen resolution
 //int ScrResH=640,ScrResV=480;
-int ScrResH=800,ScrResV=600;
-//int ScrResH=1024,ScrResV=768;
+//int ScrResH=800,ScrResV=600;
+int ScrResH=1024,ScrResV=768;
 //int ScrResH=1280,ScrResV=1024;
 
 // Poly16 point structure
@@ -35,7 +35,7 @@ int ListPtTree[] =
 // trees parameters
 #define ROAD_WIDTH  180 // width of the road on the middle
 #define FOREST_SPACE 300
-#define NUMBER_TREES 15000 //
+#define NUMBER_TREES 10000 //
 
 int TreeYPos=-130; // height of the camera from the ground
 // tree sorting data
@@ -59,6 +59,7 @@ Ground TGround[256];
 // Road
 typedef struct {
   float z;
+  int ashpaltIdx;
 } Road;
 
 Road TRoad[16];
@@ -75,12 +76,24 @@ typedef struct {
 Tree TTrees[NUMBER_TREES];
 int idxLAstTree=0; // defaul at startup
 // render Surf
+unsigned int smoothWorkerID = 0;
+
 int smoothSurfPlusX = 40, smoothSurfPlusY = 40;
 DgSurf *blurSurf16;
 DgSurf *srcBlurSurf16;
 
+// smooth half of srcBlurSurf16
+void SmoothFirstHalf() {
+    Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, 0, srcBlurSurf16->ResV/2);
+}
+// smooth second half of srcBlurSurf16 in another DWorker
+void SmoothWorker(void *, int wid) {
+    Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, srcBlurSurf16->ResV/2+1, srcBlurSurf16->ResV-1);
+}
+
 // texture Surf
-DgSurf *TreeSurf16=NULL,*Tree2Surf16=NULL,*Ground1Surf16=NULL,*AsphaltSurf16=NULL,*BackSky16=NULL;
+DgSurf *TreeSurf16=NULL,*Tree2Surf16=NULL,*Ground1Surf16=NULL,*BackSky16=NULL;
+DgSurf *AsphaltSurf16[3]= { NULL, NULL, NULL };
 
 //******************
 // FONT
@@ -99,10 +112,14 @@ char RenderSynchBuff[SIZE_SYNCH_BUFF];
 // render DWorker
 unsigned int renderWorkerID = 0;
 void *renderMutex = NULL;
+void *dataMutex = NULL;
 void RenderWorkerFunc(void *, int );
+
 float accTime = 0.0f;
 
-//******* utils function ****************************
+//******* utils functions ****************************
+void ForestInit();
+void ForestProgress();
 int GetFog(float Z); // compute the fog color
 // generate the quad polygone of a tree,
 void PtsRectGenerate(PolyPt *Pts4,DgSurf *S16,
@@ -116,23 +133,29 @@ int main (int argc, char ** argv)
 		printf("DUGL init error\n"); exit(-1);
 	}
 
-    // install timer and keyborad handler
-    DgInstallTimer(500);
-
-    if (DgTimerFreq == 0)
-    {
-       DgQuit();
-       printf("Timer error\n");
-       exit(-1);
+    // load GFX
+    if (LoadPNG16(&Ground1Surf16,"../Asset/PICS/groundhd.png")==0) {
+		printf("error loading groundhd.gif\n"); exit(-1);
     }
-    if (!InstallKeyboard()) {
-		DgQuit();
-		exit(-1);
+    if (LoadPNG16(&AsphaltSurf16[0],"../Asset/PICS/asphalt1.png")==0) {
+		printf("error loading asphalt1.png\n"); exit(-1);
+    }
+    if (LoadPNG16(&AsphaltSurf16[1],"../Asset/PICS/asphalt2.png")==0) {
+		printf("error loading asphalt2.png\n"); exit(-1);
+    }
+    if (LoadPNG16(&AsphaltSurf16[2],"../Asset/PICS/asphalt3.png")==0) {
+		printf("error loading asphalt2.png\n"); exit(-1);
+    }
+    if (LoadGIF16(&Tree2Surf16,"../Asset/PICS/tree2.gif")==0) {
+		printf("error loading tree.gif\n"); exit(-1);
     }
 
-    renderWorkerID = CreateDWorker(RenderWorkerFunc, nullptr);
-    renderMutex = CreateDMutex();
-
+    if (LoadPNG16(&BackSky16, "../Asset/PICS/Background.png" /*"backsky.png"*/) == 0) {
+		printf("error loading Background.png\n"); exit(-1);
+    }
+    if (LoadGIF16(&TreeSurf16,"../Asset/PICS/tree.gif")==0) {
+		printf("error loading tree.gif\n"); exit(-1);
+    }
 
     // load font
     if (!LoadFONT(&F1,"../Asset/FONT/helloc.chr")) {
@@ -149,6 +172,30 @@ int main (int argc, char ** argv)
 		printf("no mem\n"); exit(-1);
     }
 
+    renderWorkerID = CreateDWorker(RenderWorkerFunc, nullptr);
+    smoothWorkerID = CreateDWorker(SmoothWorker, nullptr);
+
+    renderMutex = CreateDMutex();
+    dataMutex = CreateDMutex();
+    if (renderWorkerID == 0 || smoothWorkerID == 0 || renderMutex == NULL || dataMutex == NULL) {
+		printf("DWorker threading error\n"); exit(-1);
+    }
+
+    // install timer and keyborad handler
+    DgInstallTimer(500);
+
+    if (DgTimerFreq == 0)
+    {
+       DgQuit();
+       printf("Timer error\n");
+       exit(-1);
+    }
+    if (!InstallKeyboard()) {
+		DgQuit();
+		exit(-1);
+    }
+
+
     // init video mode
     if (!DgInitMainWindowX("FOG16", ScrResH, ScrResV, 16, -1, -1, false, false, false))
     {
@@ -156,27 +203,8 @@ int main (int argc, char ** argv)
         exit(-1);
     }
 
-    // load GFX
-    //if (LoadGIF16(&Ground1Surf16,"../Asset/PICS/ground1.gif")==0) {
-    if (LoadPNG16(&Ground1Surf16,"../Asset/PICS/groundhd.png")==0) {
-		printf("error loading groundhd.gif\n"); exit(-1);
-    }
-    if (LoadPNG16(&AsphaltSurf16,"../Asset/PICS/asphalt2.png")==0) {
-		printf("error loading asphalt2.png\n"); exit(-1);
-    }
-
-    if (LoadGIF16(&Tree2Surf16,"../Asset/PICS/tree2.gif")==0) {
-		printf("error loading tree.gif\n"); exit(-1);
-    }
-
-    if (LoadPNG16(&BackSky16, "../Asset/PICS/Background.png" /*"backsky.png"*/) == 0) {
-		printf("error loading Background.png\n"); exit(-1);
-    }
     SetOrgSurf(BackSky16,BackSky16->ResH/2,BackSky16->ResV/2);
 
-    if (LoadGIF16(&TreeSurf16,"../Asset/PICS/tree.gif")==0) {
-		printf("error loading tree.gif\n"); exit(-1);
-    }
 
 	// set Surf origin on the middle of the screen
 
@@ -186,37 +214,7 @@ int main (int argc, char ** argv)
     DgClear16(0); // clear by black
     DgUpdateWindow();
 
-
-    // Init Table of ground
-    for (int i=0;i<256;i++) {
-		TGround[i].x=-4096+(i&0xf)*512; TGround[i].y=TreeYPos;
-		TGround[i].z=512.0*(float)(i/16)+100.0;
-		TGround[i].width=512; TGround[i].height=512;
-    }
-
-    // init road
-    for (int i=0;i<16;i++) {
-		TRoad[i].z=512.0*(float)(i);
-    }
-
-    // Init Table of Trees
-
-    float zTree=8191.0;
-    for (int i=0;i<NUMBER_TREES;i++) {
-		if ((rand()%2)==1)
-            TTrees[i].x=(rand()%(2048-200)+FOREST_SPACE/2);
-        else
-            TTrees[i].x=-(rand()%(2048-200)+FOREST_SPACE/2);
-
-		TTrees[i].y=TreeYPos;
-		TTrees[i].z=zTree;
-		TTrees[i].width=rand()%50+30;
-		TTrees[i].height=rand()%100+50;
-		TTrees[i].rev=rand()&1;
-		TTrees[i].imgIdx=rand()&1;
-		zTree-=8100.0/(float)(NUMBER_TREES);
-    }
-
+    ForestInit();
 
     // init synchro
     InitSynch(EventsLoopSynchBuff, NULL, 250);
@@ -231,6 +229,8 @@ int main (int argc, char ** argv)
 		WaitSynch(EventsLoopSynchBuff, NULL);
 
 		accTime += SynchAverageTime(EventsLoopSynchBuff);
+
+		ForestProgress();
 
 		// get key
 		unsigned char keyCode;
@@ -278,8 +278,12 @@ int main (int argc, char ** argv)
 	WaitDWorker(renderWorkerID); // wait render DWorker finish
 	DestroyDWorker(renderWorkerID);
 	renderWorkerID = 0;
+	DestroyDWorker(smoothWorkerID);
+	smoothWorkerID = 0;
     DestroyDMutex(renderMutex);
     renderMutex = NULL;
+    DestroyDMutex(dataMutex);
+    dataMutex = NULL;
 
     UninstallKeyboard();
     DgUninstallTimer();
@@ -288,6 +292,9 @@ int main (int argc, char ** argv)
     DestroySurf(Tree2Surf16);
     DestroySurf(Ground1Surf16);
     DestroySurf(BackSky16);
+    DestroySurf(AsphaltSurf16[0]);
+    DestroySurf(AsphaltSurf16[1]);
+    DestroySurf(AsphaltSurf16[2]);
 
     TreeSurf16=NULL;
     Tree2Surf16=NULL;
@@ -298,6 +305,99 @@ int main (int argc, char ** argv)
 
     return 0;
 }
+
+void ForestInit() {
+    // Init Table of ground
+    for (int i=0;i<256;i++) {
+		TGround[i].x=-4096+(i&0xf)*512; TGround[i].y=TreeYPos;
+		TGround[i].z=512.0*(float)(i/16)+100.0;
+		TGround[i].width=512; TGround[i].height=512;
+    }
+
+    // init road
+    for (int i=0;i<16;i++) {
+		TRoad[i].z=512.0*(float)(i);
+		TRoad[i].ashpaltIdx = rand()%3;
+    }
+
+    // Init Table of Trees
+
+    float zTree=8191.0;
+    for (int i=0;i<NUMBER_TREES;i++) {
+		if ((rand()%2)==1)
+            TTrees[i].x=(rand()%(2048-200)+FOREST_SPACE/2);
+        else
+            TTrees[i].x=-(rand()%(2048-200)+FOREST_SPACE/2);
+
+		TTrees[i].y=TreeYPos;
+		TTrees[i].z=zTree;
+		TTrees[i].width=rand()%50+30;
+		TTrees[i].height=rand()%100+50;
+		TTrees[i].rev=rand()&1;
+		TTrees[i].imgIdx=rand()&1;
+		zTree-=8100.0/(float)(NUMBER_TREES);
+    }
+}
+
+void ForestProgress() {
+    LockDMutex(dataMutex);
+
+    if (PauseMove)
+        accTime = 0.0f;
+    float moveTime = accTime;
+    accTime = 0.0f;
+    float zstep = TreesSpeed*moveTime;
+
+    // ground
+    for (int i=0;i<256;i++) {
+        TGround[i].z-=zstep;
+        if (TGround[i].z<-256.0) {
+            TGround[i].z+=8192.0;
+        }
+	}
+
+    // road
+    for (int i=0;i<16;i++) {
+        TRoad[i].z-=zstep;
+        if (TRoad[i].z<-256.0) {
+            TRoad[i].z+=8192.0;
+            TRoad[i].ashpaltIdx = rand()%3;
+        }
+    }
+
+    // trees
+
+    int nextidxLAstTree=idxLAstTree;
+    bool treeToBack=false;
+
+    for (int i=0;i<NUMBER_TREES;i++) {
+
+        // curid is the starting point of the ring buffer list of the tree
+        int curid=(idxLAstTree+i)%NUMBER_TREES; // defaul at startup
+
+        TTrees[curid].z-=zstep;
+
+        // if the tree is back the camera then push it to the end of the list
+        if (TTrees[curid].z<=20.0) {
+            if ((rand()%2)==1)
+                TTrees[curid].x=(rand()%(2048-200)+FOREST_SPACE/2);
+            else
+                TTrees[curid].x=-(rand()%(2048-200)+FOREST_SPACE/2);
+            TTrees[curid].y=TreeYPos;
+            TTrees[curid].z=8191.0;
+            TTrees[curid].width=rand()%50+30;
+            TTrees[curid].height=rand()%100+50;
+            TTrees[curid].rev=rand()&1;
+            if (!treeToBack) { nextidxLAstTree=curid; treeToBack=true; }
+            continue;
+        }
+    }
+
+    idxLAstTree=nextidxLAstTree;
+
+    UnlockDMutex(dataMutex);
+}
+
 
 int GetFog(float Z) {
 	// blending for POLY16_MASK_TEXT_BLND and POLY16_TEXT_BLND
@@ -312,10 +412,6 @@ int GetFog(float Z) {
 }
 
 void GroundRectRender(Ground *grnd) {
-	if (grnd->z<-256.0) {
-		grnd->z+=8192.0;
-//		return;
-	}
     int ColorBlnd=GetFog(grnd->z+(float)(grnd->height/2));
     // render far ground
     if (grnd->z>20.0+(grnd->height*3)) {
@@ -382,11 +478,9 @@ void GroundRectRender(Ground *grnd) {
 }
 
 void RoadRectRender(Road *rd) {
-	if (rd->z<-256.0) {
-		rd->z+=8192.0;
-//		return;
-	}
     int ColorBlnd=(rd->z > 20.0) ? GetFog(rd->z) : 0;
+    DgSurf *myAspahlt = AsphaltSurf16[rd->ashpaltIdx];
+    DgSetSrcSurf(myAspahlt);
     // render far ground
     if (rd->z>20.0f+(512.0f*3.0f)) {
         TreePts[0].z=(int)rd->z;
@@ -405,19 +499,19 @@ void RoadRectRender(Road *rd) {
         TreePts[3].x=-((ROAD_WIDTH/2)*ScrResH)/TreePts[3].z;
         TreePts[3].y=(TreeYPos*ScrResV)/TreePts[3].z;
 
-        TreePts[0].xt=AsphaltSurf16->MaxX; TreePts[0].yt=AsphaltSurf16->MinY;
-        TreePts[1].xt=AsphaltSurf16->MinX; TreePts[1].yt=AsphaltSurf16->MinY;
-        TreePts[2].xt=AsphaltSurf16->MinX; TreePts[2].yt=AsphaltSurf16->MaxY;
-        TreePts[3].xt=AsphaltSurf16->MaxX; TreePts[3].yt=AsphaltSurf16->MaxY;
+        TreePts[0].xt=myAspahlt->MaxX; TreePts[0].yt=myAspahlt->MinY;
+        TreePts[1].xt=myAspahlt->MinX; TreePts[1].yt=myAspahlt->MinY;
+        TreePts[2].xt=myAspahlt->MinX; TreePts[2].yt=myAspahlt->MaxY;
+        TreePts[3].xt=myAspahlt->MaxX; TreePts[3].yt=myAspahlt->MaxY;
 
         if (EnableFog)
             Poly16(ListPtTree, NULL, POLY16_MASK_TEXT_BLND, ColorBlnd);
         else
             Poly16(ListPtTree, NULL, POLY16_MASK_TEXT, 0);
     } else {
-        // render near grounds by splitting to 4 to avoid ugly not perspective corrected texturing
+        // render near road rect by splitting to 4 to avoid ugly not perspective corrected texturing
         float heightStep = 512.0f/4.0f;
-        float tyStep = (float)(AsphaltSurf16->MaxY-AsphaltSurf16->MinY)/4.0f;
+        float tyStep = (float)(myAspahlt->MaxY-myAspahlt->MinY)/4.0f;
         for (int i=0;i<4;i++) {
             TreePts[0].z=(int)rd->z+(int)((float)(i)*heightStep);
             if (TreePts[0].z > 1.0f) {
@@ -436,10 +530,10 @@ void RoadRectRender(Road *rd) {
                 TreePts[3].x=-((ROAD_WIDTH/2)*ScrResH)/TreePts[3].z;
                 TreePts[3].y=(TreeYPos*ScrResV)/TreePts[3].z;
 
-                TreePts[0].xt=AsphaltSurf16->MaxX; TreePts[0].yt=AsphaltSurf16->MinY+(int)((float)(i)*tyStep);
-                TreePts[1].xt=AsphaltSurf16->MinX; TreePts[1].yt=TreePts[0].yt;
-                TreePts[2].xt=AsphaltSurf16->MinX; TreePts[2].yt=AsphaltSurf16->MinY+(int)((float)(i+1)*tyStep);
-                TreePts[3].xt=AsphaltSurf16->MaxX; TreePts[3].yt=TreePts[2].yt;
+                TreePts[0].xt=myAspahlt->MaxX; TreePts[0].yt=myAspahlt->MinY+(int)((float)(i)*tyStep);
+                TreePts[1].xt=myAspahlt->MinX; TreePts[1].yt=TreePts[0].yt;
+                TreePts[2].xt=myAspahlt->MinX; TreePts[2].yt=myAspahlt->MinY+(int)((float)(i+1)*tyStep);
+                TreePts[3].xt=myAspahlt->MaxX; TreePts[3].yt=TreePts[2].yt;
 
                 if (EnableFog)
                     Poly16(ListPtTree, NULL, POLY16_MASK_TEXT_BLND, ColorBlnd);
@@ -476,7 +570,7 @@ void PtsRectGenerate(DgSurf *S16, int xRect,
 
 
 void RenderWorkerFunc(void *, int ) {
-    float avgFps, lastFps;
+    float avgFps;
     bool FullView = false;
     int frames = 0;
 
@@ -493,12 +587,6 @@ void RenderWorkerFunc(void *, int ) {
 
         // synch screen display
         avgFps=SynchAverageTime(RenderSynchBuff);
-        lastFps=SynchLastTime(RenderSynchBuff);
-
-        if (PauseMove)
-            accTime = 0.0f;
-        float moveTime = accTime;
-        accTime = 0.0f;
 
 		LockDMutex(renderMutex); // render lock
 
@@ -509,7 +597,7 @@ void RenderWorkerFunc(void *, int ) {
         int oldSMinY = BackSky16->MinY;
         CurSurf.MinY = -CurSurf.ResV / 8;
         BackSky16->MinY = -BackSky16->ResV / 8;
-        DgClear16(0);
+        //DgClear16(0);
 
         // render ///////////////////
         if (EnableFog)
@@ -525,44 +613,24 @@ void RenderWorkerFunc(void *, int ) {
             FullView = true;
         }
 
-        float zstep = TreesSpeed*moveTime;
+        LockDMutex(dataMutex);
+
         // ground rendering
         DgSetSrcSurf(Ground1Surf16);
         for (int i=0;i<256;i++) {
             GroundRectRender(&TGround[i]);
-            TGround[i].z-=zstep;
         }
         // road rendering
-        DgSetSrcSurf(AsphaltSurf16);
         for (int i=0;i<16;i++) {
             RoadRectRender(&TRoad[i]);
-            TRoad[i].z-=zstep;
         }
 
         // trees rendering
-        int nextidxLAstTree=idxLAstTree;
-        char text[100];
-        bool treeToBack=false;
 
         for (int i=0;i<NUMBER_TREES;i++) {
 
             // curid is the starting point of the ring buffer list of the tree
             int curid=(idxLAstTree+i)%NUMBER_TREES; // defaul at startup
-
-            // if the tree is back the camera then push it to the end of the list
-            if (TTrees[curid].z<=20.0) {
-                if ((rand()%2)==1)
-                    TTrees[curid].x=(rand()%(2048-200)+FOREST_SPACE/2);
-                else
-                    TTrees[curid].x=-(rand()%(2048-200)+FOREST_SPACE/2);
-                TTrees[curid].y=TreeYPos;
-                TTrees[curid].z=8191.0;
-                TTrees[curid].width=rand()%50+30;
-                TTrees[curid].height=rand()%100+50;
-                TTrees[curid].rev=rand()&1;
-                if (!treeToBack) { nextidxLAstTree=curid; treeToBack=true; }
-                continue;
-            }
 
             // compute tree rectangle parameters
             int treeX=(TTrees[curid].x*ScrResH)/(int)(TTrees[curid].z),
@@ -603,13 +671,6 @@ void RenderWorkerFunc(void *, int ) {
                         Poly16(ListPtTree, imgTree, POLY16_MASK_TEXT_BLND, ColorBlnd);
                     else
                         Poly16(ListPtTree, imgTree, POLY16_MASK_TEXT, ColorBlnd);
-                    /*Line16(&TreePts[0], &TreePts[1], 0xffff);
-                    Line16(&TreePts[1], &TreePts[2], 0xffff);
-                    Line16(&TreePts[2], &TreePts[3], 0xffff);
-                    Line16(&TreePts[0], &TreePts[3], 0xffff);
-                    FntX = treeX; FntY = treeY;
-                    SetTextCol(0xfff0);
-                    OutText16ModeFormat(AJ_CUR_POS,text,100,"%03i",curid);*/
 
                 } else {
                     treeView.MinX = treeX;
@@ -623,28 +684,31 @@ void RenderWorkerFunc(void *, int ) {
                     else
                         MaskResizeViewSurf16(imgTree, TTrees[curid].rev, 0);
                 }
-
             }
-            TTrees[curid].z-=zstep;
         }
+
+        UnlockDMutex(dataMutex);
 
         if (!FullView) {
             SetSurfViewBounds(&CurSurf, &orgView);
             FullView = true;
         }
 
-        idxLAstTree=nextidxLAstTree;
-
-
         if (SmoothDisplay) {
 
             DgSetCurSurf(srcBlurSurf16);
             ResizeViewSurf16(RendSurf, 0, 0);
-            BlurSurf16(blurSurf16,srcBlurSurf16);
+            //BlurSurf16(blurSurf16,srcBlurSurf16); // single core
+			// dual core smoothing
+			RunDWorker(smoothWorkerID, false); // lunch DWorker to smooth second half
+			SmoothFirstHalf(); // in parallel to first DWorker - smooth first half
+			WaitDWorker(smoothWorkerID); // wait the thread to finish
 
             DgSetCurSurf(RendSurf);
             ResizeViewSurf16(blurSurf16, 0, 0);
         }
+
+        char text[100];
 
         ClearText();
         SetTextCol(0xffff);
