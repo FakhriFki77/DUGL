@@ -27,9 +27,9 @@
 SDL_AudioSpec wantAudio, haveAudio;
 SDL_AudioDeviceID audDevId = 0;
 #define MAX_SIMULTANOUS_DSOUNDS 64
-#define NO_SOUND_ID 0xffffffff
 DSoundState playingSounds[MAX_SIMULTANOUS_DSOUNDS];
 DSoundState queuedSounds[MAX_SIMULTANOUS_DSOUNDS];
+DSoundState replaceSounds[MAX_SIMULTANOUS_DSOUNDS];
 unsigned int countPlayingSounds = 0;
 
 void DGaudioCallback( void *userData, Uint8 * stream, int len )
@@ -45,10 +45,23 @@ void DGaudioCallback( void *userData, Uint8 * stream, int len )
     // mix sounds
     for (;idx<MAX_SIMULTANOUS_DSOUNDS && HandledSounds < countPlayingSounds; idx++) {
         if (playingSounds[idx].sound != NULL) {
+            // replace if required
+            if (replaceSounds[idx].sound != NULL) {
+                if(replaceSounds[idx].queueInheritEvents) {
+                    replaceSounds[idx].OnFinish = playingSounds[idx].OnFinish;
+                    replaceSounds[idx].OnLoop = playingSounds[idx].OnLoop;
+                    replaceSounds[idx].OnQueue = playingSounds[idx].OnQueue;
+                }
+                playingSounds[idx] = replaceSounds[idx];
+                replaceSounds[idx].sound = NULL;
+            }
+
+            // mix
             if (!playingSounds[idx].paused) {
                 remainLen = playingSounds[idx].sound->length - playingSounds[idx].position;
                 mixLen = (remainLen >= (unsigned int)(len)) ? len : remainLen;
-                SDL_MixAudioFormat(stream,
+                if (mixLen > 0)
+                    SDL_MixAudioFormat(stream,
                                 (Uint8 *)&playingSounds[idx].sound->data[playingSounds[idx].position],
                                 haveAudio.format,
                                 mixLen, (int)playingSounds[idx].volume);
@@ -57,19 +70,32 @@ void DGaudioCallback( void *userData, Uint8 * stream, int len )
                 if (remainLen <= len) {
                     requiredLen = len - remainLen; // bytes not filled yet in stream
                     if (playingSounds[idx].loop) {
-                        if (requiredLen > 0) {
+                        if (!playingSounds[idx].stopEvents && playingSounds[idx].OnLoop != NULL)
+                            playingSounds[idx].OnLoop(idx);
+                        if (requiredLen > 0 && playingSounds[idx].sound != NULL && !playingSounds[idx].paused) {
+                            if (requiredLen > playingSounds[idx].sound->length)
+                                requiredLen = playingSounds[idx].sound->length;
                             playingSounds[idx].position = requiredLen;
                             SDL_MixAudioFormat(&stream[remainLen],
                                 (Uint8 *)&playingSounds[idx].sound->data[0],
                                 haveAudio.format,
                                 requiredLen, (int)playingSounds[idx].volume);
                         } else {
-                            playingSounds[idx].position = 0;
+                            if (playingSounds[idx].sound != NULL)
+                                playingSounds[idx].position = 0;
                         }
+
                     } else {
                         if (queuedSounds[idx].sound != NULL) { // queued ?
-                            if (requiredLen > 0) {
-                                playingSounds[idx] = queuedSounds[idx];
+                            daudioEventCallBack OnQueue = playingSounds[idx].OnQueue;
+                            // inherit current playing sound events ?
+                            if(queuedSounds[idx].queueInheritEvents) {
+                                queuedSounds[idx].OnFinish = playingSounds[idx].OnFinish;
+                                queuedSounds[idx].OnLoop = playingSounds[idx].OnLoop;
+                                queuedSounds[idx].OnQueue = playingSounds[idx].OnQueue;
+                            }
+                            playingSounds[idx] = queuedSounds[idx];
+                            if (requiredLen > 0 && !queuedSounds[idx].paused) {
                                 SDL_MixAudioFormat(&stream[remainLen],
                                     (Uint8 *)&playingSounds[idx].sound->data[0],
                                     haveAudio.format,
@@ -79,9 +105,13 @@ void DGaudioCallback( void *userData, Uint8 * stream, int len )
                                 playingSounds[idx].position = 0;
                             }
                             queuedSounds[idx].sound = NULL;
+                            if (!playingSounds[idx].stopEvents && OnQueue != NULL)
+                                OnQueue(idx);
                         } else {
                             playingSounds[idx].sound = NULL;
                             countPlayingSounds--;
+                            if (!playingSounds[idx].stopEvents && playingSounds[idx].OnFinish != NULL)
+                                playingSounds[idx].OnFinish(idx);
                         }
                     }
                 } else {
@@ -108,6 +138,7 @@ bool InstallDAudio(int frequency, bool stereo) {
 
     SDL_memset(playingSounds, 0, sizeof(DSoundState)*MAX_SIMULTANOUS_DSOUNDS);
     SDL_memset(queuedSounds, 0, sizeof(DSoundState)*MAX_SIMULTANOUS_DSOUNDS);
+    SDL_memset(replaceSounds, 0, sizeof(DSoundState)*MAX_SIMULTANOUS_DSOUNDS);
 
     countPlayingSounds = 0;
 
@@ -120,6 +151,11 @@ void UninstallDAudio() {
         SDL_PauseAudioDevice(audDevId, 1);
         SDL_CloseAudioDevice(audDevId);
         audDevId = 0;
+        SDL_memset(playingSounds, 0, sizeof(DSoundState)*MAX_SIMULTANOUS_DSOUNDS);
+        SDL_memset(queuedSounds, 0, sizeof(DSoundState)*MAX_SIMULTANOUS_DSOUNDS);
+        SDL_memset(replaceSounds, 0, sizeof(DSoundState)*MAX_SIMULTANOUS_DSOUNDS);
+
+        countPlayingSounds = 0;
     }
 }
 
@@ -155,6 +191,7 @@ unsigned int PlayDSound(DSound *sound, unsigned char volume, bool loop, bool pau
         return NO_SOUND_ID;
     }
 
+    SDL_memset(&playingSounds[freeIdx], 0, sizeof(DSoundState));
     playingSounds[freeIdx].sound = sound;
     playingSounds[freeIdx].volume = (((unsigned int)volume+1)*SDL_MIX_MAXVOLUME)>>8;
     playingSounds[freeIdx].loop = loop;
@@ -168,7 +205,7 @@ unsigned int PlayDSound(DSound *sound, unsigned char volume, bool loop, bool pau
 }
 
 void StopDSound(unsigned int soundID) {
-    if (playingSounds[soundID].sound != NULL) {
+    if (soundID < MAX_SIMULTANOUS_DSOUNDS && playingSounds[soundID].sound != NULL) {
         LockDAudio();
         playingSounds[soundID].sound = NULL;
         countPlayingSounds--;
@@ -177,40 +214,101 @@ void StopDSound(unsigned int soundID) {
 }
 
 void SetVolumeDSound(unsigned int soundID, unsigned char volume) {
-    if (playingSounds[soundID].sound != NULL) {
+    if (soundID < MAX_SIMULTANOUS_DSOUNDS && playingSounds[soundID].sound != NULL) {
         playingSounds[soundID].volume = (((unsigned int)volume+1)*SDL_MIX_MAXVOLUME)>>8;
     }
 }
 
 void SetPausedDSound(unsigned int soundID, bool paused) {
-    if (playingSounds[soundID].sound != NULL) {
+    if (soundID < MAX_SIMULTANOUS_DSOUNDS && playingSounds[soundID].sound != NULL) {
         playingSounds[soundID].paused = paused;
     }
 }
 
 void SetLoopingDSound(unsigned int soundID, bool loop) {
-    if (playingSounds[soundID].sound != NULL) {
+    if (soundID < MAX_SIMULTANOUS_DSOUNDS && playingSounds[soundID].sound != NULL) {
         playingSounds[soundID].loop = loop;
     }
 }
 
-void QueueDSound(unsigned int soundID, DSound *sound, unsigned char volume, bool loop, bool paused) {
+void SetStopEventsDSound(unsigned int soundID, bool stopEvents) {
+    if (soundID < MAX_SIMULTANOUS_DSOUNDS && playingSounds[soundID].sound != NULL) {
+        playingSounds[soundID].stopEvents = stopEvents;
+    }
+}
+
+DSoundState* GetPlayingStateDSound(unsigned int soundID) {
+    if (soundID<MAX_SIMULTANOUS_DSOUNDS) {
+        return &playingSounds[soundID];
+    }
+    return NULL;
+}
+
+void SetEventsDSound(unsigned int soundID, daudioEventCallBack OnFinish, daudioEventCallBack OnLoop, daudioEventCallBack OnQueue) {
+    if (soundID < MAX_SIMULTANOUS_DSOUNDS) {
+        LockDAudio();
+        if (playingSounds[soundID].sound != NULL) {
+            playingSounds[soundID].OnFinish = OnFinish;
+            playingSounds[soundID].OnLoop = OnLoop;
+            playingSounds[soundID].OnQueue = OnQueue;
+        }
+        UnlockDAudio();
+    }
+}
+
+bool QueueDSound(unsigned int soundID, DSound *sound, unsigned char volume, bool loop, bool paused, bool inheritEvents) {
+    bool res = false;
     LockDAudio();
     if (playingSounds[soundID].sound != NULL && queuedSounds[soundID].sound == NULL) {
+        SDL_memset(&queuedSounds[soundID], 0, sizeof(DSoundState));
         queuedSounds[soundID].sound = sound;
         queuedSounds[soundID].volume = (((unsigned int)volume+1)*SDL_MIX_MAXVOLUME)>>8;
         queuedSounds[soundID].loop = loop;
         queuedSounds[soundID].position = 0;
         queuedSounds[soundID].paused = paused;
+        queuedSounds[soundID].queueInheritEvents = inheritEvents;
+        res = true;
     }
     UnlockDAudio();
+    return res;
+}
+
+bool ReplaceDSound(unsigned int *soundID, DSound *sound, unsigned char volume, bool loop, bool paused, bool inheritEvents) {
+    bool res = false;
+    LockDAudio();
+    if (*soundID < MAX_SIMULTANOUS_DSOUNDS && playingSounds[*soundID].sound != NULL) {
+        SDL_memset(&replaceSounds[*soundID], 0, sizeof(DSoundState));
+        replaceSounds[*soundID].sound = sound;
+        replaceSounds[*soundID].volume = (((unsigned int)volume+1)*SDL_MIX_MAXVOLUME)>>8;
+        replaceSounds[*soundID].loop = loop;
+        replaceSounds[*soundID].position = 0;
+        replaceSounds[*soundID].paused = paused;
+        replaceSounds[*soundID].queueInheritEvents = inheritEvents;
+        res = true;
+    } else { // no sound playing ? add new playing sound
+        *soundID = PlayDSound(sound, volume, loop, paused);
+    }
+    UnlockDAudio();
+    return res;
 }
 
 bool IsQueuedDSound(unsigned int soundID) {
     bool res = false;
-    LockDAudio();
-    res = (queuedSounds[soundID].sound == NULL);
-    UnlockDAudio();
+    if (soundID < MAX_SIMULTANOUS_DSOUNDS) {
+        LockDAudio();
+        res = (queuedSounds[soundID].sound != NULL);
+        UnlockDAudio();
+    }
+    return res;
+}
+
+bool IsPlayingDSound(unsigned int soundID) {
+    bool res = false;
+    if (soundID < MAX_SIMULTANOUS_DSOUNDS) {
+        LockDAudio();
+        res = (playingSounds[soundID].sound != NULL);
+        UnlockDAudio();
+    }
     return res;
 }
 
