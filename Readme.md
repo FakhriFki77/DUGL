@@ -53,17 +53,22 @@ You need to (1) Go to **Global compilers Settings** => **Other settings** => **A
 
 
 ### Screenshots ###
+
 **HelloWorld**
-![Forest](./screenshots/HelloWorld.png)
+
+![HelloWorld](https://github.com/FakhriFki77/DUGL/blob/main/Screenshots/HelloWorld.png)
 
 **Forest**
-![Forest](./screenshots/forest.png)
+
+![Forest](https://github.com/FakhriFki77/DUGL/blob/main/Screenshots/forest.png)
 
 **keybmap**
-![Forest](./screenshots/keybmap.png)
+
+![keybmap](https://github.com/FakhriFki77/DUGL/blob/main/Screenshots/keybmap.png)
 
 **Edchr2**
-![Forest](./screenshots/Edchr2.png)
+
+![Echr2](https://github.com/FakhriFki77/DUGL/blob/main/Screenshots/Edchr2.png)
 
 
 ### Contact ###
