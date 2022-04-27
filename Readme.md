@@ -52,6 +52,20 @@ Compiling asm sources:
 You need to (1) Go to **Global compilers Settings** => **Other settings** => **Advanced options..** (2) Add two new **Source ext** "asm" and "ASM" (3) Select the **Command** "Compile single file to object file" and (4) set the **Command line macro:** to "nasm $file -f win32 -Ox -o $object"
 
 
+### Screenshots ###
+**HelloWorld**
+![Forest](./screenshots/HelloWorld.png)
+
+**Forest**
+![Forest](./screenshots/forest.png)
+
+**keybmap**
+![Forest](./screenshots/keybmap.png)
+
+**Edchr2**
+![Forest](./screenshots/Edchr2.png)
+
+
 ### Contact ###
 
 Please feel free to email the author(s) - libdugl@hotmail.com
