@@ -197,14 +197,14 @@ int main (int argc, char ** argv)
 
 
     // init video mode
-    if (!DgInitMainWindowX("FOG16", ScrResH, ScrResV, 16, -1, -1, false, false, false))
+    if (!DgInitMainWindowX("Forest", ScrResH, ScrResV, 16, -1, -1, false, false, false))
     {
         DgQuit();
         exit(-1);
     }
 
     SetOrgSurf(BackSky16,BackSky16->ResH/2,BackSky16->ResV/2);
-
+    DgSetWindowIcone(Tree2Surf16);
 
 	// set Surf origin on the middle of the screen
 
@@ -221,6 +221,8 @@ int main (int argc, char ** argv)
     InitSynch(RenderSynchBuff, NULL, 60);
     // lunch rendering loop
 	RunDWorker(renderWorkerID, false);
+	unsigned int LastDgTime = DgTime;
+	float revTimerFreq = 1.0f/(float)(DgTimerFreq);
 
 	//DgQuit();
 	// main loop
@@ -228,9 +230,11 @@ int main (int argc, char ** argv)
 		// synchronise event loop
 		WaitSynch(EventsLoopSynchBuff, NULL);
 
-		accTime += SynchAverageTime(EventsLoopSynchBuff);
-
-		ForestProgress();
+		if (DgTime != LastDgTime) {
+            accTime += (float)(DgTime-LastDgTime)*revTimerFreq; //SynchAverageTime(EventsLoopSynchBuff);
+            LastDgTime = DgTime;
+            ForestProgress();
+		}
 
 		// get key
 		unsigned char keyCode;
@@ -342,8 +346,11 @@ void ForestInit() {
 void ForestProgress() {
     LockDMutex(dataMutex);
 
-    if (PauseMove)
+    if (PauseMove || accTime <= 0.0f) {
         accTime = 0.0f;
+        UnlockDMutex(dataMutex);
+        return;
+    }
     float moveTime = accTime;
     accTime = 0.0f;
     float zstep = TreesSpeed*moveTime;
