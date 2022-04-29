@@ -178,6 +178,14 @@ void DgCheckEvents() {
     SDL_PumpEvents();
 }
 
+void DgSetWindowIcone(DgSurf *S) {
+    if (window != NULL) {
+        SDL_Surface *surf16Icone = SDL_CreateRGBSurfaceWithFormatFrom((void*)(S->rlfb), S->ResH, S->ResV, 16, S->ResH*2, SDL_PIXELFORMAT_RGB565);
+        SDL_SetWindowIcon(window, surf16Icone);
+        SDL_FreeSurface(surf16Icone);
+    }
+}
+
 void DgUpdateWindow()
 {
 	SDL_Surface *tmpSDLSurf = surf16bpp;

@@ -79,6 +79,8 @@ void DgCheckEvents();
 // Set/Get Double buffers or screen swap when DgUpdateWindow is called
 void DgSetEnabledDoubleBuff(bool dblBuffEnabled);
 bool DgGetEnabledDoubleBuff();
+// set window icone
+void DgSetWindowIcone(DgSurf *S);
 
 // DgSurf handling ========================
 
