@@ -17,7 +17,6 @@
 					<Add option="-m32" />
 					<Add option="-g" />
 					<Add directory="../../" />
-					<Add directory="../../Addon/DUGLGUI/" />
 				</Compiler>
 				<Linker>
 					<Add option="-static-libstdc++" />
@@ -26,11 +25,9 @@
 					<Add option="-m32" />
 					<Add library="mingw32" />
 					<Add library="DUGL" />
-					<Add library="DUGLGUI" />
 					<Add library="SDL2Main" />
 					<Add library="SDL2.dll" />
 					<Add directory="../../bin/Debug" />
-					<Add directory="../../Addon/DUGLGUI/bin/Debug" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -46,7 +43,6 @@
 					<Add option="-m32" />
 					<Add option="-mwindows" />
 					<Add directory="../../" />
-					<Add directory="../../Addon/DUGLGUI/" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -56,11 +52,9 @@
 					<Add option="-m32" />
 					<Add library="mingw32" />
 					<Add library="DUGL" />
-					<Add library="DUGLGUI" />
 					<Add library="SDL2Main" />
 					<Add library="SDL2.dll" />
 					<Add directory="../../bin/Release" />
-					<Add directory="../../Addon/DUGLGUI/bin/Release" />
 				</Linker>
 			</Target>
 		</Build>
