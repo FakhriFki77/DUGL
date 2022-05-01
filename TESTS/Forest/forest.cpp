@@ -109,6 +109,7 @@ bool requestRenderMutex=false;
 // synch buffers
 char EventsLoopSynchBuff[SIZE_SYNCH_BUFF];
 char RenderSynchBuff[SIZE_SYNCH_BUFF];
+unsigned int LastDgTime;
 // render DWorker
 unsigned int renderWorkerID = 0;
 void *renderMutex = NULL;
@@ -125,6 +126,24 @@ int GetFog(float Z); // compute the fog color
 void PtsRectGenerate(PolyPt *Pts4,DgSurf *S16,
         int xRect, int yRect,int wRect,int hRect, int rev);
 void GroundRectRender(Ground *grnd);
+// event resize
+DgView orgView,treeView;
+bool oldPauseMove = false;
+void ForestWinPreResize(int , int ) {
+    oldPauseMove = PauseMove;
+    PauseMove = true;
+}
+void ForestWinResize(int , int ) {
+	SetOrgSurf(RendSurf, RendSurf->ResH/2, RendSurf->ResV/2);
+    GetSurfView(RendSurf, &orgView);
+    GetSurfView(RendSurf, &treeView);
+	ScrResH=RendSurf->ResH;
+	ScrResV=RendSurf->ResV;
+	// restore old PauseMove
+    PauseMove = oldPauseMove;
+    LastDgTime = DgTime;
+    accTime = 0.0f;
+}
 
 int main (int argc, char ** argv)
 {
@@ -195,20 +214,22 @@ int main (int argc, char ** argv)
 		exit(-1);
     }
 
-
     // init video mode
-    if (!DgInitMainWindowX("Forest", ScrResH, ScrResV, 16, -1, -1, false, false, false))
+    if (!DgInitMainWindowX("Forest", ScrResH, ScrResV, 16, -1, -1, false, false, true))
     {
         DgQuit();
         exit(-1);
     }
-
-    SetOrgSurf(BackSky16,BackSky16->ResH/2,BackSky16->ResV/2);
     DgSetWindowIcone(Tree2Surf16);
+    DgSetMainWindowMinSize(128, 64);
+	DgSetMainWindowResizeCallBack(ForestWinPreResize, ForestWinResize, renderMutex, &requestRenderMutex);
 
 	// set Surf origin on the middle of the screen
 
+    SetOrgSurf(BackSky16,BackSky16->ResH/2,BackSky16->ResV/2);
 	SetOrgSurf(RendSurf, RendSurf->ResH/2, RendSurf->ResV/2);
+    GetSurfView(RendSurf, &orgView);
+    GetSurfView(RendSurf, &treeView);
 
     DgSetCurSurf(RendSurf);
     DgClear16(0); // clear by black
@@ -221,7 +242,7 @@ int main (int argc, char ** argv)
     InitSynch(RenderSynchBuff, NULL, 60);
     // lunch rendering loop
 	RunDWorker(renderWorkerID, false);
-	unsigned int LastDgTime = DgTime;
+	LastDgTime = DgTime;
 	float revTimerFreq = 1.0f/(float)(DgTimerFreq);
 
 	//DgQuit();
@@ -268,7 +289,7 @@ int main (int argc, char ** argv)
             // first try to lock renderMutex,
             // if fail, wait until rendering DWorker set requestRenderMutex to false, and execute a DelayMs(10) to free the renderMutex
             if(!TryLockDMutex(renderMutex)) {
-                for (requestRenderMutex = true;requestRenderMutex;);
+                for (requestRenderMutex = true;requestRenderMutex;) DelayMs(1);
                 LockDMutex(renderMutex);
             }
 			SaveBMP16(RendSurf,(char*)"forest.bmp");
@@ -580,10 +601,6 @@ void RenderWorkerFunc(void *, int ) {
     float avgFps;
     bool FullView = false;
     int frames = 0;
-
-    DgView orgView,treeView;
-    GetSurfView(RendSurf, &orgView);
-    GetSurfView(RendSurf, &treeView);
 
     for(;!ExitApp;) {
         // synchronise
