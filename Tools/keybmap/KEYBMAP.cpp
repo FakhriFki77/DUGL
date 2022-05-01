@@ -372,10 +372,6 @@ int main(int argc,char *argv[])
 		WaitSynch(RenderSynchBuff, NULL);
 
 		ClearSurf16(noir);
-           // create a screenshot
-           // tab + ctrl + shift
-		if (IsKeyDown(KB_KEY_TAB) && (KbFLAG&KB_SHIFT_PR) && (KbFLAG&KB_CTRL_PR))
-              SaveBMP16(&CurSurf,"keybmap.bmp");
 
 		switch (CurProc) {
 			case 0: NormScan(); break;
@@ -391,7 +387,13 @@ int main(int argc,char *argv[])
 		sprintf(s,"LastKey %x, KbFLAG %x",LastKey,KbFLAG);
 		OutText16Mode(s,AJ_MID);
 
+        // create a screenshot
+        // tab + ctrl + shift
+		if (IsKeyDown(KB_KEY_TAB) && (KbFLAG&KB_SHIFT_PR) && (KbFLAG&KB_CTRL_PR))
+              SaveBMP16(&CurSurf,"keybmap.bmp");
+
 		PutMaskSurf16(MsPtr,MsX,MsY,0);
+
 		DgCheckEvents();
 		DgUpdateWindow();
 	}
