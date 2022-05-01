@@ -28,11 +28,15 @@
 
 int SDLEventHandler(void *data, SDL_Event* event);
 
-SDL_Window *window = NULL;
+SDL_Window *DgWindow = NULL;
 SDL_Surface *surfaceW = NULL;
 SDL_mutex *mutexEvents = NULL;
 SDL_Surface *surf16bpp = NULL;
 SDL_Surface *surfFront16bpp = NULL;
+DgWindowResizeCallBack dgWindowResizeCallBack = NULL;
+DgWindowResizeCallBack dgWindowPreResizeCallBack = NULL;
+void *dgResizeWinMutex = NULL;
+bool *dgRequestResizeWinMutex = NULL;
 bool enableDoubleBuff = true;
 
 
@@ -78,18 +82,60 @@ void DgQuit()
         }
     }
     DestroyDWorkers();
-    if (window != NULL) {
-		SDL_DestroyWindow(window);
+    if (DgWindow != NULL) {
+		SDL_DestroyWindow(DgWindow);
 		if (RendSurf!=NULL && RendSurf->rlfb != 0) {
 			DestroySurf(RendSurf);
 			RendSurf = NULL;
+            SDL_FreeSurface(surf16bpp);
+            surf16bpp = NULL;
+
 		}
 		if (RendFrontSurf!=NULL && RendFrontSurf->rlfb != 0) {
 			DestroySurf(RendFrontSurf);
 			RendFrontSurf = NULL;
+            SDL_FreeSurface(surfFront16bpp);
+            surfFront16bpp = NULL;
 		}
     }
     SDL_Quit();
+}
+
+void DgResizeRendSurf(int resH, int resV) {
+    if (DgWindow != NULL) {
+		if (RendSurf!=NULL && RendSurf->rlfb != 0) {
+			DestroySurf(RendSurf);
+			RendSurf = NULL;
+            SDL_FreeSurface(surf16bpp);
+            surf16bpp = NULL;
+
+		}
+		if (enableDoubleBuff && RendFrontSurf!=NULL && RendFrontSurf->rlfb != 0) {
+			DestroySurf(RendFrontSurf);
+			RendFrontSurf = NULL;
+            SDL_FreeSurface(surfFront16bpp);
+            surfFront16bpp = NULL;
+		}
+
+        // recreate the render Surface 16bpp
+        if (!CreateSurf(&RendSurf, resH, resV, 16))
+            return;
+        surf16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendSurf->rlfb), resH, resV, 16, resH*2, SDL_PIXELFORMAT_RGB565);
+        if (surf16bpp == NULL) {
+            SDL_Log("SDL_CreateRGBSurfaceWithFormat() failed: %s", SDL_GetError());
+            return;
+        }
+        if (enableDoubleBuff) {
+            if (!CreateSurf(&RendFrontSurf, resH, resV, 16))
+            return;
+
+            surfFront16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendFrontSurf->rlfb), resH, resV, 16, resH*2, SDL_PIXELFORMAT_RGB565);
+            if (surfFront16bpp == NULL) {
+                SDL_Log("SDL_CreateRGBSurfaceWithFormat() failed: %s", SDL_GetError());
+                return;
+            }
+        }
+    }
 }
 
 int SDLEventHandler(void *data, SDL_Event* event)
@@ -110,7 +156,7 @@ int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, i
     Uint32 FlagCreate = 0;
 
     // Main windows already initialized ?
-    if (window != NULL)
+    if (DgWindow != NULL)
         return 0;
 
     if (BitsPixel != 16 || ResHz <= 1 || ResVt <= 1)
@@ -126,13 +172,13 @@ int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, i
 			FlagCreate |= SDL_WINDOW_RESIZABLE;
     }
 
-    window = SDL_CreateWindow(title, posX, posY, ResHz, ResVt, FlagCreate);
-    if (window == NULL)
+    DgWindow = SDL_CreateWindow(title, posX, posY, ResHz, ResVt, FlagCreate);
+    if (DgWindow == NULL)
     {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Window creation fail : %s\n",SDL_GetError());
         return 0;
     }
-    surfaceW = SDL_GetWindowSurface(window);
+    surfaceW = SDL_GetWindowSurface(DgWindow);
     if (surfaceW == NULL)
     {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Window Surface creation fail : %s\n",SDL_GetError());
@@ -160,18 +206,99 @@ int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, i
     }
 
 	if (FullScreen) {
-		SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+		SDL_SetWindowFullscreen(DgWindow, SDL_WINDOW_FULLSCREEN);
 	}
+
+	if (MsScanEvents == 1) {
+        if (SDL_LockMutex(mutexEvents) == 0) {
+            MsZ = 0;
+            ClearMsEvntsStack();
+            EnableMsEvntsStack();
+            MsScanEvents = 1;
+            if (DgWindow != NULL) {
+                if (DgWindow == SDL_GetMouseFocus()) {
+                    MsInWindow = 1;
+                    SDL_ShowCursor(SDL_DISABLE);
+                } else {
+                    MsInWindow = 0;
+                    SDL_ShowCursor(SDL_ENABLE);
+                }
+                DgView defaultMsView;
+                GetSurfView(RendSurf, &defaultMsView);
+                SetMouseRView(&defaultMsView);
+                if (MsInWindow == 1) {
+                    SDL_GetMouseState(&MsX, &MsY);
+                    iSetMousePos(MsX, MsY);
+                    iPushMsEvent(MS_EVNT_MOUSE_MOVE);
+                }
+            }
+            SDL_UnlockMutex(mutexEvents);
+        }
+	}
+    dgWindowResizeCallBack = NULL;
+    dgWindowPreResizeCallBack = NULL;
+    dgResizeWinMutex = NULL;
+    dgRequestResizeWinMutex = NULL;
 
     return 1;
 }
 
+void DgSetMainWindowSize(int ResHz, int ResVt) {
+    if (DgWindow != NULL) {
+        SDL_SetWindowSize(DgWindow, ResHz, ResVt);
+    }
+}
+
+void DgSetMainWindowMinSize(int minResHz, int minResVt) {
+    if (DgWindow != NULL) {
+        SDL_SetWindowMinimumSize(DgWindow, minResHz, minResVt);
+    }
+}
+
+void DgSetMainWindowMaxSize(int maxResHz, int maxResVt) {
+    if (DgWindow != NULL) {
+        SDL_SetWindowMaximumSize(DgWindow, maxResHz, maxResVt);
+    }
+}
+
+void DgGetMainWindowSize(int *ResHz, int *ResVt) {
+    if (DgWindow != NULL) {
+        SDL_GetWindowSize(DgWindow, ResHz, ResVt);
+    }
+}
+
+void DgGetMainWindowMinSize(int *minResHz, int *minResVt) {
+    if (DgWindow != NULL) {
+        SDL_GetWindowMinimumSize(DgWindow, minResHz, minResVt);
+    }
+}
+
+void DgGetMainWindowMaxSize(int *maxResHz, int *maxResVt) {
+    if (DgWindow != NULL) {
+        SDL_GetWindowMaximumSize(DgWindow, maxResHz, maxResVt);
+    }
+}
+
+void DgSetMainWindowResizeCallBack(DgWindowResizeCallBack preresizeCallBack, DgWindowResizeCallBack resizeCallBack, void *resizeMutex, bool *requestResizeMutex) {
+    if (DgWindow != NULL) {
+        dgWindowResizeCallBack = resizeCallBack;
+        dgWindowPreResizeCallBack = preresizeCallBack;
+        dgResizeWinMutex = resizeMutex;
+        dgRequestResizeWinMutex = requestResizeMutex;
+    }
+}
+
+DgWindowResizeCallBack GetMainWindowResizeCallBack() {
+    return dgWindowResizeCallBack;
+}
+
+
 void DgToggleFullScreen(bool fullScreen) {
-	SDL_SetWindowFullscreen(window, (fullScreen) ? SDL_WINDOW_FULLSCREEN : 0);
+	SDL_SetWindowFullscreen(DgWindow, (fullScreen) ? SDL_WINDOW_FULLSCREEN : 0);
 }
 
 bool DgIsFullScreen() {
-	return ((SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) != 0);
+	return ((SDL_GetWindowFlags(DgWindow) & SDL_WINDOW_FULLSCREEN) != 0);
 }
 
 void DgCheckEvents() {
@@ -179,9 +306,9 @@ void DgCheckEvents() {
 }
 
 void DgSetWindowIcone(DgSurf *S) {
-    if (window != NULL) {
+    if (DgWindow != NULL) {
         SDL_Surface *surf16Icone = SDL_CreateRGBSurfaceWithFormatFrom((void*)(S->rlfb), S->ResH, S->ResV, 16, S->ResH*2, SDL_PIXELFORMAT_RGB565);
-        SDL_SetWindowIcon(window, surf16Icone);
+        SDL_SetWindowIcon(DgWindow, surf16Icone);
         SDL_FreeSurface(surf16Icone);
     }
 }
@@ -190,12 +317,12 @@ void DgUpdateWindow()
 {
 	SDL_Surface *tmpSDLSurf = surf16bpp;
 	DgSurf *tmpSurf;
-	surfaceW = SDL_GetWindowSurface(window);
+	surfaceW = SDL_GetWindowSurface(DgWindow);
 
     if (RendSurf->rlfb != 0 && surfaceW != NULL)
     {
         SDL_BlitSurface( tmpSDLSurf, NULL, surfaceW, NULL );
-		SDL_UpdateWindowSurface(window);
+		SDL_UpdateWindowSurface(DgWindow);
 
 		if (enableDoubleBuff) {
 			tmpSurf = RendSurf;

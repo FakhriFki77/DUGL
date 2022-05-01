@@ -172,6 +172,14 @@ int iGetMsEvent(MouseEvent *MsEvnt);
 void UpdateMouseButtonsState();
 void UpdateCAPS_NUMKbFLAG();
 
+// window
+extern SDL_Window *DgWindow;
+extern DgWindowResizeCallBack dgWindowResizeCallBack;
+extern DgWindowResizeCallBack dgWindowPreResizeCallBack;
+extern void *dgResizeWinMutex;
+extern bool *dgRequestResizeWinMutex;
+void DgResizeRendSurf(int resH, int resV);
+
 // conversion & effect
 
 void ConvB8ToB16Pal(void *BuffImgSrc, void *BuffImgDst, int ImgWidth, int ImgHeight, void *PalRGBA1024);

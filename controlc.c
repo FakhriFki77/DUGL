@@ -312,16 +312,49 @@ void DgScanEvents(SDL_Event *event)
                     MsInWindow = 0;
                     if (MsScanEvents == 1) SDL_ShowCursor(SDL_ENABLE);
                     break;
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                    if (DgWindow != NULL) {
+                        int w = 0, h = 0;
+                        if (dgWindowPreResizeCallBack != NULL) {
+                            dgWindowPreResizeCallBack(RendSurf->ResH, RendSurf->ResV);
+                        }
+                        if (dgResizeWinMutex != NULL) {
+                            if (dgRequestResizeWinMutex == NULL) {
+                                LockDMutex(dgResizeWinMutex);
+                            } else {
+                                if(!TryLockDMutex(dgResizeWinMutex)) {
+                                    // the Delay inside the loop is required to ensure the other thread will be able to modify the bool to false
+                                    for ((*dgRequestResizeWinMutex) = true;(*dgRequestResizeWinMutex) == true;) DelayMs(1);
+                                    LockDMutex(dgResizeWinMutex);
+                                }
+                            }
+                        }
+                        DgGetMainWindowSize(&w, &h);
+                        DgResizeRendSurf(w, h);
+                        // update mouse View
+                        if (MsScanEvents == 1) {
+                            DgView defaultMsView;
+                            GetSurfView(RendSurf, &defaultMsView);
+                            SetMouseRView(&defaultMsView);
+                        }
+                        if (dgWindowResizeCallBack != NULL) {
+                            dgWindowResizeCallBack(w, h);
+                        }
+                        if (dgResizeWinMutex != NULL)
+                            UnlockDMutex(dgResizeWinMutex);
+                    }
+					//printf("Window: Size Changed\n");
+                    break;
                 case SDL_WINDOWEVENT_FOCUS_GAINED:
                     if (KbScanEvents == 1) UpdateCAPS_NUMKbFLAG();
                     DgWindowFocused = 1;
-					printf("Window: Focus Gained\n\n");
+					//printf("Window: Focus Gained\n\n");
                     break;
                 case SDL_WINDOWEVENT_FOCUS_LOST:
                     if (KbScanEvents == 1) UpdateCAPS_NUMKbFLAG();
                     DgWindowFocused = 0;
                     DgWindowFocusLost = 1;
-					printf("Window: Focus Lost event\n\n");
+					//printf("Window: Focus Lost event\n\n");
 
                     break;
             }
@@ -972,6 +1005,24 @@ int  InstallMouse()
         ClearMsEvntsStack();
         EnableMsEvntsStack();
         MsScanEvents = 1;
+        if (DgWindow != NULL) {
+            if (DgWindow == SDL_GetMouseFocus()) {
+                MsInWindow = 1;
+                SDL_ShowCursor(SDL_DISABLE);
+            } else {
+                MsInWindow = 0;
+                SDL_ShowCursor(SDL_ENABLE);
+            }
+            DgView defaultMsView;
+            GetSurfView(RendSurf, &defaultMsView);
+            SetMouseRView(&defaultMsView);
+        }
+        if (MsInWindow == 1) {
+            SDL_GetMouseState(&MsX, &MsY);
+            iSetMousePos(MsX, MsY);
+            iPushMsEvent(MS_EVNT_MOUSE_MOVE);
+        }
+
         SDL_UnlockMutex(mutexEvents);
     }
     return 1;

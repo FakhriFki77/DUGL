@@ -62,12 +62,34 @@ int DgInit();
 // free all ressources allocated to run DUGL
 void DgQuit();
 
+// events
+typedef void (*DgWindowResizeCallBack)(int,int);
 // Init Main DUGL window
 // for BitPixels only is 16 bpp
 // return 1 if success 0 if fail
 int DgInitMainWindow(const char *title, int ResHz, int ResVt, char BitsPixel);
 // extended parameters
 int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, int PosX, int PosY, bool FullScreen, bool Borderless, bool ResizeWin);
+// Set MainWindow size
+void DgSetMainWindowSize(int ResHz, int ResVt);
+// Set MainWindow minimum size
+void DgSetMainWindowMinSize(int minResHz, int minResVt);
+// Set MainWindow maximum size
+void DgSetMainWindowMaxSize(int maxResHz, int maxResVt);
+// Get MainWindow size
+void DgGetMainWindowSize(int *ResHz, int *ResVt);
+// Get MainWindow minimum size
+void DgGetMainWindowMinSize(int *minResHz, int *minResVt);
+// Get MainWindow maximum size
+void DgGetMainWindowMaxSize(int *maxResHz, int *maxResVt);
+// Set MainWindow resize event call back, pass NULL to disable
+// preresizeCallBack is called with old (w, h), resizeCallBack is called with new (w, h)
+// if RendSurf and or RendFrontSurf are accessed by another thread a DMutex locked/unlocked by this thread is required
+// to avoid concurrency problem, if this thread is very fast a boolean activating a Delay of 10msec with this mutex unlocked
+// and setting the boolean to false to tell that the delay of 10 msec started
+void DgSetMainWindowResizeCallBack(DgWindowResizeCallBack preresizeCallBack, DgWindowResizeCallBack resizeCallBack, void *resizeMutex, bool *requestResizeMutex);
+// Get MainWindow resize event call back, return NULL if disabled
+DgWindowResizeCallBack GetMainWindowResizeCallBack();
 // update window with contents of RendSurf, and swap RendFrontSurf and RendSurf
 void DgUpdateWindow();
 // toggle full screen
