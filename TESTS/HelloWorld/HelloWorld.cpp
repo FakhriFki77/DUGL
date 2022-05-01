@@ -159,7 +159,7 @@ int main (int argc, char ** argv)
             // first try to lock renderMutex,
             // if fail, wait until rendering DWorker set requestRenderMutex to false, and execute a DelayMs(10) to free the renderMutex
             if(!TryLockDMutex(renderMutex)) {
-                for (requestRenderMutex = true;requestRenderMutex;);
+                for (requestRenderMutex = true;requestRenderMutex;) DelayMs(1);
                 LockDMutex(renderMutex);
             }
 			SaveBMP16(RendSurf,(char*)"HelloWorld.bmp");
