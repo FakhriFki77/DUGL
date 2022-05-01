@@ -205,19 +205,17 @@ int main()
     DgInit();
 
 
+
     if (!DgInitMainWindowX(SLbFPrinc.StrPtr, ScreenWidth, ScreenHeight, 16, defaultWinX, defaultWinY, false, true, false))
         DgQuit();
+
+    InstallMouse();
 
     DgInstallTimer(500);
     InstallKeyboard();
     SetKbMAP(KM);
-    InstallMouse();
 
     LoadConfig();
-
-    GetSurfView(RendSurf, &MsView);
-    SetMouseRView(&MsView);
-    //SetMouseOrg(RendSurf.ResH / 2, RendSurf.ResV / 2);
 
     SetFONT(&F1);
 
@@ -229,7 +227,7 @@ int main()
 	HELPDlg = CreateMainWinHelpDLG(WH);
 	ABOUTDlg = CreateMainWinAboutDLG(WH);
 
-    FPrinc->AllowMove = false;
+    //FPrinc->AllowMove = false;
 //---- FPrinc
 
 
