@@ -1,5 +1,5 @@
 /*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki
+    Copyright (C) 2023  Fakhri Feki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,10 +26,7 @@ extern "C" {
 // DWorker support =====================================================================
 
 typedef void (*dworkerFunctionPointer)(void*, int);
-#define DWORKERS_DEFAULT_MAX_COUNT	128
 
-bool InitDWorkers(unsigned int MAX_DWorker);
-void DestroyDWorkers();
 unsigned int CreateDWorker(dworkerFunctionPointer workerFunction, void *workerData);
 void RunDWorker(unsigned int dworkerID, bool WaitIfBusy);
 void SetDWorkerDataPtr(unsigned int dworkerID, void *dataPtr);
@@ -40,14 +37,15 @@ void WaitDWorker(unsigned int dworkerID);
 bool WaitTimeOutDWorker(unsigned int dworkerID, unsigned int timeOut);
 void DestroyDWorker(unsigned int dworkerID);
 // Mutex
+#define PDMutex void*
 void *CreateDMutex();
-void  DestroyDMutex(void *DMutexPtr);
-void  LockDMutex(void *DMutexPtr);
-void  UnlockDMutex(void *DMutexPtr);
-bool  TryLockDMutex(void *DMutexPtr);
+void  DestroyDMutex(PDMutex DMutexPtr);
+void  LockDMutex(PDMutex DMutexPtr);
+void  UnlockDMutex(PDMutex DMutexPtr);
+bool  TryLockDMutex(PDMutex DMutexPtr);
 
 #ifdef __cplusplus
-		}  // extern "C" {
+        }  // extern "C" {
 #endif
 
 #endif // DWORKER_H_INCLUDED

@@ -1,5 +1,5 @@
-/*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki
+/*  Dust Ultimate Game Library (DUGL)
+    Copyright (C) 2023  Fakhri Feki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -46,18 +46,18 @@ typedef union {
 } DVEC2i;
 
 typedef union {
-	struct { DVEC4 min;	DVEC4 max; };
-	DVEC4 v[2];
+    struct { DVEC4 min; DVEC4 max; };
+    DVEC4 v[2];
 } DAAMinBBox;
 
 typedef union {
-	struct {
-		DVEC4 front_bottom_left;	DVEC4 front_bottom_right;
-		DVEC4 front_top_right;		DVEC4 front_top_left;
-		DVEC4 back_bottom_left;		DVEC4 back_bottom_right;
-		DVEC4 back_top_right;		DVEC4 back_top_left;
-	};
-	DVEC4 v[8];
+    struct {
+        DVEC4 front_bottom_left;    DVEC4 front_bottom_right;
+        DVEC4 front_top_right;      DVEC4 front_top_left;
+        DVEC4 back_bottom_left;     DVEC4 back_bottom_right;
+        DVEC4 back_top_right;       DVEC4 back_top_left;
+    };
+    DVEC4 v[8];
 } DAABBox;
 
 typedef union {
@@ -130,10 +130,10 @@ void DVEC4MaxXYZ(DVEC4 *v, float *maxXYZRes);
 
 // culling / collision / clipping //////////////////////////////////////
 bool DVEC4InAAMinBBox(DVEC4 *vec4Pos, DAAMinBBox *aaMinBbox);
-#define DVEC4_IN_MASK_X	0x0001
+#define DVEC4_IN_MASK_X 0x0001
 #define DVEC4_IN_MASK_Y 0x0010
-#define DVEC4_IN_MASK_Z	0x0100
-#define DVEC4_IN_MASK_D	0x1000
+#define DVEC4_IN_MASK_Z 0x0100
+#define DVEC4_IN_MASK_D 0x1000
 bool DVEC4MaskInAAMinBBox(DVEC4 *vec4Pos, DAAMinBBox *aaMinBbox, int Mask); // 0x1111 => (d,z,y,x) ex: 0x110 => test in for (z,y)
 
 int DVEC4ArrayIdxCountInAAMinBBox(DVEC4 *vec4Array, int *idxsVec4, int countIdxs, DAAMinBBox *aaMinBbox);
@@ -175,7 +175,7 @@ void DMatrix4MulDVEC4ArrayResDVec2iNT(DMatrix4 *mat4x4, DVEC4 *vec4ArraySrc, int
 
 
 #ifdef __cplusplus
-		}  // extern "C" {
+        }  // extern "C" {
 #endif
 
 #endif // DMATH3D_H_INCLUDED

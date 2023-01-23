@@ -1,5 +1,5 @@
-/*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki
+/*  Dust Ultimate Game Library (DUGL)
+    Copyright (C) 2023  Fakhri Feki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ extern "C" {
 typedef void (*daudioEventCallBack)(unsigned int);
 
 typedef struct DSound {
-	unsigned char       *data;
-	unsigned int        length;
+    unsigned char       *data;
+    unsigned int        length;
 } DSound;
 
 // DSound
@@ -37,9 +37,9 @@ typedef struct DSoundState {
     unsigned int        volume;
     unsigned int        position;
 
-	daudioEventCallBack OnFinish;
-	daudioEventCallBack OnLoop;
-	daudioEventCallBack OnQueue;
+    daudioEventCallBack OnFinish;
+    daudioEventCallBack OnLoop;
+    daudioEventCallBack OnQueue;
 
     bool                paused;
     bool                loop;
@@ -94,7 +94,7 @@ bool IsPlayingDSound(unsigned int soundID);
 unsigned int GetPlayingDSoundCount();
 
 #ifdef __cplusplus
-		}  // extern "C" {
+        }  // extern "C" {
 #endif
 
 

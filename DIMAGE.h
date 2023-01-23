@@ -1,5 +1,5 @@
-/*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki
+/*  Dust Ultimate Game Library (DUGL)
+    Copyright (C) 2023  Fakhri Feki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ int SaveJPG16(DgSurf *S,char *filename,int quality);
 int SaveMemJPG16(DgSurf *S,void **OutJpg, int *SizeOutJpg, int quality);
 
 #ifdef __cplusplus
-		}  // extern "C" {
+        }  // extern "C" {
 #endif
 
 #endif // DIMAGE_H_INCLUDED

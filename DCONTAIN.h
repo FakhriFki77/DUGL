@@ -1,5 +1,5 @@
-/*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki
+/*  Dust Ultimate Game Library (DUGL)
+    Copyright (C) 2023  Fakhri Feki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,11 +27,11 @@ extern "C" {
 // DMemChunk
 
 typedef struct DMemChunk {
-	struct DMemChunk 	*next; // pointer to next Mem Chunk
-	char   			 	*chunkPtr;
-	unsigned int		chunkSize,
-						used,
-						countUsage;
+    struct DMemChunk    *next; // pointer to next Mem Chunk
+    char                *chunkPtr;
+    unsigned int        chunkSize,
+                         used,
+                         countUsage;
 } DMemChunk;
 
 DMemChunk * CreateDMemChunk(unsigned int size);
@@ -44,27 +44,27 @@ void DestroyChainedDMemChunks(DMemChunk * memChunks);
 
 // DSTRDic
 
-#define DHASHSIZE	13
+#define DHASHSIZE   13
 
 typedef struct nodeValListDSTRDic {
-    struct nodeValListDSTRDic 	*next; /* next value node*/
-    char 			*key; /* defined key */
-    void 			*value; /* data pointer*/
+    struct nodeValListDSTRDic   *next; /* next value node*/
+    char            *key; /* defined key */
+    void            *value; /* data pointer*/
 } nodeValListDSTRDic;
 
 typedef struct {
-	nodeValListDSTRDic	**hashtab; /* pointer table */
-	nodeValListDSTRDic	*currentNodeVal;
-	DMemChunk 			*chunks; // chained list of mem chunks, first is the last current
-	unsigned int		defaultDMemChunkSize,
-						hashbits,
-						hashsize,
-						hashmask,
-						firstHashtabIdx,
-						lastHashtabIdx,
-						currentHashtabIdx,
-						currentCountKeys,
-						countKeys;
+    nodeValListDSTRDic  **hashtab; /* pointer table */
+    nodeValListDSTRDic  *currentNodeVal;
+    DMemChunk           *chunks; // chained list of mem chunks, first is the last current
+    unsigned int        defaultDMemChunkSize,
+                        hashbits,
+                        hashsize,
+                        hashmask,
+                        firstHashtabIdx,
+                        lastHashtabIdx,
+                        currentHashtabIdx,
+                        currentCountKeys,
+                        countKeys;
 } DSTRDic;
 
 DSTRDic *CreateDSTRDic(unsigned int memChunkSize, unsigned int hashTabSize); // memChunkSize = 0 => use default size, hashTabSize = 0 default size
@@ -84,17 +84,17 @@ unsigned int DHashStr(char *str);
 
 // DSplitString
 
-#define DEFAULT_DSPLITSTRING_CHARSCOUNT		256
-#define DEFAULT_DSPLITSTRING_GLOBSTRINGSIZE	1024*16
+#define DEFAULT_DSPLITSTRING_CHARSCOUNT     256
+#define DEFAULT_DSPLITSTRING_GLOBSTRINGSIZE 1024*16
 
 typedef struct {
-	char 			*globStr; 				// global buffer of source string to split
-	char			*multiDelim;		// 256 boolean array of chars used as separator
-	unsigned int 	globLen, 		// current length
-					maxGlobLength, 	// max global length
-					maxCountStrings,
-					countStrings; 	// result count of splitted strings
-	char 			**ListStrings;				// result of splitted strings
+    char            *globStr;         // global buffer of source string to split
+    char            *multiDelim;      // 256 boolean array of chars used as separator
+    unsigned int     globLen,         // current length
+                     maxGlobLength,   // max global length
+                     maxCountStrings,
+                     countStrings;    // result count of splitted strings
+    char           **ListStrings;     // result of splitted strings
 } DSplitString;
 
 
@@ -109,23 +109,23 @@ void DestroyDSplitString(DSplitString *splitString);
 // DFileBuffer
 
 typedef struct {
-	FILE 			*m_file;
-	char 			*m_buffRead;
-	unsigned int 	 m_bytesInBuff;
-	unsigned int 	 m_sizeBuff;
-	bool 			 m_EOF;
+    FILE            *m_file;
+    char            *m_buffRead;
+    unsigned int     m_bytesInBuff;
+    unsigned int     m_sizeBuff;
+    bool             m_EOF;
 } DFileBufferReadJob;
 
 typedef struct  {
-	char 			  *m_buffRead;
-	char 			  *m_buffReadWorker;
-	unsigned int 	   m_curPos,
-					   m_bytesInBuff,
-					   m_sizeBuff,
-					   m_readWorkerID;
-	FILE 			  *m_file;
-	DFileBufferReadJob m_ReadJob;
-	bool 			   m_EOF;
+    char              *m_buffRead;
+    char              *m_buffReadWorker;
+    unsigned int       m_curPos,
+                       m_bytesInBuff,
+                       m_sizeBuff,
+                       m_readWorkerID;
+    FILE              *m_file;
+    DFileBufferReadJob m_ReadJob;
+    bool               m_EOF;
 } DFileBuffer;
 
 DFileBuffer* CreateDFileBuffer(unsigned int sizeBuff);
@@ -136,7 +136,7 @@ unsigned int GetLineDFileBuffer(DFileBuffer *ptr, char *line, unsigned int maxLi
 bool IsEndOfFileDFileBuffer(DFileBuffer *ptr);
 
 #ifdef __cplusplus
-		}  // extern "C" {
+        }  // extern "C" {
 #endif
 
 #endif // DCONTAIN_H_INCLUDED

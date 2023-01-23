@@ -1,5 +1,5 @@
-/*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki
+/*  Dust Ultimate Game Library (DUGL)
+    Copyright (C) 2023  Fakhri Feki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ void BlurSurf16(DgSurf *S16Dst, DgSurf *S16Src);
 
 
 #ifdef __cplusplus
-		}  // extern "C" {
+        }  // extern "C" {
 #endif
 
 #endif // DCONV_H_INCLUDED

@@ -1,5 +1,5 @@
-/*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki
+/*  Dust Ultimate Game Library (DUGL)
+    Copyright (C) 2023  Fakhri Feki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ extern "C" {
 typedef struct
 {
     unsigned int TimeHst[SYNCH_HST_SIZE];
-	float Freq,  // freq / per sec
+    float Freq,  // freq / per sec
         LastPos;
     unsigned int FirstTimeValue, LastTimeValue;
     unsigned int NbNullSynch, LastSynchNull, LastNbNullSynch;
@@ -37,19 +37,19 @@ typedef struct
 
 //************FORMAT ** BMP**************************
 typedef struct __attribute__ ((packed))
-{	short 		    Sign; // == 'BM'
- 	unsigned int	SizeFile; // size in bytes of the file
-	short		    Reserved0; // 0
-	short		    Reserved1; // 0
-	unsigned int	DataOffset;
+{   short           Sign; // == 'BM'
+    unsigned int   SizeFile; // size in bytes of the file
+    short           Reserved0; // 0
+    short           Reserved1; // 0
+    unsigned int   DataOffset;
 } HeadBMP;
 typedef struct __attribute__((packed))
-{	unsigned int	SizeInfo, // size in bytes of the info struct
+{   unsigned int    SizeInfo, // size in bytes of the info struct
                     ImgWidth,
                     ImgHeight;
-	short 		    Planes, // == 1
+    short           Planes, // == 1
                     BitsPixel; // bits per pixel
-	unsigned int	Compression, // == 0 no compression
+    unsigned int    Compression, // == 0 no compression
                     SizeCompData, // == 0 no compression or the size in byte of the comp data
                     PixXPerMeter, // == 0
                     PixYPerMeter, // == 0
@@ -59,80 +59,86 @@ typedef struct __attribute__((packed))
 
 //************FORMAT ** PCX**************************
 typedef struct __attribute__((packed))
-{	char 	Sign;
- 	char	Ver;
-	char	Comp;
-	char	BitPixel;
-	short	X1;
-	short	Y1;
-	short	X2;
-	short	Y2;
-	short	ResHzDPI;
-	short	ResVtDPI;
-	char	Pal[48];
-	char	resv;
-	char	NbPlan;
-	short	OctLgImg;
-	short	TypePal;
-	short	ResHz;
-	short	ResVt;
-	char	resv2[54];
+{   char    Sign;
+    char    Ver;
+    char    Comp;
+    char    BitPixel;
+    short   X1;
+    short   Y1;
+    short   X2;
+    short   Y2;
+    short   ResHzDPI;
+    short   ResVtDPI;
+    char    Pal[48];
+    char    resv;
+    char    NbPlan;
+    short   OctLgImg;
+    short   TypePal;
+    short   ResHz;
+    short   ResVt;
+    char    resv2[54];
 } HeadPCX;
 
 //************FORMAT ** GIF**************************
 typedef struct __attribute__((packed))
-{	int  	Sign; // == "GIF8"
- 	short	Ver; // == "7a" | "9a"
-	short	LargEcran;
-	short	HautEcran;
-	char	IndicRes;
-	char	FondCol;
-	char	PAspcRation;
+{   int     Sign; // == "GIF8"
+    short   Ver; // == "7a" | "9a"
+    short   LargEcran;
+    short   HautEcran;
+    char    IndicRes;
+    char    FondCol;
+    char    PAspcRation;
 } HeadGIF;
 
 typedef struct __attribute__((packed))
-{	char	Sign; // == ','
- 	short	XPos;
-	short	YPos;
-	short	ResHz;
-	short	ResVt;
-	char	Indicateur;
+{   char    Sign; // == ','
+    short   XPos;
+    short   YPos;
+    short   ResHz;
+    short   ResVt;
+    char    Indicateur;
 } DescImgGIF;
 
 typedef struct __attribute__((packed))
-{	unsigned char 	SignExt; // == '!'
- 	char		    code;
-	unsigned char	Size;
+{   unsigned char   SignExt; // == '!'
+    char            code;
+    unsigned char   Size;
 } ExtBlock;
 
 // FONT AND CHR FORMAT ================================================
 
 typedef struct
-{	int		        DatCar;
-	char	        PlusX,PlusLgn;
-	unsigned char   Ht,Lg;
+{   int             DatCar;
+    char            PlusX,PlusLgn;
+    unsigned char   Ht,Lg;
 } Caract;
 
 typedef struct
-{	int	       	Sign;  		// = "FCHR"
-	char	    MaxHautFnt,
-		       	MaxHautLgn,
-		       	MinPlusLgn,
-		       	SensFnt;
-	int	       	SizeDataCar,
+{   int         Sign;       // = "FCHR"
+    char        MaxHautFnt,
+                MaxHautLgn,
+                MinPlusLgn,
+                SensFnt;
+    int         SizeDataCar,
                 PtrBuff;
-	int		    Resv[28];
-	Caract	    C[256];
+    int         Resv[28];
+    Caract      C[256];
 } HeadCHR;
 
 // GLOBAL vars
 extern int vlfb,rlfb,OffVMem,ResH,ResV,MaxX,MaxY,MinX,MinY,SizeSurf;
 extern int OrgX,OrgY,NegScanLine;
+// DWorker
+
+#define DWORKERS_DEFAULT_MAX_COUNT  128
+
+bool InitDWorkers(unsigned int MAX_DWorker);
+void DestroyDWorkers();
 
 // mutex
 
 typedef struct
-{	int	       	Sign;  		// = "DMTX"
+{   int         Sign;       // = "DMTX"
     SDL_mutex   *mutex;
 } DMutex;
 

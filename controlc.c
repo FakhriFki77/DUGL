@@ -1,5 +1,5 @@
-/*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki
+/*  Dust Ultimate Game Library (DUGL)
+    Copyright (C) 2023  Fakhri Feki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -297,165 +297,138 @@ unsigned int lastTime_left_ctrlDown = 0;
 unsigned char DgWindowFocused = 0;
 unsigned char DgWindowFocusLost = 0;
 
-void DgScanEvents(SDL_Event *event)
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
-        if (event->type == SDL_WINDOWEVENT)
-        {
+void DgScanEvents(SDL_Event *event) {
+    if (SDL_LockMutex(mutexEvents) == 0) {
+        if (event->type == SDL_WINDOWEVENT) {
             switch (event->window.event) {
-                case SDL_WINDOWEVENT_ENTER:
-                    MsInWindow = 1;
-                    if (MsScanEvents == 1) SDL_ShowCursor(SDL_DISABLE);
-                    break;
-                case SDL_WINDOWEVENT_LEAVE:
-                    MsInWindow = 0;
-                    if (MsScanEvents == 1) SDL_ShowCursor(SDL_ENABLE);
-                    break;
-                case SDL_WINDOWEVENT_SIZE_CHANGED:
-                    if (DgWindow != NULL) {
-                        int w = 0, h = 0;
-                        if (dgWindowPreResizeCallBack != NULL) {
-                            dgWindowPreResizeCallBack(RendSurf->ResH, RendSurf->ResV);
-                        }
-                        if (dgResizeWinMutex != NULL) {
-                            if (dgRequestResizeWinMutex == NULL) {
+            case SDL_WINDOWEVENT_ENTER:
+                MsInWindow = 1;
+                if (MsScanEvents == 1) SDL_ShowCursor(SDL_DISABLE);
+                break;
+            case SDL_WINDOWEVENT_LEAVE:
+                MsInWindow = 0;
+                if (MsScanEvents == 1) SDL_ShowCursor(SDL_ENABLE);
+                break;
+            case SDL_WINDOWEVENT_SIZE_CHANGED:
+                if (DgWindow != NULL) {
+                    int w = 0, h = 0;
+                    if (dgWindowPreResizeCallBack != NULL) {
+                        dgWindowPreResizeCallBack(RendSurf->ResH, RendSurf->ResV);
+                    }
+                    if (dgResizeWinMutex != NULL) {
+                        if (dgRequestResizeWinMutex == NULL) {
+                            LockDMutex(dgResizeWinMutex);
+                        } else {
+                            if(!TryLockDMutex(dgResizeWinMutex)) {
+                                // the Delay inside the loop is required to ensure the other thread will be able to modify the bool to false
+                                for ((*dgRequestResizeWinMutex) = true; (*dgRequestResizeWinMutex) == true;) DelayMs(1);
                                 LockDMutex(dgResizeWinMutex);
-                            } else {
-                                if(!TryLockDMutex(dgResizeWinMutex)) {
-                                    // the Delay inside the loop is required to ensure the other thread will be able to modify the bool to false
-                                    for ((*dgRequestResizeWinMutex) = true;(*dgRequestResizeWinMutex) == true;) DelayMs(1);
-                                    LockDMutex(dgResizeWinMutex);
-                                }
                             }
                         }
-                        DgGetMainWindowSize(&w, &h);
-                        DgResizeRendSurf(w, h);
-                        // update mouse View
-                        if (MsScanEvents == 1) {
-                            DgView defaultMsView;
-                            GetSurfView(RendSurf, &defaultMsView);
-                            SetMouseRView(&defaultMsView);
-                        }
-                        if (dgWindowResizeCallBack != NULL) {
-                            dgWindowResizeCallBack(w, h);
-                        }
-                        if (dgResizeWinMutex != NULL)
-                            UnlockDMutex(dgResizeWinMutex);
                     }
-					//printf("Window: Size Changed\n");
-                    break;
-                case SDL_WINDOWEVENT_FOCUS_GAINED:
-                    if (KbScanEvents == 1) UpdateCAPS_NUMKbFLAG();
-                    DgWindowFocused = 1;
-					//printf("Window: Focus Gained\n\n");
-                    break;
-                case SDL_WINDOWEVENT_FOCUS_LOST:
-                    if (KbScanEvents == 1) UpdateCAPS_NUMKbFLAG();
-                    DgWindowFocused = 0;
-                    DgWindowFocusLost = 1;
-					//printf("Window: Focus Lost event\n\n");
+                    DgGetMainWindowSize(&w, &h);
+                    DgResizeRendSurf(w, h);
+                    // update mouse View
+                    if (MsScanEvents == 1) {
+                        DgView defaultMsView;
+                        GetSurfView(RendSurf, &defaultMsView);
+                        SetMouseRView(&defaultMsView);
+                    }
+                    if (dgWindowResizeCallBack != NULL) {
+                        dgWindowResizeCallBack(w, h);
+                    }
+                    if (dgResizeWinMutex != NULL)
+                        UnlockDMutex(dgResizeWinMutex);
+                }
+                break;
+            case SDL_WINDOWEVENT_FOCUS_GAINED:
+                if (KbScanEvents == 1) UpdateCAPS_NUMKbFLAG();
+                DgWindowFocused = 1;
+                break;
+            case SDL_WINDOWEVENT_FOCUS_LOST:
+                if (KbScanEvents == 1) UpdateCAPS_NUMKbFLAG();
+                DgWindowFocused = 0;
+                DgWindowFocusLost = 1;
 
-                    break;
+                break;
             }
         }
 
-        if (KbScanEvents == 1)
-        {
+        if (KbScanEvents == 1) {
             unsigned int realKeyCode = 0;
-            switch(event->type)
-            {
-                case SDL_KEYDOWN:
-                    // handle the special case of  right alt e6 (alt gr) and left ctrl e0
-                    if (event->key.keysym.scancode == 0xe6 || event->key.keysym.scancode == 0xe0)
-                    {
-                        if (event->key.keysym.scancode == 0xe0) // left Ctrl
-                        {
-                            iPushKbDownEvent((unsigned int)SDLKeybMap[0xe0]);
-                            left_ctrlDown = 1;
-                            lastTime_left_ctrlDown = event->key.timestamp;
-                        }
-                        else if  (event->key.keysym.scancode == 0xe6)
-                        {
-                            // cancel left Ctrl if delta time between last right alt is below 4 ms ?
-                            if (left_ctrlDown == 1 && (event->key.timestamp - lastTime_left_ctrlDown) < 4)
-                                iPushKbReleaseEvent((unsigned int)SDLKeybMap[0xe0]);
-                            iPushKbDownEvent((unsigned int)SDLKeybMap[0xe6]);
-                        }
+            switch(event->type) {
+            case SDL_KEYDOWN:
+                // handle the special case of  right alt e6 (alt gr) and left ctrl e0
+                if (event->key.keysym.scancode == 0xe6 || event->key.keysym.scancode == 0xe0) {
+                    if (event->key.keysym.scancode == 0xe0) { // left Ctrl
+                        iPushKbDownEvent((unsigned int)SDLKeybMap[0xe0]);
+                        left_ctrlDown = 1;
+                        lastTime_left_ctrlDown = event->key.timestamp;
+                    } else if  (event->key.keysym.scancode == 0xe6) {
+                        // cancel left Ctrl if delta time between last right alt is below 4 ms ?
+                        if (left_ctrlDown == 1 && (event->key.timestamp - lastTime_left_ctrlDown) < 4)
+                            iPushKbReleaseEvent((unsigned int)SDLKeybMap[0xe0]);
+                        iPushKbDownEvent((unsigned int)SDLKeybMap[0xe6]);
                     }
-                    else
-                        realKeyCode = (event->key.keysym.scancode <= 0xFF) ? (unsigned int)SDLKeybMap[event->key.keysym.scancode] : 0;
-                    if (realKeyCode > 0)
-                    {
-                        // try to update CAPS and NUM
-                        if (realKeyCode != 0x3a && realKeyCode != 0x45)
-                            UpdateCAPS_NUMKbFLAG();
-                        /*else
-                        {
-                            printf("CAPS or NUM LOCK Key\n");
-                            fflush(stdout);
-                        }*/
-
-                        iPushKbDownEvent(realKeyCode);
-                    }
-
-                    //printf("SDL Key %x  - DOWN - time %i\n", event->key.keysym.scancode, event->key.timestamp);
-                    //fflush(stdout);
-
-                    break;
-                case SDL_KEYUP:
-                    if (event->key.keysym.scancode == 0xe0) // left Ctrl
-                    {
-                        left_ctrlDown = 0;
-                        lastTime_left_ctrlDown = 0;
-                    }
-
+                } else
                     realKeyCode = (event->key.keysym.scancode <= 0xFF) ? (unsigned int)SDLKeybMap[event->key.keysym.scancode] : 0;
-                    if (realKeyCode > 0)
-                        iPushKbReleaseEvent(realKeyCode);
-                    //printf("SDL Key %x  - UP - time %i\n", event->key.keysym.scancode, event->key.timestamp);
-                    //fflush(stdout);
-                    break;
-                default:
-                    break;
+                if (realKeyCode > 0) {
+                    // try to update CAPS and NUM
+                    if (realKeyCode != 0x3a && realKeyCode != 0x45)
+                        UpdateCAPS_NUMKbFLAG();
+
+                    iPushKbDownEvent(realKeyCode);
+                }
+
+                break;
+            case SDL_KEYUP:
+                if (event->key.keysym.scancode == 0xe0) { // left Ctrl
+                    left_ctrlDown = 0;
+                    lastTime_left_ctrlDown = 0;
+                }
+
+                realKeyCode = (event->key.keysym.scancode <= 0xFF) ? (unsigned int)SDLKeybMap[event->key.keysym.scancode] : 0;
+                if (realKeyCode > 0)
+                    iPushKbReleaseEvent(realKeyCode);
+                break;
+            default:
+                break;
             }
         }
 
-        if (MsScanEvents == 1)
-        {
+        if (MsScanEvents == 1) {
             unsigned int msButtonEventID = 0;
-            switch(event->type)
-            {
-                case SDL_MOUSEMOTION:
-                    iSetMousePos(event->motion.x, event->motion.y);
-                    iPushMsEvent(MS_EVNT_MOUSE_MOVE);
-                    break;
-                case SDL_MOUSEBUTTONDOWN:
-                    UpdateMouseButtonsState();
-                    if( event->button.button == SDL_BUTTON_RIGHT)
-                        msButtonEventID = MS_EVNT_RBUTT_PRES;
-                    else if ( event->button.button == SDL_BUTTON_LEFT)
-                        msButtonEventID = MS_EVNT_LBUTT_PRES;
-                    else if ( event->button.button == SDL_BUTTON_MIDDLE)
-                        msButtonEventID = MS_EVNT_MBUTT_PRES;
-                    iPushMsEvent(msButtonEventID);
-                    break;
-                case SDL_MOUSEBUTTONUP:
-                    UpdateMouseButtonsState();
-                    if( event->button.button == SDL_BUTTON_RIGHT)
-                        msButtonEventID = MS_EVNT_RBUTT_RELS;
-                    else if ( event->button.button == SDL_BUTTON_LEFT)
-                        msButtonEventID = MS_EVNT_LBUTT_RELS;
-                    else if ( event->button.button == SDL_BUTTON_MIDDLE)
-                        msButtonEventID = MS_EVNT_MBUTT_RELS;
-                    iPushMsEvent(msButtonEventID);
-                    break;
-                case SDL_MOUSEWHEEL:
-                    MsZ += event->wheel.y;
-                    iPushMsEvent(MS_EVNT_WHEEL_MOVE);
-                    break;
-                default:
-                    break;
+            switch(event->type) {
+            case SDL_MOUSEMOTION:
+                iSetMousePos(event->motion.x, event->motion.y);
+                iPushMsEvent(MS_EVNT_MOUSE_MOVE);
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+                UpdateMouseButtonsState();
+                if( event->button.button == SDL_BUTTON_RIGHT)
+                    msButtonEventID = MS_EVNT_RBUTT_PRES;
+                else if ( event->button.button == SDL_BUTTON_LEFT)
+                    msButtonEventID = MS_EVNT_LBUTT_PRES;
+                else if ( event->button.button == SDL_BUTTON_MIDDLE)
+                    msButtonEventID = MS_EVNT_MBUTT_PRES;
+                iPushMsEvent(msButtonEventID);
+                break;
+            case SDL_MOUSEBUTTONUP:
+                UpdateMouseButtonsState();
+                if( event->button.button == SDL_BUTTON_RIGHT)
+                    msButtonEventID = MS_EVNT_RBUTT_RELS;
+                else if ( event->button.button == SDL_BUTTON_LEFT)
+                    msButtonEventID = MS_EVNT_LBUTT_RELS;
+                else if ( event->button.button == SDL_BUTTON_MIDDLE)
+                    msButtonEventID = MS_EVNT_MBUTT_RELS;
+                iPushMsEvent(msButtonEventID);
+                break;
+            case SDL_MOUSEWHEEL:
+                MsZ += event->wheel.y;
+                iPushMsEvent(MS_EVNT_WHEEL_MOVE);
+                break;
+            default:
+                break;
             }
         }
 
@@ -463,8 +436,7 @@ void DgScanEvents(SDL_Event *event)
     }
 }
 
-void UpdateMouseButtonsState()
-{
+void UpdateMouseButtonsState() {
     Uint32 buttonsMask = SDL_GetMouseState(NULL, NULL);
     MsButton = 0;
     if (buttonsMask & SDL_BUTTON(SDL_BUTTON_RIGHT))
@@ -499,20 +471,17 @@ const int TimeFreqs[10] = { 20, 25, 40, 50, 100, 125, 200, 250, 500, 1000};
 
 Uint32 DgTimeHandler(Uint32 interval, void *param);
 
-void DgInstallTimer(int Freq)
-{
+void DgInstallTimer(int Freq) {
     int nIdx = 0;
     SDL_Log("Installing Timer: requested frequency %i\n\n", Freq);
     printf("Installing Timer: requested frequency %i\n\n", Freq);
-    if (sdl_timer_id != 0)
-    {
+    if (sdl_timer_id != 0) {
         SDL_RemoveTimer(sdl_timer_id);
         sdl_timer_id = 0;
     }
 
     // verify validity
-    if (Freq < MinTimerFreq || Freq > MaxTimerFreq)
-    {
+    if (Freq < MinTimerFreq || Freq > MaxTimerFreq) {
         DgInstallTimer(DefaultTimerFreq);
         return;
     }
@@ -520,13 +489,11 @@ void DgInstallTimer(int Freq)
     DgTime = 0;
     DgTimerFreq = 0;
     // search equal or highest bound
-    for (nIdx = 0; nIdx < TimeFreqsCount; nIdx++)
-    {
+    for (nIdx = 0; nIdx < TimeFreqsCount; nIdx++) {
         if (TimeFreqs[nIdx] == Freq)
             break;
-        else
-            if (TimeFreqs[nIdx] > Freq) // choose always the higher bound
-                break;
+        else if (TimeFreqs[nIdx] > Freq) // choose always the higher bound
+            break;
     }
     // fail ?
     if (nIdx >= TimeFreqsCount)
@@ -535,7 +502,7 @@ void DgInstallTimer(int Freq)
     DgTimerInterval = 1000/TimeFreqs[nIdx];
     DgTime = 0;
     DgPerformanceCounterFreq = SDL_GetPerformanceFrequency();
-	lastPerformanceCounterValue = SDL_GetPerformanceCounter();
+    lastPerformanceCounterValue = SDL_GetPerformanceCounter();
     lastPerformanceCounterRest = 0;
     DgTimerFreq = TimeFreqs[nIdx];
     sdl_timer_id = SDL_AddTimer(DgTimerInterval, DgTimeHandler, NULL);
@@ -543,23 +510,20 @@ void DgInstallTimer(int Freq)
         DgTimerFreq = 0;
 }
 
-Uint32 DgTimeHandler(Uint32 interval, void *param)
-{
-	if (DgTimerFreq>0) {
+Uint32 DgTimeHandler(Uint32 interval, void *param) {
+    if (DgTimerFreq>0) {
         newPerfCounter = SDL_GetPerformanceCounter();
         deltaPerfCounter = (newPerfCounter - lastPerformanceCounterValue + lastPerformanceCounterRest) * (Uint64)(DgTimerFreq);
         lastPerformanceCounterRest = (deltaPerfCounter % DgPerformanceCounterFreq)/(Uint64)(DgTimerFreq);
         DgTime += (unsigned int)(deltaPerfCounter / DgPerformanceCounterFreq);
 
         lastPerformanceCounterValue = newPerfCounter;
-	}
-	return interval;
+    }
+    return interval;
 }
 
-void DgUninstallTimer()
-{
-    if (sdl_timer_id != 0)
-    {
+void DgUninstallTimer() {
+    if (sdl_timer_id != 0) {
         SDL_RemoveTimer(sdl_timer_id);
         sdl_timer_id = 0;
         DgTime = 0;
@@ -571,32 +535,29 @@ void DgUninstallTimer()
 // time Synch
 
 int  InitSynch(void *SynchBuff,int *Pos,float Freq) {
-   SynchTime *ST;
-   if (!DgTimerFreq) return 0;
-   // start Sync
-   StartSynch(SynchBuff,Pos);
-   // save parameters
-   ST=((SynchTime*)(SynchBuff));
-   ST->Freq=Freq;
-   return 1;
+    SynchTime *ST;
+    if (!DgTimerFreq) return 0;
+    // start Sync
+    StartSynch(SynchBuff,Pos);
+    // save parameters
+    ST=((SynchTime*)(SynchBuff));
+    ST->Freq=Freq;
+    return 1;
 }
 
-void InsertTime(SynchTime *ST, unsigned int TimeValue)
-{
+void InsertTime(SynchTime *ST, unsigned int TimeValue) {
     ST->LastTimeValue = TimeValue;
     // Add a new time value
     if (ST->hstNbItems < SYNCH_HST_SIZE) { // time table not yet full ?
-         ST->hstIdxFin = (ST->hstIdxDeb+ST->hstNbItems)&(SYNCH_HST_SIZE-1);
-         ST->hstNbItems++;
-    }
-    else
-    { // time table full
+        ST->hstIdxFin = (ST->hstIdxDeb+ST->hstNbItems)&(SYNCH_HST_SIZE-1);
+        ST->hstNbItems++;
+    } else {
+        // time table full
         ST->hstIdxDeb =(ST->hstIdxDeb+1)&(SYNCH_HST_SIZE-1);
         ST->hstIdxFin = (ST->hstIdxDeb+SYNCH_HST_SIZE-1)&(SYNCH_HST_SIZE-1);
     }
     ST->TimeHst[ST->hstIdxFin] = ST->LastTimeValue;
-    if(ST->hstIdxFin == 0)
-    {
+    if(ST->hstIdxFin == 0) {
         ST->LastNbNullSynch = ST->NbNullSynch;
         ST->NbNullSynch = 0;
     }
@@ -674,11 +635,10 @@ float SynchAverageTime(void *SynchBuff) {
     ST=((SynchTime*)(SynchBuff));
     if (DgTimerFreq == 0 || ST == NULL || ST->hstNbItems < 2)
         return 0.0;
-    for (i=0; i < ST->hstNbItems-1; i++)
-    {
-         idxDeb = (ST->hstIdxDeb+i)&(SYNCH_HST_SIZE-1);
-         idxFin = (ST->hstIdxDeb+i+1)&(SYNCH_HST_SIZE-1);
-         SumSyncTime+=(ST->TimeHst[idxFin]-ST->TimeHst[idxDeb]);
+    for (i=0; i < ST->hstNbItems-1; i++) {
+        idxDeb = (ST->hstIdxDeb+i)&(SYNCH_HST_SIZE-1);
+        idxFin = (ST->hstIdxDeb+i+1)&(SYNCH_HST_SIZE-1);
+        SumSyncTime+=(ST->TimeHst[idxFin]-ST->TimeHst[idxDeb]);
     }
     return (float)(SumSyncTime)/(float)((ST->hstNbItems-1+((ST->LastNbNullSynch)))*DgTimerFreq);
 }
@@ -711,18 +671,15 @@ int  WaitSynch(void *SynchBuff,int *Pos) {
 
     curIPos = (int)ST->LastPos;
     lastIPos = (int)ST->LastPos;
-    for (;;)
-    {
+    for (;;) {
         timeToHandle = DgTime;
-        if (timeToHandle == ST->LastTimeValue)
-        {
+        if (timeToHandle == ST->LastTimeValue) {
             SDL_Delay(1);
             continue;
         }
         lastPos = ST->LastPos + ((float)(timeToHandle - ST->LastTimeValue) / (float) DgTimerFreq) * ST->Freq;
         lastIPos = (int)(lastPos);
-        if (lastIPos > curIPos)
-        {
+        if (lastIPos > curIPos) {
             InsertTime(ST, timeToHandle);
             ST->LastPos = lastPos;
             break;
@@ -735,22 +692,22 @@ int  WaitSynch(void *SynchBuff,int *Pos) {
 }
 
 void DelayMs(unsigned int delayInMs) {
-	#define bigDelay 10
-	const Uint64 timeout = SDL_GetTicks64() + delayInMs;
-	Uint64 curTick64 = 0;
-	while ((curTick64 = SDL_GetTicks64()) < timeout) {
-		if (curTick64 + bigDelay <= timeout) {
-			SDL_Delay(bigDelay);
-		} else
-			SDL_Delay(1);
-	}
+#define bigDelay 10
+    const Uint64 timeout = SDL_GetTicks64() + delayInMs;
+    Uint64 curTick64 = 0;
+    while ((curTick64 = SDL_GetTicks64()) < timeout) {
+        if (curTick64 + bigDelay <= timeout) {
+            SDL_Delay(bigDelay);
+        } else {
+            SDL_Delay(1);
+        }
+    }
 }
 
 ///////////////////////////////////////
 // Keyboard ///////////////////////////
 
-int  InstallKeyboard()
-{
+int  InstallKeyboard() {
     if (KbScanEvents == 1)
         return 1;
     iClearKeyCircBuff();
@@ -758,7 +715,8 @@ int  InstallKeyboard()
 
     KbFLAG = 0;
     KbApp[0] = KbApp[1] = KbApp[2] = KbApp[3] = KbApp[4] = KbApp[5] = KbApp[6] = KbApp[7] = 0;
-    LastKey = 0; LastAscii = 0;
+    LastKey = 0;
+    LastAscii = 0;
     // update KbFLAG
     UpdateCAPS_NUMKbFLAG();
 
@@ -767,226 +725,214 @@ int  InstallKeyboard()
     return 1;
 }
 
-void UpdateCAPS_NUMKbFLAG()
-{
+void UpdateCAPS_NUMKbFLAG() {
     int tempflags = SDL_GetModState();
 
     if (tempflags & KMOD_CAPS) // CAPS
         KbFLAG |= KB_CAPS_ACT;
-    else
-    {
-       if (KbFLAG & KB_CAPS_ACT) // DELETE ?
+    else {
+        if (KbFLAG & KB_CAPS_ACT) // DELETE ?
             KbFLAG ^= KB_CAPS_ACT;
     }
     if (tempflags & KMOD_NUM) // NUM
         KbFLAG |= KB_NUM_ACT;
-    else
-    {
-       if (KbFLAG & KB_NUM_ACT) // DELETE ?
+    else {
+        if (KbFLAG & KB_NUM_ACT) // DELETE ?
             KbFLAG ^= KB_NUM_ACT;
     }
 }
 
-void UninstallKeyboard()
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void UninstallKeyboard() {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iUninstallKeyboard();
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
 
-void PushKbDownEvent(unsigned int KeyCode)
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void PushKbDownEvent(unsigned int KeyCode) {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iPushKbDownEvent(KeyCode);
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
-void PushKbReleaseEvent(unsigned int KeyCode)
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void PushKbReleaseEvent(unsigned int KeyCode) {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iPushKbReleaseEvent(KeyCode);
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
 
-void SetKbMAP(KbMAP *KM)
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void SetKbMAP(KbMAP *KM) {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iSetKbMAP(KM);
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
-void DisableCurKbMAP()
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void DisableCurKbMAP() {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iDisableCurKbMAP();
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
 
-void GetKey(unsigned char *Key,unsigned int *KeyFLAG)
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void GetKey(unsigned char *Key,unsigned int *KeyFLAG) {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iGetKey(Key, KeyFLAG);
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
 void WaitKeyPressed() {
-	while (GetKeyNbElt() == 0) {
-		SDL_Delay(10);
-		DgCheckEvents();
-	}
+    while (GetKeyNbElt() == 0) {
+        SDL_Delay(10);
+        DgCheckEvents();
+    }
 }
 
-void ClearKeyCircBuff()
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void ClearKeyCircBuff() {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iClearKeyCircBuff();
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
-void GetTimedKeyDown(unsigned char *Key,unsigned int *KeyTime)
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void GetTimedKeyDown(unsigned char *Key,unsigned int *KeyTime) {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iGetTimedKeyDown(Key,KeyTime);
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
-void ClearTimedKeyCircBuff()
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void ClearTimedKeyCircBuff() {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iClearTimedKeyCircBuff();
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
-void GetAscii(unsigned char *Ascii,unsigned int *AsciiFLAG)
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void GetAscii(unsigned char *Ascii,unsigned int *AsciiFLAG) {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iGetAscii(Ascii, AsciiFLAG);
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
-void ClearAsciiCircBuff()
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void ClearAsciiCircBuff() {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iClearAsciiCircBuff();
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
 
-int  LoadKbMAP(KbMAP **KMap,const char *Fname)
-{	FILE *InKbMAP;
-	KbMAP KM;
-	int Size,i;
-	unsigned int Buff;
+int  LoadKbMAP(KbMAP **KMap,const char *Fname) {
+    FILE *InKbMAP;
+    KbMAP KM;
+    int Size,i;
+    unsigned int Buff;
 
-	if (fopen_s(&InKbMAP,Fname,"rb")!=0) return 0;
-	if (fread(&KM,sizeof(KbMAP),1,InKbMAP)<1) { fclose(InKbMAP); return 0; }
-	fseek(InKbMAP,0,SEEK_END);
-	Size=ftell(InKbMAP);
-	if (KM.Sign!='PAMK' || KM.SizeKbMap!=(Size-sizeof(KbMAP)))
-	  { fclose(InKbMAP); return 0; }
-	if ((*KMap=(KbMAP*) malloc(KM.SizeKbMap+sizeof(KbMAP)))==NULL)
-	  { fclose(InKbMAP); return 0; }
-	Buff=(unsigned int)(*KMap);
+    if (fopen_s(&InKbMAP,Fname,"rb")!=0) {
+        return 0;
+    }
+    if (fread(&KM,sizeof(KbMAP),1,InKbMAP)<1) {
+        fclose(InKbMAP);
+        return 0;
+    }
+    fseek(InKbMAP,0,SEEK_END);
+    Size=ftell(InKbMAP);
+    if (KM.Sign!='PAMK' || KM.SizeKbMap!=(Size-sizeof(KbMAP))) {
+        fclose(InKbMAP);
+        return 0;
+    }
+    if ((*KMap=(KbMAP*) malloc(KM.SizeKbMap+sizeof(KbMAP)))==NULL) {
+        fclose(InKbMAP);
+        return 0;
+    }
+    Buff=(unsigned int)(*KMap);
 
-	fseek(InKbMAP,0,SEEK_SET);
-	if (fread(*KMap,KM.SizeKbMap+sizeof(KbMAP),1,InKbMAP)<1)
-	  { free(*KMap); fclose(InKbMAP); return 0; }
+    fseek(InKbMAP,0,SEEK_SET);
+    if (fread(*KMap,KM.SizeKbMap+sizeof(KbMAP),1,InKbMAP)<1) {
+        free(*KMap);
+        fclose(InKbMAP);
+        return 0;
+    }
 
-	// Ajuste les pointeur
-	(*KMap)->KbMapPtr=(void*)((unsigned int)((*KMap)->KbMapPtr)+Buff);
-	if ((*KMap)->TabPrefixKeyb!=NULL)
-	  (*KMap)->TabPrefixKeyb=
-	    (PrefixKeyb*)((unsigned int)((*KMap)->TabPrefixKeyb)+Buff);
-	if ((*KMap)->TabNormPrefixKeyb!=NULL)
-	  (*KMap)->TabNormPrefixKeyb=
-	    (NormKeyb*)((unsigned int)((*KMap)->TabNormPrefixKeyb)+Buff);
-	if ((*KMap)->TabNormKeyb!=NULL)
-	  (*KMap)->TabNormKeyb=
-	    (NormKeyb*)((unsigned int)((*KMap)->TabNormKeyb)+Buff);
+    // Adjust pointers
+    (*KMap)->KbMapPtr=(void*)((unsigned int)((*KMap)->KbMapPtr)+Buff);
+    if ((*KMap)->TabPrefixKeyb!=NULL) {
+        (*KMap)->TabPrefixKeyb = (PrefixKeyb*)((unsigned int)((*KMap)->TabPrefixKeyb)+Buff);
+    }
+    if ((*KMap)->TabNormPrefixKeyb!=NULL) {
+        (*KMap)->TabNormPrefixKeyb = (NormKeyb*)((unsigned int)((*KMap)->TabNormPrefixKeyb)+Buff);
+    }
+    if ((*KMap)->TabNormKeyb!=NULL) {
+        (*KMap)->TabNormKeyb = (NormKeyb*)((unsigned int)((*KMap)->TabNormKeyb)+Buff);
+    }
 
-	if ((*KMap)->TabNormKeyb!=NULL)
-	  for (i=0;i<(*KMap)->NbNorm;i++)
-	    (*KMap)->TabNormKeyb[i].Ptr=
-	      (unsigned char*)((unsigned int)((*KMap)->TabNormKeyb[i].Ptr)+Buff);
-	if ((*KMap)->TabNormPrefixKeyb!=NULL)
-	  for (i=0;i<(*KMap)->NbNormPrefix;i++)
-	    (*KMap)->TabNormPrefixKeyb[i].Ptr=
-	      (unsigned char*)((unsigned int)((*KMap)->TabNormPrefixKeyb[i].Ptr)+Buff);
-	if ((*KMap)->TabPrefixKeyb!=NULL)
-	  for (i=0;i<(*KMap)->NbPrefix;i++) {
-	    (*KMap)->TabPrefixKeyb[i].TabNormKeyb=
-	      (NormKeyb*)((unsigned int)((*KMap)->TabPrefixKeyb[i].TabNormKeyb)+Buff);
-	  }
-	fclose(InKbMAP);
-	return 1;
+    if ((*KMap)->TabNormKeyb!=NULL) {
+        for (i=0; i<(*KMap)->NbNorm; i++)
+            (*KMap)->TabNormKeyb[i].Ptr = (unsigned char*)((unsigned int)((*KMap)->TabNormKeyb[i].Ptr)+Buff);
+    }
+    if ((*KMap)->TabNormPrefixKeyb!=NULL) {
+        for (i=0; i<(*KMap)->NbNormPrefix; i++) {
+            (*KMap)->TabNormPrefixKeyb[i].Ptr = (unsigned char*)((unsigned int)((*KMap)->TabNormPrefixKeyb[i].Ptr)+Buff);
+        }
+    }
+    if ((*KMap)->TabPrefixKeyb!=NULL) {
+        for (i=0; i<(*KMap)->NbPrefix; i++) {
+            (*KMap)->TabPrefixKeyb[i].TabNormKeyb = (NormKeyb*)((unsigned int)((*KMap)->TabPrefixKeyb[i].TabNormKeyb)+Buff);
+        }
+    }
+    fclose(InKbMAP);
+    return 1;
 }
 
-int  LoadMemKbMAP(KbMAP **KMap,void *In,int SizeIn)
-{	KbMAP KM;
-	int i;
-	unsigned int Buff;
+int  LoadMemKbMAP(KbMAP **KMap,void *In,int SizeIn) {
+    KbMAP KM;
+    int i;
+    unsigned int Buff;
 
-	memcpy(&KM,In,sizeof(KbMAP));
-	if (KM.Sign!='PAMK' || KM.SizeKbMap!=(SizeIn-sizeof(KbMAP))) return 0;
-	if ((*KMap=(KbMAP*)malloc(KM.SizeKbMap+sizeof(KbMAP)))==NULL) return 0;
-	Buff=(unsigned int)(*KMap);
-	memcpy(*KMap,In,KM.SizeKbMap+sizeof(KbMAP));
+    memcpy(&KM,In,sizeof(KbMAP));
+    if (KM.Sign!='PAMK' || KM.SizeKbMap!=(SizeIn-sizeof(KbMAP))) return 0;
+    if ((*KMap=(KbMAP*)malloc(KM.SizeKbMap+sizeof(KbMAP)))==NULL) return 0;
+    Buff=(unsigned int)(*KMap);
+    memcpy(*KMap,In,KM.SizeKbMap+sizeof(KbMAP));
 
-	// Ajuste les pointeur
-	(*KMap)->KbMapPtr=(void*)((unsigned int)((*KMap)->KbMapPtr)+Buff);
-	if ((*KMap)->TabPrefixKeyb!=NULL)
-	  (*KMap)->TabPrefixKeyb=
-	    (PrefixKeyb*)((unsigned int)((*KMap)->TabPrefixKeyb)+Buff);
-	if ((*KMap)->TabNormPrefixKeyb!=NULL)
-	  (*KMap)->TabNormPrefixKeyb=
-	    (NormKeyb*)((unsigned int)((*KMap)->TabNormPrefixKeyb)+Buff);
-	if ((*KMap)->TabNormKeyb!=NULL)
-	  (*KMap)->TabNormKeyb=
-	    (NormKeyb*)((unsigned int)((*KMap)->TabNormKeyb)+Buff);
+    // Adjust pointers
+    (*KMap)->KbMapPtr=(void*)((unsigned int)((*KMap)->KbMapPtr)+Buff);
+    if ((*KMap)->TabPrefixKeyb!=NULL) {
+        (*KMap)->TabPrefixKeyb = (PrefixKeyb*)((unsigned int)((*KMap)->TabPrefixKeyb)+Buff);
+    }
+    if ((*KMap)->TabNormPrefixKeyb!=NULL) {
+        (*KMap)->TabNormPrefixKeyb = (NormKeyb*)((unsigned int)((*KMap)->TabNormPrefixKeyb)+Buff);
+    }
+    if ((*KMap)->TabNormKeyb!=NULL) {
+        (*KMap)->TabNormKeyb = (NormKeyb*)((unsigned int)((*KMap)->TabNormKeyb)+Buff);
+    }
 
-	if ((*KMap)->TabNormKeyb!=NULL)
-	  for (i=0;i<(*KMap)->NbNorm;i++)
-	    (*KMap)->TabNormKeyb[i].Ptr=
-	      (unsigned char*)((unsigned int)((*KMap)->TabNormKeyb[i].Ptr)+Buff);
-	if ((*KMap)->TabNormPrefixKeyb!=NULL)
-	  for (i=0;i<(*KMap)->NbNormPrefix;i++)
-	    (*KMap)->TabNormPrefixKeyb[i].Ptr=
-	      (unsigned char*)((unsigned int)((*KMap)->TabNormPrefixKeyb[i].Ptr)+Buff);
-	if ((*KMap)->TabPrefixKeyb!=NULL)
-	  for (i=0;i<(*KMap)->NbPrefix;i++) {
-	    (*KMap)->TabPrefixKeyb[i].TabNormKeyb=
-	      (NormKeyb*)((unsigned int)((*KMap)->TabPrefixKeyb[i].TabNormKeyb)+Buff);
-	  }
-	return 1;
+    if ((*KMap)->TabNormKeyb!=NULL) {
+        for (i=0; i<(*KMap)->NbNorm; i++)
+            (*KMap)->TabNormKeyb[i].Ptr = (unsigned char*)((unsigned int)((*KMap)->TabNormKeyb[i].Ptr)+Buff);
+    }
+    if ((*KMap)->TabNormPrefixKeyb!=NULL) {
+        for (i=0; i<(*KMap)->NbNormPrefix; i++)
+            (*KMap)->TabNormPrefixKeyb[i].Ptr = (unsigned char*)((unsigned int)((*KMap)->TabNormPrefixKeyb[i].Ptr)+Buff);
+    }
+    if ((*KMap)->TabPrefixKeyb!=NULL) {
+        for (i=0; i<(*KMap)->NbPrefix; i++) {
+            (*KMap)->TabPrefixKeyb[i].TabNormKeyb = (NormKeyb*)((unsigned int)((*KMap)->TabPrefixKeyb[i].TabNormKeyb)+Buff);
+        }
+    }
+    return 1;
 }
 
 void DestroyKbMAP(KbMAP *KM) {
-   if (KM) free(KM);
+    if (KM) free(KM);
 }
 
 ////////////////////////////////////////////////
@@ -995,12 +941,10 @@ void DestroyKbMAP(KbMAP *KM) {
 int MsScanEvents = 0;
 unsigned char MsInWindow = 0;
 
-int  InstallMouse()
-{
+int  InstallMouse() {
     if (MsScanEvents == 1)
         return 1; // already installed
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         MsZ = 0;
         ClearMsEvntsStack();
         EnableMsEvntsStack();
@@ -1028,82 +972,65 @@ int  InstallMouse()
     return 1;
 }
 
-void UninstallMouse()
-{
+void UninstallMouse() {
     if (MsScanEvents == 0)
         return;
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         MsScanEvents = 0;
         ClearMsEvntsStack();
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
-int IsMouseWheelSupported()
-{
+int IsMouseWheelSupported() {
     return 1;
 }
 
-void PushMsEvent(unsigned int eventID)
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void PushMsEvent(unsigned int eventID) {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iPushMsEvent(eventID);
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
-void SetMouseRView(DgView *V)
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void SetMouseRView(DgView *V) {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iSetMouseRView(V);
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
-void SetMouseOrg(int MsOrgX,int MsOrgY)
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void SetMouseOrg(int MsOrgX,int MsOrgY) {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iSetMouseOrg(MsOrgX, MsOrgY);
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
-void EnableMsEvntsStack()
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void EnableMsEvntsStack() {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iEnableMsEvntsStack();
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
-void DisableMsEvntsStack()
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void DisableMsEvntsStack() {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iDisableMsEvntsStack();
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
-void ClearMsEvntsStack()
-{
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+void ClearMsEvntsStack() {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         iClearMsEvntsStack();
         SDL_UnlockMutex(mutexEvents);
     }
 }
 
-int GetMsEvent(MouseEvent *MsEvnt)
-{
+int GetMsEvent(MouseEvent *MsEvnt) {
     int resMsEvent = 0;
-    if (SDL_LockMutex(mutexEvents) == 0)
-    {
+    if (SDL_LockMutex(mutexEvents) == 0) {
         resMsEvent = iGetMsEvent(MsEvnt);
         SDL_UnlockMutex(mutexEvents);
     }

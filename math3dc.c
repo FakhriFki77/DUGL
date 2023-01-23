@@ -1,5 +1,5 @@
-/*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki
+/*  Dust Ultimate Game Library (DUGL)
+    Copyright (C) 2023  Fakhri Feki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -69,11 +69,11 @@ void DestroyDVEC4(void *vec4) {
 }
 
 void *CreateDVEC2() {
-	return SDL_SIMDAlloc(sizeof(DVEC2));
+    return SDL_SIMDAlloc(sizeof(DVEC2));
 }
 
 void *CreateDVEC2Array(int count) {
-	return SDL_SIMDAlloc(sizeof(DVEC2)*(size_t)(count));
+    return SDL_SIMDAlloc(sizeof(DVEC2)*(size_t)(count));
 }
 
 void DestroyDVEC2(void *vec2) {
@@ -82,19 +82,19 @@ void DestroyDVEC2(void *vec2) {
 
 // DMatrix4 ==========
 DMatrix4 identityDMatrix4 __attribute__ ((aligned (16))) = {
-	.raw = {
-		 1.0f, 0.0f, 0.0f, 0.0f,
-		 0.0f, 1.0f, 0.0f, 0.0f,
-		 0.0f, 0.0f, 1.0f, 0.0f,
-		 0.0f, 0.0f, 0.0f, 1.0f}
+    .raw = {
+         1.0f, 0.0f, 0.0f, 0.0f,
+         0.0f, 1.0f, 0.0f, 0.0f,
+         0.0f, 0.0f, 1.0f, 0.0f,
+         0.0f, 0.0f, 0.0f, 1.0f}
 };
 
 DMatrix4 zeroDMatrix4 __attribute__ ((aligned (16))) = {
-	.raw = {
-	   0.0f, 0.0f, 0.0f, 0.0f ,
-	   0.0f, 0.0f, 0.0f, 0.0f ,
-	   0.0f, 0.0f, 0.0f, 0.0f ,
-	   0.0f, 0.0f, 0.0f, 0.0f }
+    .raw = {
+       0.0f, 0.0f, 0.0f, 0.0f ,
+       0.0f, 0.0f, 0.0f, 0.0f ,
+       0.0f, 0.0f, 0.0f, 0.0f ,
+       0.0f, 0.0f, 0.0f, 0.0f }
 };
 
 DMatrix4 *CreateDMatrix4() {
@@ -106,107 +106,107 @@ DMatrix4 *CreateDMatrix4Array(size_t count) {
 }
 
 void GetIdentityDMatrix4(DMatrix4 *mat4x4Dst) {
-	CopyDVEC4(mat4x4Dst, &identityDMatrix4, 4);
+    CopyDVEC4(mat4x4Dst, &identityDMatrix4, 4);
 }
 
 void GetLookAtDMatrix4Val(DMatrix4 *mat4x4, float eye_x, float eye_y, float eye_z, float center_x, float center_y, float center_z, float up_x, float up_y, float up_z) {
-	DVEC4 *varray = (DVEC4 *)CreateDVEC4Array(3);
-	if (varray == NULL)
-		return;
-	DVEC4 *eye = &varray[0];
-	DVEC4 *center = &varray[1];
-	DVEC4 *up = &varray[2];
-	eye->x = eye_x; eye->y = eye_y; eye->z = eye_z; eye->d = 0.0f;
-	center->x = center_x; center->y = center_y; center->z = center_z; center->d = 0.0f;
-	up->x = up_x; up->y = up_y; up->z = up_z; up->d = 0.0f;
+    DVEC4 *varray = (DVEC4 *)CreateDVEC4Array(3);
+    if (varray == NULL)
+        return;
+    DVEC4 *eye = &varray[0];
+    DVEC4 *center = &varray[1];
+    DVEC4 *up = &varray[2];
+    eye->x = eye_x; eye->y = eye_y; eye->z = eye_z; eye->d = 0.0f;
+    center->x = center_x; center->y = center_y; center->z = center_z; center->d = 0.0f;
+    up->x = up_x; up->y = up_y; up->z = up_z; up->d = 0.0f;
 
-	GetLookAtDMatrix4(mat4x4, eye, center, up);
+    GetLookAtDMatrix4(mat4x4, eye, center, up);
 
-	DestroyDVEC4(varray);
+    DestroyDVEC4(varray);
 }
 
 void GetLookAtDMatrix4(DMatrix4 *mat4x4, DVEC4 *eye, DVEC4 *center, DVEC4 *up) {
-	DVEC4 *varray = (DVEC4*)CreateDVEC4Array(4);
-	if (varray == NULL)
-		return;
-	DMatrix4 *vTransMat = CreateDMatrix4();
-	if (vTransMat == NULL) {
-		DestroyDVEC4(varray);
-		return;
-	}
+    DVEC4 *varray = (DVEC4*)CreateDVEC4Array(4);
+    if (varray == NULL)
+        return;
+    DMatrix4 *vTransMat = CreateDMatrix4();
+    if (vTransMat == NULL) {
+        DestroyDVEC4(varray);
+        return;
+    }
 
-	DVEC4 *negEye = &varray[0];
-	DVEC4 *n = &varray[1];
-	DVEC4 *u = &varray[2];
-	DVEC4 *s = &varray[3];
+    DVEC4 *negEye = &varray[0];
+    DVEC4 *n = &varray[1];
+    DVEC4 *u = &varray[2];
+    DVEC4 *s = &varray[3];
 
-	MulValDVEC4Res(eye, -1.0f, negEye);
-	GetTranslateDMatrix4(vTransMat, negEye);
+    MulValDVEC4Res(eye, -1.0f, negEye);
+    GetTranslateDMatrix4(vTransMat, negEye);
 
-	*n = *eye;
-	SubDVEC4(n, center);
-	NormalizeDVEC4(n);
+    *n = *eye;
+    SubDVEC4(n, center);
+    NormalizeDVEC4(n);
 
-	CrossDVEC4(up, n, s);
-	NormalizeDVEC4(s);
+    CrossDVEC4(up, n, s);
+    NormalizeDVEC4(s);
 
-	CrossDVEC4(n, s, u);
-	NormalizeDVEC4(u);
+    CrossDVEC4(n, s, u);
+    NormalizeDVEC4(u);
 
-	mat4x4->raw[0] = s->x;  mat4x4->raw[4] = s->y;  mat4x4->raw[8]  = s->z;  mat4x4->raw[12] = 0.0f;
-	mat4x4->raw[1] = u->x;  mat4x4->raw[5] = u->y;  mat4x4->raw[9]  = u->z;  mat4x4->raw[13] = 0.0f;
-	mat4x4->raw[2] = n->x;  mat4x4->raw[6] = n->y;  mat4x4->raw[10] = n->z;  mat4x4->raw[14] = 0.0f;
-	mat4x4->raw[3] = 0.0f;  mat4x4->raw[7] = 0.0f;  mat4x4->raw[11] = 0.0f;  mat4x4->raw[15] = 1.0f;
+    mat4x4->raw[0] = s->x;  mat4x4->raw[4] = s->y;  mat4x4->raw[8]  = s->z;  mat4x4->raw[12] = 0.0f;
+    mat4x4->raw[1] = u->x;  mat4x4->raw[5] = u->y;  mat4x4->raw[9]  = u->z;  mat4x4->raw[13] = 0.0f;
+    mat4x4->raw[2] = n->x;  mat4x4->raw[6] = n->y;  mat4x4->raw[10] = n->z;  mat4x4->raw[14] = 0.0f;
+    mat4x4->raw[3] = 0.0f;  mat4x4->raw[7] = 0.0f;  mat4x4->raw[11] = 0.0f;  mat4x4->raw[15] = 1.0f;
 
-	DMatrix4MulDMatrix4(mat4x4, vTransMat);
+    DMatrix4MulDMatrix4(mat4x4, vTransMat);
 
-	DestroyDVEC4(varray);
-	DestroyDMatrix4(vTransMat);
+    DestroyDVEC4(varray);
+    DestroyDMatrix4(vTransMat);
 }
 
 void GetPerspectiveDMatrix4(DMatrix4 *mat4x4, float fov, float aspect, float znear, float zfar) {
 
-	float y = SDL_tanf(fov * MDEG_TO_RAD_STEP / 2.0f);
-	float x = y * aspect;
-	float deltaFN = (zfar - znear);
-	float zFNRat = -(zfar + znear) / deltaFN;
-	float zFNVol = -(2.0f * zfar * znear) / deltaFN;
+    float y = SDL_tanf(fov * MDEG_TO_RAD_STEP / 2.0f);
+    float x = y * aspect;
+    float deltaFN = (zfar - znear);
+    float zFNRat = -(zfar + znear) / deltaFN;
+    float zFNVol = -(2.0f * zfar * znear) / deltaFN;
 
 
-	mat4x4->raw[0] = 1.0f/x; mat4x4->raw[4] = 0.0f;   mat4x4->raw[8]  = 0.0f;   mat4x4->raw[12] = 0.0f;
-	mat4x4->raw[1] = 0.0f;   mat4x4->raw[5] = 1.0f/y; mat4x4->raw[9]  = 0.0f;   mat4x4->raw[13] = 0.0f;
-	mat4x4->raw[2] = 0.0f;   mat4x4->raw[6] = 0.0f;   mat4x4->raw[10] = zFNRat; mat4x4->raw[14] = zFNVol;
-	mat4x4->raw[3] = 0.0f;   mat4x4->raw[7] = 0.0f;   mat4x4->raw[11] = -1.0f;  mat4x4->raw[15] = 0.0f;
+    mat4x4->raw[0] = 1.0f/x; mat4x4->raw[4] = 0.0f;   mat4x4->raw[8]  = 0.0f;   mat4x4->raw[12] = 0.0f;
+    mat4x4->raw[1] = 0.0f;   mat4x4->raw[5] = 1.0f/y; mat4x4->raw[9]  = 0.0f;   mat4x4->raw[13] = 0.0f;
+    mat4x4->raw[2] = 0.0f;   mat4x4->raw[6] = 0.0f;   mat4x4->raw[10] = zFNRat; mat4x4->raw[14] = zFNVol;
+    mat4x4->raw[3] = 0.0f;   mat4x4->raw[7] = 0.0f;   mat4x4->raw[11] = -1.0f;  mat4x4->raw[15] = 0.0f;
 }
 
 void GetOrthoDMatrix4(DMatrix4 *mat4x4, float left, float right, float bottom, float top, float znear, float zfar) {
-	float x = 2.0f / (right - left);
-	float y = 2.0f / (top - bottom);
-	float z = -2.0f / (zfar - znear);
-	float tx = - ((right + left) / (right - left));
-	float ty = - ((top + bottom) / (top - bottom));
-	float tz = - ((zfar + znear) / (zfar - znear));
+    float x = 2.0f / (right - left);
+    float y = 2.0f / (top - bottom);
+    float z = -2.0f / (zfar - znear);
+    float tx = - ((right + left) / (right - left));
+    float ty = - ((top + bottom) / (top - bottom));
+    float tz = - ((zfar + znear) / (zfar - znear));
 
-	mat4x4->raw[0] = x;      mat4x4->raw[4] = 0.0f;   mat4x4->raw[8]  = 0.0f;   mat4x4->raw[12] = -tx;
-	mat4x4->raw[1] = 0.0f;   mat4x4->raw[5] = y;      mat4x4->raw[9]  = 0.0f;   mat4x4->raw[13] = -ty;
-	mat4x4->raw[2] = 0.0f;   mat4x4->raw[6] = 0.0f;   mat4x4->raw[10] = z;      mat4x4->raw[14] = -tz;
-	mat4x4->raw[3] = 0.0f;   mat4x4->raw[7] = 0.0f;   mat4x4->raw[11] = 0.0f;   mat4x4->raw[15] = 0.0f;
+    mat4x4->raw[0] = x;      mat4x4->raw[4] = 0.0f;   mat4x4->raw[8]  = 0.0f;   mat4x4->raw[12] = -tx;
+    mat4x4->raw[1] = 0.0f;   mat4x4->raw[5] = y;      mat4x4->raw[9]  = 0.0f;   mat4x4->raw[13] = -ty;
+    mat4x4->raw[2] = 0.0f;   mat4x4->raw[6] = 0.0f;   mat4x4->raw[10] = z;      mat4x4->raw[14] = -tz;
+    mat4x4->raw[3] = 0.0f;   mat4x4->raw[7] = 0.0f;   mat4x4->raw[11] = 0.0f;   mat4x4->raw[15] = 0.0f;
 }
 
 void GetViewDMatrix4(DMatrix4 *mat4x4, DgView *view, float startX, float endX, float startY, float endY)
 {
-	float propWidth = endX - startX;
-	float propHeight = endY - startY;
+    float propWidth = endX - startX;
+    float propHeight = endY - startY;
 
-	if (propWidth == 0.0f || propHeight == 0.0f)
-		return;
+    if (propWidth == 0.0f || propHeight == 0.0f)
+        return;
 
-	int viewWidth = view->MaxX - view->MinX;
-	int viewHeight = view->MaxY - view->MinY;
+    int viewWidth = view->MaxX - view->MinX;
+    int viewHeight = view->MaxY - view->MinY;
 
-	DMatrix4 *vmatrix = CreateDMatrix4();
-	if (vmatrix == NULL)
-		return;
+    DMatrix4 *vmatrix = CreateDMatrix4();
+    if (vmatrix == NULL)
+        return;
 
    GetTranslateDMatrix4Val(mat4x4, (float)(view->MinX), (float)(view->MinY), 0.0f);
 
@@ -214,8 +214,8 @@ void GetViewDMatrix4(DMatrix4 *mat4x4, DgView *view, float startX, float endX, f
    DMatrix4MulDMatrix4(mat4x4, vmatrix);
 
    if (startX != 0.0f || startY != 0.0f) {
-		GetTranslateDMatrix4Val(vmatrix, -startX/propWidth, -startY/propHeight, 0.0f);
-		DMatrix4MulDMatrix4(mat4x4, vmatrix);
+        GetTranslateDMatrix4Val(vmatrix, -startX/propWidth, -startY/propHeight, 0.0f);
+        DMatrix4MulDMatrix4(mat4x4, vmatrix);
    }
 
    GetScaleDMatrix4Val(vmatrix, 0.5f / propWidth, 0.5f / propHeight, 1.0f);
@@ -229,9 +229,9 @@ void GetViewDMatrix4(DMatrix4 *mat4x4, DgView *view, float startX, float endX, f
 
 
 void GetRotDMatrix4(DMatrix4 *FMG, float Rx, float Ry, float Rz) {
-	float rx=MDEG_TO_RAD_STEP*Rx;
-	float ry=MDEG_TO_RAD_STEP*Ry;
-	float rz=MDEG_TO_RAD_STEP*Rz;
+    float rx=MDEG_TO_RAD_STEP*Rx;
+    float ry=MDEG_TO_RAD_STEP*Ry;
+    float rz=MDEG_TO_RAD_STEP*Rz;
    float cx=SDL_cosf(rx),sx=SDL_sinf(rx),cy=SDL_cosf(ry),sy=SDL_sinf(ry),
          cz=SDL_cosf(rz),sz=SDL_sinf(rz),sx_sy=sx*sy,cx_sy=cx*sy;
    GetIdentityDMatrix4(FMG);

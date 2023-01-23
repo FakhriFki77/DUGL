@@ -1,5 +1,5 @@
 /*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki
+    Copyright (C) 2023  Fakhri Feki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,8 +32,7 @@ DSoundState queuedSounds[MAX_SIMULTANOUS_DSOUNDS];
 DSoundState replaceSounds[MAX_SIMULTANOUS_DSOUNDS];
 unsigned int countPlayingSounds = 0;
 
-void DGaudioCallback( void *userData, Uint8 * stream, int len )
-{
+void DGaudioCallback( void *userData, Uint8 * stream, int len ) {
     int remainLen, mixLen, requiredLen;
     int idx = 0, HandledSounds = 0;
 
@@ -43,7 +42,7 @@ void DGaudioCallback( void *userData, Uint8 * stream, int len )
     if (countPlayingSounds == 0)
         return;
     // mix sounds
-    for (;idx<MAX_SIMULTANOUS_DSOUNDS && HandledSounds < countPlayingSounds; idx++) {
+    for (; idx<MAX_SIMULTANOUS_DSOUNDS && HandledSounds < countPlayingSounds; idx++) {
         if (playingSounds[idx].sound != NULL) {
             // replace if required
             if (replaceSounds[idx].sound != NULL) {
@@ -62,9 +61,9 @@ void DGaudioCallback( void *userData, Uint8 * stream, int len )
                 mixLen = (remainLen >= (unsigned int)(len)) ? len : remainLen;
                 if (mixLen > 0)
                     SDL_MixAudioFormat(stream,
-                                (Uint8 *)&playingSounds[idx].sound->data[playingSounds[idx].position],
-                                haveAudio.format,
-                                mixLen, (int)playingSounds[idx].volume);
+                                       (Uint8 *)&playingSounds[idx].sound->data[playingSounds[idx].position],
+                                       haveAudio.format,
+                                       mixLen, (int)playingSounds[idx].volume);
 
                 // sound finished
                 if (remainLen <= len) {
@@ -77,9 +76,9 @@ void DGaudioCallback( void *userData, Uint8 * stream, int len )
                                 requiredLen = playingSounds[idx].sound->length;
                             playingSounds[idx].position = requiredLen;
                             SDL_MixAudioFormat(&stream[remainLen],
-                                (Uint8 *)&playingSounds[idx].sound->data[0],
-                                haveAudio.format,
-                                requiredLen, (int)playingSounds[idx].volume);
+                                               (Uint8 *)&playingSounds[idx].sound->data[0],
+                                               haveAudio.format,
+                                               requiredLen, (int)playingSounds[idx].volume);
                         } else {
                             if (playingSounds[idx].sound != NULL)
                                 playingSounds[idx].position = 0;
@@ -97,9 +96,9 @@ void DGaudioCallback( void *userData, Uint8 * stream, int len )
                             playingSounds[idx] = queuedSounds[idx];
                             if (requiredLen > 0 && !queuedSounds[idx].paused) {
                                 SDL_MixAudioFormat(&stream[remainLen],
-                                    (Uint8 *)&playingSounds[idx].sound->data[0],
-                                    haveAudio.format,
-                                    requiredLen, (int)playingSounds[idx].volume);
+                                                   (Uint8 *)&playingSounds[idx].sound->data[0],
+                                                   haveAudio.format,
+                                                   requiredLen, (int)playingSounds[idx].volume);
                                 playingSounds[idx].position = requiredLen;
                             } else {
                                 playingSounds[idx].position = 0;
@@ -146,7 +145,6 @@ bool InstallDAudio(int frequency, bool stereo) {
 }
 
 void UninstallDAudio() {
-
     if (audDevId != 0) {
         SDL_PauseAudioDevice(audDevId, 1);
         SDL_CloseAudioDevice(audDevId);
@@ -184,7 +182,7 @@ unsigned int PlayDSound(DSound *sound, unsigned char volume, bool loop, bool pau
         return NO_SOUND_ID;
     }
     // mix sounds
-    for (;freeIdx<MAX_SIMULTANOUS_DSOUNDS && playingSounds[freeIdx].sound != NULL; freeIdx++);
+    for (; freeIdx<MAX_SIMULTANOUS_DSOUNDS && playingSounds[freeIdx].sound != NULL; freeIdx++);
     // shouldn't happen
     if (freeIdx >= MAX_SIMULTANOUS_DSOUNDS) {
         UnlockDAudio();
@@ -326,8 +324,8 @@ DSound *DgLoadWAV(char *filename) {
     if (audDevId != 0) {
         if (SDL_LoadWAV(filename, &wav_spec, &wavBuffer, &wavLength) != NULL) {
             // convert to current audio device format
-           	SDL_BuildAudioCVT(&cvt, wav_spec.format, wav_spec.channels, wav_spec.freq, haveAudio.format, haveAudio.channels, haveAudio.freq);
-           	if (cvt.needed) {
+            SDL_BuildAudioCVT(&cvt, wav_spec.format, wav_spec.channels, wav_spec.freq, haveAudio.format, haveAudio.channels, haveAudio.freq);
+            if (cvt.needed) {
                 cvt.buf =(Uint8*)SDL_malloc(wavLength*((Uint32)cvt.len_mult));
                 if (cvt.buf != NULL) {
                     cvt.len = wavLength;
@@ -342,14 +340,14 @@ DSound *DgLoadWAV(char *filename) {
                     }
                     SDL_free(cvt.buf);
                 }
-           	} else { // copy data as-is, no conversion needed
-           	    sound = (DSound*)SDL_malloc(sizeof(DSound) + wavLength);
-           	    if (sound != NULL) {
+            } else { // copy data as-is, no conversion needed
+                sound = (DSound*)SDL_malloc(sizeof(DSound) + wavLength);
+                if (sound != NULL) {
                     sound->data = &((Uint8 *)sound)[sizeof(DSound)];
                     sound->length = wavLength;
                     SDL_memcpy(sound->data, wavBuffer, wavLength);
-           	    }
-           	}
+                }
+            }
             SDL_FreeWAV(wavBuffer);
         }
     }

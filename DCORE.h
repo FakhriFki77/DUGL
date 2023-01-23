@@ -1,5 +1,5 @@
-/*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki
+/*  Dust Ultimate Game Library (DUGL)
+    Copyright (C) 2023  Fakhri Feki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,33 +23,33 @@
 extern "C" {
 #endif
 
-#define DUGL_VERSION_MAJOR		1
-#define DUGL_VERSION_MINOR		0
-#define DUGL_VERSION_TYPE		'b' // a alpha, b beta, r release
-#define DUGL_VERSION_PATCH		3
+#define DUGL_VERSION_MAJOR      1
+#define DUGL_VERSION_MINOR      0
+#define DUGL_VERSION_TYPE       'b' // a alpha, b beta, r release
+#define DUGL_VERSION_PATCH      3
 
 typedef struct
-{	int	ScanLine;
-	int	rlfb;
-	int	OrgX, OrgY;
-	int	MaxX, MaxY, MinX, MinY;
-	int	Mask, ResH, ResV;
-	int vlfb;
-	int	NegScanLine;
-	int	OffVMem;
-	int	BitsPixel;
-	int SizeSurf;
+{   int ScanLine;
+    int rlfb;
+    int OrgX, OrgY;
+    int MaxX, MaxY, MinX, MinY;
+    int Mask, ResH, ResV;
+    int vlfb;
+    int NegScanLine;
+    int OffVMem;
+    int BitsPixel;
+    int SizeSurf;
 } DgSurf;
 
 typedef struct
-{	int	OrgX, OrgY;
-	int	MaxX, MaxY, MinX, MinY;
+{   int OrgX, OrgY;
+    int MaxX, MaxY, MinX, MinY;
 } DgView;
 
 // DUGL Main global variables
 
 extern DgSurf   *RendSurf; // main destination render
-extern DgSurf	*RendFrontSurf; // currently displayed if double buffer enabled
+extern DgSurf   *RendFrontSurf; // currently displayed if double buffer enabled
 extern DgSurf   CurSurf; // The Surf that graphic functions will render to as DgClear16, Line16, Poly16 ...
 extern DgSurf   SrcSurf; // The source Surf used by graphic functions as Poly16, PutSurf16, ResizeViewSurf16 ..
 extern unsigned char DgWindowFocused;
@@ -189,9 +189,9 @@ void MaskTransResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int tra
 void BlndResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int colBlnd); // ColBnd =  color16 | (blend << 24),  blend 0->31 (31 color16)
 void MaskBlndResizeViewSurf16(DgSurf *SSrcSurf, int swapHz, int swapVt, int colBlnd); // ColBnd =  color16 | (blend << 24),  blend 0->31 (31 color16)
 // 16bpp Surf blitting functions
-#define PUTSURF_NORM	0 // as it
+#define PUTSURF_NORM    0 // as it
 #define PUTSURF_INV_HZ  1 // reversed horizontally
-#define PUTSURF_INV_VT 	2 // reversed vertically
+#define PUTSURF_INV_VT  2 // reversed vertically
 // Blit the Source DgSurf into current DgSurf taking care of current views
 void PutSurf16(DgSurf *S,int X,int Y,int PType);
 void PutMaskSurf16(DgSurf *S,int X,int Y,int PType);
@@ -203,25 +203,25 @@ void PutMaskSurfTrans16(DgSurf *S,int X,int Y,int PType,int trans);
 // *ListPt FORMAT : [int CountVertices]|[Ptr * Point1] .. [Ptr * Point(CountVertices)]
 // Point FORMAT [int ScreenX][int ScreenY][int Z reserved][int U texture coordinate][int V texture coordinate]
 // all TEXTURE Functions uses a simple affine texture interpolation mapping (not perspective corrected)
-#define POLY16_SOLID			0
-#define POLY16_TEXT				1
-#define POLY16_MASK_TEXT		2
-#define POLY16_TEXT_TRANS		10
-#define POLY16_MASK_TEXT_TRANS	11
-#define POLY16_RGB				12
-#define POLY16_SOLID_BLND		13
-#define POLY16_TEXT_BLND		14
-#define POLY16_MASK_TEXT_BLND	15
-#define POLY16_MAX_TYPE			15
-#define POLY16_FLAG_DBL_SIDED	0x80000000
+#define POLY16_SOLID            0
+#define POLY16_TEXT             1
+#define POLY16_MASK_TEXT        2
+#define POLY16_TEXT_TRANS       10
+#define POLY16_MASK_TEXT_TRANS  11
+#define POLY16_RGB              12
+#define POLY16_SOLID_BLND       13
+#define POLY16_TEXT_BLND        14
+#define POLY16_MASK_TEXT_BLND   15
+#define POLY16_MAX_TYPE         15
+#define POLY16_FLAG_DBL_SIDED   0x80000000
 void Poly16(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 
 #ifdef __cplusplus
-		}  // extern "C" {
+        }  // extern "C" {
 #endif
 
 // utils macro
-#define RGB16(r,g,b) ((r>>3)|((g>>2)<<5)|((b>>3)<<11))
+#define RGB16(r,g,b) ((b>>3)|((g>>2)<<5)|((r>>3)<<11))
 
 #endif // DCORE_H_INCLUDED
 

@@ -1,5 +1,5 @@
-/*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki
+/*  Dust Ultimate Game Library (DUGL)
+    Copyright (C) 2023  Fakhri Feki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@ extern "C" {
 typedef struct {
     int             FntPtr;
     unsigned char   FntHaut,FntDistLgn;
-	char            FntLowPos, FntHighPos, FntSens;
-	unsigned char   FntTab,Fntrevb[2];
+    char            FntLowPos, FntHighPos, FntSens;
+    unsigned char   FntTab,Fntrevb[2];
     int             FntX, FntY, FntCol, FntBCol, FntDresv;
 } FONT;
 
@@ -42,12 +42,12 @@ extern int              FntPtr, FntX, FntY, FntCol;
 extern unsigned char    FntHaut, FntDistLgn, FntTab;
 extern char             FntLowPos, FntHighPos, FntSens;
 // Text drawing Mode
-#define AJ_CUR_POS	0 // draw starting from the current xy text position
-#define AJ_MID		1 // set the text on the middle of the current Surf View
-#define AJ_SRC		2 // justify to the text source (left in case of left to right)
-#define AJ_DST		3 // justify to the text destination
-#define AJ_LEFT		4 // justify always to the left
-#define AJ_RIGHT	5 // justify always to the right
+#define AJ_CUR_POS  0 // draw starting from the current xy text position
+#define AJ_MID      1 // set the text on the middle of the current Surf View
+#define AJ_SRC      2 // justify to the text source (left in case of left to right)
+#define AJ_DST      3 // justify to the text destination
+#define AJ_LEFT     4 // justify always to the left
+#define AJ_RIGHT    5 // justify always to the right
 
 int  LoadMemFONT(FONT *F,void *In,int SizeIn);
 int  LoadFONT(FONT *F,const char *Fname);
@@ -76,7 +76,7 @@ int  ViewOutText16YMode(DgView *V,int TY,const char *str,int Mode);
 int  ViewOutText16XY(DgView *V,int TX,int TY,const char *str);
 
 #ifdef __cplusplus
-		}  // extern "C" {
+        }  // extern "C" {
 #endif
 
 #endif // DFONT_H_INCLUDED
