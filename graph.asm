@@ -94,7 +94,7 @@ _GetMaxResVSetSurf:
 ALIGN 32
 _DgSetSrcSurf:
     ARG SrcS, 4
-    
+
             PUSH        EDI
             PUSH        ESI
 
@@ -110,7 +110,7 @@ _DgSetSrcSurf:
 ALIGN 32
 _DgGetCurSurf:
   ARG SGet, 4
-  
+
             PUSH        EDI
             PUSH        ESI
 
@@ -225,7 +225,7 @@ _SurfCopy:
             POP         EBX
             POP         ESI
             POP         EDI
-            
+
     RETURN
 
 
@@ -360,7 +360,7 @@ _DgSurfCPutPixel16:
 .Clip:
 
     RETURN
-    
+
 _ClearSurf16:
     ARG ClearSurf16Col, 4
 
@@ -496,405 +496,406 @@ _WidthText:
     RETURN
 
 _WidthPosText:
-  ARG LPStr, 4, LPPos, 4
-    PUSH    EBX
-    PUSH    EDI
-    PUSH    ESI
+    ARG LPStr, 4, LPPos, 4
 
-    MOV     EBX,[_FntPtr]
-    XOR     ECX,ECX
-    OR      EBX,EBX
-    JZ      .FinLargText
-    MOV     ESI,[EBP+LPStr]
-    MOV     EDI,[EBP+LPPos]
-    XOR     EAX,EAX
-    OR      EDI,EDI
-    JZ      .FinLargText
-    ADD     EDI,ESI
+            PUSH        EBX
+            PUSH        EDI
+            PUSH        ESI
+
+            MOV         EBX,[_FntPtr]
+            XOR         ECX,ECX
+            OR          EBX,EBX
+            JZ          .FinLargText
+            MOV         ESI,[EBP+LPStr]
+            MOV         EDI,[EBP+LPPos]
+            XOR         EAX,EAX
+            OR          EDI,EDI
+            JZ          .FinLargText
+            ADD         EDI,ESI
 .BcCalcLarg:
-    XOR     EAX,EAX
-    CMP     EDI,ESI
-    JBE     .FinLargText
-    LODSB
-    OR      AL,AL
-    JZ      .FinLargText
-    CMP     AL,13
-    JE      .FinLargText
-    CMP     AL,10
-    JE      .FinLargText
-    CMP     AL,9     ; Tab
-    JNE     .PasTrtTab
-    MOV     AL,32
-    MOVSX   EDX,BYTE [EBX+EAX*8+4] ; space
-    XOR     EAX,EAX
-    MOV     AL,[_FntTab]
-    IMUL    EDX,EAX
-    ADD     ECX,EDX
-    JMP     SHORT .BcCalcLarg
+            XOR         EAX,EAX
+            CMP         EDI,ESI
+            JBE         .FinLargText
+            LODSB
+            OR          AL,AL
+            JZ          .FinLargText
+            CMP         AL,13
+            JE          .FinLargText
+            CMP         AL,10
+            JE          .FinLargText
+            CMP         AL,9     ; Tab
+            JNE         .PasTrtTab
+            MOV         AL,32
+            MOVSX       EDX,BYTE [EBX+EAX*8+4] ; space
+            XOR         EAX,EAX
+            MOV         AL,[_FntTab]
+            IMUL        EDX,EAX
+            ADD         ECX,EDX
+            JMP         SHORT .BcCalcLarg
 .PasTrtTab:
-    MOVSX   EDX,BYTE [EBX+EAX*8+4]
-    ADD     ECX,EDX
-    JMP     SHORT .BcCalcLarg
+            MOVSX       EDX,BYTE [EBX+EAX*8+4]
+            ADD         ECX,EDX
+            JMP         SHORT .BcCalcLarg
 .FinLargText:
-    OR      ECX,ECX
-    JNS     .Positiv
-    NEG     ECX
+            OR          ECX,ECX
+            JNS         .Positiv
+            NEG         ECX
 .Positiv:
-    MOV     EAX,ECX
-    OR      EAX,EAX
-    JZ      .ZeroRien
-    DEC     EAX
+            MOV         EAX,ECX
+            OR          EAX,EAX
+            JZ          .ZeroRien
+            DEC         EAX
 .ZeroRien:
 
-    POP     ESI
-    POP     EDI
-    POP     EBX
+            POP         ESI
+            POP         EDI
+            POP         EBX
     RETURN
 
 _PosWidthText:
-  ARG PLStr, 4, PLLarg, 4
-    PUSH    EBX
-    PUSH    EDI
-    PUSH    ESI
+    ARG PLStr, 4, PLLarg, 4
+            PUSH        EBX
+            PUSH        EDI
+            PUSH        ESI
 
-    MOV     EBX,[_FntPtr]
-    XOR     ECX,ECX
-    OR      EBX,EBX
-    JZ      .FinPosLargText
-    MOV     ESI,[EBP+PLStr]
-    XOR     EDI,EDI
+            MOV         EBX,[_FntPtr]
+            XOR         ECX,ECX
+            OR          EBX,EBX
+            JZ          .FinPosLargText
+            MOV         ESI,[EBP+PLStr]
+            XOR         EDI,EDI
 .BcCalcLarg:
-    XOR     EAX,EAX
-    CMP     ECX,[EBP+PLLarg]
-    JAE     .FinPosLargText
-    LODSB
-    INC     EDI
-    OR      AL,AL
-    JZ      .FinPosLargText
-    CMP     AL,13
-    JE      .FinPosLargText
-    CMP     AL,10
-    JE      .FinPosLargText
-    CMP     AL,9     ; Tab
-    JNE     .PasTrtTab
-    MOV     AL,32
-    MOVSX   EDX,BYTE [EBX+EAX*8+4] ; space
-    XOR     EAX,EAX
-    MOV     AL,[_FntTab]
-    IMUL    EDX,EAX
-    OR      EDX,EDX
-    JS      .NegTab
-    ADD     ECX,EDX
-    JMP     SHORT .BcCalcLarg
+            XOR         EAX,EAX
+            CMP         ECX,[EBP+PLLarg]
+            JAE         .FinPosLargText
+            LODSB
+            INC         EDI
+            OR          AL,AL
+            JZ          .FinPosLargText
+            CMP         AL,13
+            JE          .FinPosLargText
+            CMP         AL,10
+            JE          .FinPosLargText
+            CMP         AL,9     ; Tab
+            JNE         .PasTrtTab
+            MOV         AL,32
+            MOVSX       EDX,BYTE [EBX+EAX*8+4] ; space
+            XOR         EAX,EAX
+            MOV         AL,[_FntTab]
+            IMUL        EDX,EAX
+            OR          EDX,EDX
+            JS          .NegTab
+            ADD         ECX,EDX
+            JMP         SHORT .BcCalcLarg
 .NegTab:
-    SUB     ECX,EDX
-    JMP     SHORT .BcCalcLarg
+            SUB         ECX,EDX
+            JMP         SHORT .BcCalcLarg
 .PasTrtTab:
-    MOVSX   EDX,BYTE [EBX+EAX*8+4]
-    OR      EDX,EDX
-    JS      .NegNorm
-    ADD     ECX,EDX
-    JMP     SHORT .BcCalcLarg
+            MOVSX       EDX,BYTE [EBX+EAX*8+4]
+            OR          EDX,EDX
+            JS          .NegNorm
+            ADD         ECX,EDX
+            JMP         SHORT .BcCalcLarg
 .NegNorm:
-    SUB     ECX,EDX
-    JMP     SHORT .BcCalcLarg
+            SUB         ECX,EDX
+            JMP         SHORT .BcCalcLarg
 
 .FinPosLargText:
-    OR      EDI,EDI
-    JZ      .PosZero
-    DEC     EDI
+            OR          EDI,EDI
+            JZ          .PosZero
+            DEC         EDI
 .PosZero:
-    MOV     EAX,EDI
+            MOV         EAX,EDI
 
-    POP     ESI
-    POP     EDI
-    POP     EBX
+            POP         ESI
+            POP         EDI
+            POP         EBX
     RETURN
 
 
 ALIGN 32
 _OutText16:
-  ARG Str16, 4
-    PUSH    EBX
-    PUSH    EDI
-    PUSH    ESI
+    ARG Str16, 4
+            PUSH        EBX
+            PUSH        EDI
+            PUSH        ESI
 
-    MOV     ESI,[EBP+Str16]
-    XOR     EAX,EAX
-    MOV     EBX,[_FntPtr]
+            MOV         ESI,[EBP+Str16]
+            XOR         EAX,EAX
+            MOV         EBX,[_FntPtr]
 .BcOutChar:
-    OR      AL,[ESI]
-    JZ      .FinOutText
-    INC     ESI
-    PUSH    EBX
-    PUSH    ESI
+            OR          AL,[ESI]
+            JZ          .FinOutText
+            INC         ESI
+            PUSH        EBX
+            PUSH        ESI
 ;**************** Affichage et traitement **********************************
 ;***************************************************************************
-    CMP     AL,13    ;** Debut Cas Special
-    MOVSX   ESI,BYTE [EBX+EAX*8+4] ; PlusX
-    JE      .DebLigne
-    XOR     EDX,EDX
-    CMP     AL,10
-    MOV     DL,[EBX+EAX*8+7] ;Largeur
-    JE      .DebNextLigne
-    XOR     ECX,ECX
-    CMP     AL,9
-    MOV     CL,[EBX+EAX*8+6] ; Haut
-    JE      .TabCar  ;** Fin   Cas Special
-    MOVSX   EDI,BYTE [EBX+EAX*8+5] ; PlusLgn
-    MOV     [ChLarg],EDX
-    MOV     [ChPlusX],ESI
-    MOVD    xmm6,[EBX+EAX*8]        ; PtrDat
-    OR      ESI,ESI
-    MOV     [ChPlusLgn],EDI
-    MOV     [ChHaut],ECX
-    JNS     .GauchDroit
-    JZ      SHORT .RienZero1
-    LEA     EAX,[ESI+1]
-    ADD     [_FntX],EAX
+            CMP         AL,13    ;** Debut Cas Special
+            MOVSX       ESI,BYTE [EBX+EAX*8+4] ; PlusX
+            JE          .DebLigne
+            XOR         EDX,EDX
+            CMP         AL,10
+            MOV         DL,[EBX+EAX*8+7] ;Largeur
+            JE          .DebNextLigne
+            XOR         ECX,ECX
+            CMP         AL,9
+            MOV         CL,[EBX+EAX*8+6] ; Haut
+            JE          .TabCar  ;** Fin   Cas Special
+            MOVSX       EDI,BYTE [EBX+EAX*8+5] ; PlusLgn
+            MOV         [ChLarg],EDX
+            MOV         [ChPlusX],ESI
+            MOVD        xmm6,[EBX+EAX*8]        ; PtrDat
+            OR          ESI,ESI
+            MOV         [ChPlusLgn],EDI
+            MOV         [ChHaut],ECX
+            JNS         .GauchDroit
+            JZ          SHORT .RienZero1
+            LEA         EAX,[ESI+1]
+            ADD         [_FntX],EAX
 .GauchDroit:
 .RienZero1:
-    MOV     EBP,[_FntX]  ; MinX
-    ADD     EDI,[_FntY]  ; MinY
-    LEA     EBX,[EBP+EDX-1] ; MaxX: EBX=MinX+Larg-1
-    LEA     ESI,[EDI+ECX-1] ; MaxY: ESI=MinY+Haut-1
+            MOV         EBP,[_FntX]  ; MinX
+            ADD         EDI,[_FntY]  ; MinY
+            LEA         EBX,[EBP+EDX-1] ; MaxX: EBX=MinX+Larg-1
+            LEA         ESI,[EDI+ECX-1] ; MaxY: ESI=MinY+Haut-1
 
-    CMP     EBX,[_MaxX]
-    JG      .CharClip
-    CMP     ESI,[_MaxY]
-    JG      .CharClip
-    CMP     EBP,[_MinX]
-    JL      .CharClip
-    CMP     EDI,[_MinY]
-    JL      .CharClip
+            CMP         EBX,[_MaxX]
+            JG          .CharClip
+            CMP         ESI,[_MaxY]
+            JG          .CharClip
+            CMP         EBP,[_MinX]
+            JL          .CharClip
+            CMP         EDI,[_MinY]
+            JL          .CharClip
 ;****** trace caractere IN *****************************
 .CharIn:
-    MOV     ECX,[_ScanLine]
-    MOV     EBP,EDX ;Largeur
-    IMUL    EDI,ECX
-    LEA     ECX,[ECX+EDX*2]
-    NEG     EDI
-    MOV     [ChPlus],ECX
-    ADD     EDI,[_FntX]
-    ADD     EDI,[_FntX]
-    MOV     EDX,[ChHaut]
-    ADD     EDI,[_vlfb]
-    XOR     EAX,EAX
-    MOVD    ESI,xmm6
-    MOV     EAX,[_FntCol]
+            MOV         ECX,[_ScanLine]
+            MOV         EBP,EDX ;Largeur
+            IMUL        EDI,ECX
+            LEA         ECX,[ECX+EDX*2]
+            NEG         EDI
+            MOV         [ChPlus],ECX
+            ADD         EDI,[_FntX]
+            ADD         EDI,[_FntX]
+            MOV         EDX,[ChHaut]
+            ADD         EDI,[_vlfb]
+            XOR         EAX,EAX
+            MOVD        ESI,xmm6
+            MOV         EAX,[_FntCol]
 .LdNext:
-    MOV     EBX,[ESI]
-    MOV     CL,32
-    ADD     ESI,BYTE 4
+            MOV         EBX,[ESI]
+            MOV         CL,32
+            ADD         ESI,BYTE 4
 ;ALIGN 4
 .BcDrCarHline:
-    BT      EBX,0
-    JNC     SHORT .PasDrPixel
-    MOV     [EDI],AX
+            BT          EBX,0
+            JNC         SHORT .PasDrPixel
+            MOV         [EDI],AX
 .PasDrPixel:
-    SHR     EBX,1
-    DEC     EBP
-    LEA     EDI,[EDI+2]
-    JZ      SHORT .FinDrCarHline
-    DEC     CL
-    JNZ     SHORT .BcDrCarHline
-    JZ      .LdNext
+            SHR         EBX,1
+            DEC         EBP
+            LEA         EDI,[EDI+2]
+            JZ          SHORT .FinDrCarHline
+            DEC         CL
+            JNZ         SHORT .BcDrCarHline
+            JZ          .LdNext
 ;ALIGN 4
 .FinDrCarHline:
-    MOV     EBX,[ESI]
-    SUB     EDI,[ChPlus]
-    MOV     CL,32
-    LEA     ESI,[ESI+4]
-    DEC     DL
-    MOV     EBP,[ChLarg]
-    JNZ     .BcDrCarHline
-    JMP     .FinDrChar
+            MOV         EBX,[ESI]
+            SUB         EDI,[ChPlus]
+            MOV         CL,32
+            LEA         ESI,[ESI+4]
+            DEC         DL
+            MOV         EBP,[ChLarg]
+            JNZ         .BcDrCarHline
+            JMP         .FinDrChar
 ;****** Trace Caractere Clip ***************************
 .CharClip:
-    CMP     EBX,[_MinX]
-    JL      .FinDrChar
-    CMP     ESI,[_MinY]
-    JL      .FinDrChar
-    CMP     EBP,[_MaxX]
-    JG      .FinDrChar
-    CMP     EDI,[_MaxY]
-    JG      .FinDrChar
-    ; traitement MaxX********************************************
-    CMP     EBX,[_MaxX] ; MaxX>_MaxX
-    MOV     EAX,EBX
-    JLE     .PasApPlus
-    SUB     EAX,[_MaxX] ; DXAp = EAX = MaxX-_MaxX
-    SUB     EDX,EAX   ; EDX = Larg-DXAp
-    CMP     EAX,BYTE 32
-    JL      SHORT .PasApPlus
-    MOV     DWORD [ChApPlus],4
-    JMP     SHORT .ApPlus
+            CMP         EBX,[_MinX]
+            JL          .FinDrChar
+            CMP         ESI,[_MinY]
+            JL          .FinDrChar
+            CMP         EBP,[_MaxX]
+            JG          .FinDrChar
+            CMP         EDI,[_MaxY]
+            JG          .FinDrChar
+            ; traitement MaxX********************************************
+            CMP         EBX,[_MaxX] ; MaxX>_MaxX
+            MOV         EAX,EBX
+            JLE         .PasApPlus
+            SUB         EAX,[_MaxX] ; DXAp = EAX = MaxX-_MaxX
+            SUB         EDX,EAX   ; EDX = Larg-DXAp
+            CMP         EAX,BYTE 32
+            JL          SHORT .PasApPlus
+            MOV         DWORD [ChApPlus],4
+            JMP         SHORT .ApPlus
 .PasApPlus:
-    XOR     EAX,EAX
-    MOV     [ChApPlus],EAX
+            XOR         EAX,EAX
+            MOV         [ChApPlus],EAX
 .ApPlus:
-    ; traitement MinX********************************************
-    MOV     EAX,[_MinX]
-    SUB     EAX,EBP
-    JLE     .PasAvPlus
-    SUB     EDX,EAX
+            ; traitement MinX********************************************
+            MOV         EAX,[_MinX]
+            SUB         EAX,EBP
+            JLE         .PasAvPlus
+            SUB         EDX,EAX
 
-    CMP     EAX,BYTE 32
-    JL      .PasAvPlus2
-    MOV     DWORD [ChAvPlus],4
-    SUB     AL,32
-    MOV     AH,32
-    MOV     [ChAvDecal],AL
-    SUB     AH,AL
-    MOV     [ChNbBitDat],AH
-    JMP     SHORT .AvPlus
+            CMP         EAX,BYTE 32
+            JL          .PasAvPlus2
+            MOV         DWORD [ChAvPlus],4
+            SUB         AL,32
+            MOV         AH,32
+            MOV         [ChAvDecal],AL
+            SUB         AH,AL
+            MOV         [ChNbBitDat],AH
+            JMP         SHORT .AvPlus
 .PasAvPlus2:
-    MOV     AH,32
-    MOV     [ChAvDecal],AL
-    SUB     AH,AL
-    MOV     [ChNbBitDat],AH
-    XOR     EAX,EAX
-    MOV     [ChAvPlus],EAX
-    JMP     SHORT .AvPlus
+            MOV         AH,32
+            MOV         [ChAvDecal],AL
+            SUB         AH,AL
+            MOV         [ChNbBitDat],AH
+            XOR         EAX,EAX
+            MOV         [ChAvPlus],EAX
+            JMP         SHORT .AvPlus
 .PasAvPlus:
-    XOR     EAX,EAX
-    MOV     BYTE [ChNbBitDat],32
-    MOV     [ChAvPlus],EAX
-    MOV     [ChAvDecal],AL
+            XOR         EAX,EAX
+            MOV         BYTE [ChNbBitDat],32
+            MOV         [ChAvPlus],EAX
+            MOV         [ChAvDecal],AL
 .AvPlus:
-    ; traitement MaxY********************************************
-    CMP     ESI,[_MaxY] ; MaxY>_MaxY
-    MOV     EAX,ESI
-    JLE     .PasSupMaxY
-    SUB     EAX,[_MaxY] ; DY = EAX = MaxY-_MaxY
-    SUB     ECX,EAX   ; ECX = Haut-DY
+    ; handling MaxY********************************************
+            CMP         ESI,[_MaxY] ; MaxY>_MaxY
+            MOV         EAX,ESI
+            JLE         .PasSupMaxY
+            SUB         EAX,[_MaxY] ; DY = EAX = MaxY-_MaxY
+            SUB         ECX,EAX   ; ECX = Haut-DY
 .PasSupMaxY:
-    ; traitement MinY********************************************
-    MOV     EAX,[_MinY]
-    SUB     EAX,EDI
-    JLE     .PasInfMinY
-    SUB     ECX,EAX
-    MOV     EDI,[_MinY]
-    CMP     DWORD [ChLarg],BYTE 32
-    JLE     .Larg1DD
+    ; handling MinY********************************************
+            MOV         EAX,[_MinY]
+            SUB         EAX,EDI
+            JLE         .PasInfMinY
+            SUB         ECX,EAX
+            MOV         EDI,[_MinY]
+            CMP         DWORD [ChLarg],BYTE 32
+            JLE         .Larg1DD
 .Larg2DD:
-    IMUL    EAX,BYTE 8
-    MOVD    xmm7,EAX
-    PADDD   xmm6,xmm7
-    JMP     SHORT .PasInfMinY
+            IMUL        EAX,BYTE 8
+            MOVD        xmm7,EAX
+            PADDD       xmm6,xmm7
+            JMP         SHORT .PasInfMinY
 .Larg1DD:
-    IMUL    EAX,BYTE 4
-    MOVD    xmm7,EAX
-    PADDD   xmm6,xmm7
+            IMUL        EAX,BYTE 4
+            MOVD        xmm7,EAX
+            PADDD       xmm6,xmm7
 .PasInfMinY:
-    MOV     [ChHaut],ECX
-    MOV     [ChLarg],EDX
+            MOV         [ChHaut],ECX
+            MOV         [ChLarg],EDX
 ;************************************************
-    MOV     ECX,[_ScanLine]
-    MOV     EBP,EDX ;Largeur
-    IMUL    EDI,ECX
-    XOR     EAX,EAX
-    LEA     ECX,[ECX+EDX*2] ;
-    MOV     AL,[ChAvDecal]
-    NEG     EDI
-    MOV     [ChPlus],ECX
-    ADD     EDI,[_FntX]
-    ADD     EDI,[_FntX]  ; 2*_FntX 16bpp
-    LEA     EDI,[EDI+EAX*2]      ; EDI +=2*ChAvDecal
-    MOV     EDX,[ChHaut]
-    ADD     EDI,[_vlfb]
-    MOVD    ESI,xmm6
+            MOV         ECX,[_ScanLine]
+            MOV         EBP,EDX ;Largeur
+            IMUL        EDI,ECX
+            XOR         EAX,EAX
+            LEA         ECX,[ECX+EDX*2] ;
+            MOV         AL,[ChAvDecal]
+            NEG         EDI
+            MOV         [ChPlus],ECX
+            ADD         EDI,[_FntX]
+            ADD         EDI,[_FntX]  ; 2*_FntX 16bpp
+            LEA         EDI,[EDI+EAX*2]      ; EDI +=2*ChAvDecal
+            MOV         EDX,[ChHaut]
+            ADD         EDI,[_vlfb]
+            MOVD        ESI,xmm6
 
-    MOV     EAX,[_FntCol]  ;*************
-    ADD     ESI,[ChAvPlus]
-    MOV     EBX,[ESI]
-    MOV     CL,[ChAvDecal]
-    MOV     CH,[ChNbBitDat]
-    ADD     ESI,BYTE 4
-    SHR     EBX,CL
-    JMP     SHORT .CBcDrCarHline
+            MOV         EAX,[_FntCol]  ;*************
+            ADD         ESI,[ChAvPlus]
+            MOV         EBX,[ESI]
+            MOV         CL,[ChAvDecal]
+            MOV         CH,[ChNbBitDat]
+            ADD         ESI,BYTE 4
+            SHR         EBX,CL
+            JMP         SHORT .CBcDrCarHline
 
 .CLdNext:
-    MOV     EBX,[ESI]
-    MOV     CH,32
-    ADD     ESI,BYTE 4
+            MOV         EBX,[ESI]
+            MOV         CH,32
+            ADD         ESI,BYTE 4
 ;ALIGN 4
 .CBcDrCarHline:
-    BT      EBX,0
-    JNC     SHORT .CPasDrPixel
-    MOV     [EDI],AX
+            BT          EBX,0
+            JNC         SHORT .CPasDrPixel
+            MOV         [EDI],AX
 .CPasDrPixel:
-    SHR     EBX,1
-    DEC     EBP
-    LEA     EDI,[EDI+2]
-    JZ      SHORT .CFinDrCarHline
-    DEC     CH
-    JNZ     SHORT .CBcDrCarHline
-    JZ      SHORT .CLdNext
+            SHR         EBX,1
+            DEC         EBP
+            LEA         EDI,[EDI+2]
+            JZ          SHORT .CFinDrCarHline
+            DEC         CH
+            JNZ         SHORT .CBcDrCarHline
+            JZ          SHORT .CLdNext
 ;ALIGN 4
 .CFinDrCarHline:
-    ADD     ESI,[ChApPlus]
-    SUB     EDI,[ChPlus]
-    ADD     ESI,[ChAvPlus]
-    MOV     CL,[ChAvDecal]
-    MOV     EBX,[ESI]
-    MOV     CH,[ChNbBitDat]
-    SHR     EBX,CL
-    LEA     ESI,[ESI+4]
-    DEC     DL
-    MOV     EBP,[ChLarg]
-    JNZ     .CBcDrCarHline
+            ADD         ESI,[ChApPlus]
+            SUB         EDI,[ChPlus]
+            ADD         ESI,[ChAvPlus]
+            MOV         CL,[ChAvDecal]
+            MOV         EBX,[ESI]
+            MOV         CH,[ChNbBitDat]
+            SHR         EBX,CL
+            LEA         ESI,[ESI+4]
+            DEC         DL
+            MOV         EBP,[ChLarg]
+            JNZ         .CBcDrCarHline
 
 .FinDrChar:;********************************************
-    MOV     ESI,[ChPlusX]
-    OR      ESI,ESI
-    JS      SHORT .DroitGauch
-    JZ      SHORT .RienZero2
-    ADD     [_FntX],ESI
+            MOV         ESI,[ChPlusX]
+            OR          ESI,ESI
+            JS          SHORT .DroitGauch
+            JZ          SHORT .RienZero2
+            ADD         [_FntX],ESI
 .DroitGauch:
 .RienZero2:
-    OR      ESI,ESI
-    JNS     SHORT .GauchDroit2
-    JZ      .RienZero3
-    MOV     EAX,[_FntX]
-    DEC     EAX
-    MOV     [_FntX],EAX
+            OR          ESI,ESI
+            JNS         SHORT .GauchDroit2
+            JZ          .RienZero3
+            MOV         EAX,[_FntX]
+            DEC         EAX
+            MOV         [_FntX],EAX
 .GauchDroit2:
 .RienZero3:
-    JMP     SHORT .Norm
+            JMP         SHORT .Norm
 
 .DebNextLigne:
-    MOVZX   EAX,BYTE [_FntDistLgn] ;***debut trait Cas sp
-    MOV     EBX,[_FntY]
-    SUB     EBX,EAX
-    MOV     [_FntY],EBX
+            MOVZX       EAX,BYTE [_FntDistLgn] ;***debut trait Cas sp
+            MOV         EBX,[_FntY]
+            SUB         EBX,EAX
+            MOV         [_FntY],EBX
 .DebLigne:
-    CMP     BYTE [_FntSens], 0
-    JE      SHORT .GchDrt
-    MOV     EBX,[_MaxX]
-    JMP     SHORT .DrtGch
+            CMP         BYTE [_FntSens], 0
+            JE          SHORT .GchDrt
+            MOV         EBX,[_MaxX]
+            JMP         SHORT .DrtGch
 .GchDrt:
-    MOV     EBX,[_MinX]
+            MOV         EBX,[_MinX]
 .DrtGch:
-    MOV     [_FntX],EBX
-    JMP     SHORT .Norm
+            MOV         [_FntX],EBX
+            JMP         SHORT .Norm
 .TabCar:
-    MOV     AL,32      ; TAB
-    MOV     ESI,[_FntX]
-    MOVZX   ECX,BYTE [_FntTab]
-    MOVSX   EAX,BYTE [EBX+EAX*8+4] ; PlusX
-    IMUL    ECX,EAX
-    ADD     ESI,ECX
-    MOV     [_FntX],ESI ;***********fin trait Cas sp
+            MOV         AL,32      ; TAB
+            MOV         ESI,[_FntX]
+            MOVZX       ECX,BYTE [_FntTab]
+            MOVSX       EAX,BYTE [EBX+EAX*8+4] ; PlusX
+            IMUL        ECX,EAX
+            ADD         ESI,ECX
+            MOV         [_FntX],ESI ;***********fin trait Cas sp
 .Norm:
-    XOR     EAX,EAX
-    POP     ESI
-    POP     EBX
-    JMP     .BcOutChar
+            XOR         EAX,EAX
+            POP         ESI
+            POP         EBX
+            JMP         .BcOutChar
 .FinOutText:
-    POP     ESI
-    POP     EDI
-    POP     EBX
+            POP         ESI
+            POP         EDI
+            POP         EBX
     RETURN
 
 
@@ -902,443 +903,442 @@ _OutText16:
 ; == xxxResizeViewSurf16 =====================================
 
 _ResizeViewSurf16:
-  ARG SrcResizeSurf16, 4, ResizeRevertHz, 4, ResizeRevertVt, 4
+    ARG SrcResizeSurf16, 4, ResizeRevertHz, 4, ResizeRevertVt, 4
 
-    PUSH    ESI
-    PUSH    EBX
-    PUSH    EDI
+            PUSH        ESI
+            PUSH        EBX
+            PUSH        EDI
 
-    MOV       ESI,[EBP+SrcResizeSurf16]
-    MOV       EDI,_SrcSurf
-    XOR         EBX,EBX ; store flags revert Hz and Vt
-    CopySurfDA  ; copy the source surface
+            MOV         ESI,[EBP+SrcResizeSurf16]
+            MOV         EDI,_SrcSurf
+            XOR         EBX,EBX ; store flags revert Hz and Vt
+            CopySurfDA  ; copy the source surface
 
 
-    MOV       EAX,[EBP+ResizeRevertHz]
-    MOV       EDX,[EBP+ResizeRevertVt]
-    OR          EAX,EAX
-    ; compute horizontal pnt in EBP
-    MOV         EBP,[_MaxY]
-    SETNZ       BL ; BL = RevertHz ?
-    OR          EDX,EDX
-    MOV         EAX,[SMaxX]
-    SETNZ       BH ; BH = RevertVt ?
-    MOV         EDI,[_MinY]
-    MOV         ESI,[SMinX]
-    PUSH        EBX ; save FLAGS Revert
-    MOV         ECX,[_MaxX]
-    SUB         EBP,EDI ; = (_MaxY - MinY)
-    MOV         EBX,[_MinX]
-    INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
-    SUB         EAX,ESI
-    IMUL        EDI,[_NegScanLine]
-    SUB         ECX,EBX
-    ADD         EDI,[_vlfb]
-    MOVD        mm5,EBP ; count of hline
-    MOVD        mm1,ESI ; SMinX
-    INC         EAX
-    LEA         EDI,[EDI+EBX*2]
-    INC         ECX
-    MOVD        mm6,EDI ; xmm6 = start Hline dest
-    MOVD        mm2,ECX ; xmm2 = dest hline size
-    MOV         EBX,[SMaxY]
-    SHL         EAX,Prec
-    MOV         EDI,EBP ; EDI = DeltaY
-    XOR         EDX,EDX
-    SUB         EBX,[SMinY]
-    DIV         ECX
-    INC         EBX ; Source DeltaYT
-    SHL         EBX,Prec
-    MOV         EBP,EAX
-    XOR         EDX,EDX
-    MOV         EAX,EBX
-    DIV         EDI
-    POP         EBX
-    XOR         EDX,EDX ; EDX = acc PntX
-    MOVD        mm7,[SMinY]
-    PXOR        mm4,mm4 ; xmm4 = acc pnt
-    MOVD        ECX,mm5
-    CMP         BL,0
-    JZ          SHORT .NoRevertHz
-    MOVD        mm1,[SMaxX] ; SMaxX
-    MOV         EDX,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
-    NEG         EBP ; revert Horizontal Pnt X
+            MOV         EAX,[EBP+ResizeRevertHz]
+            MOV         EDX,[EBP+ResizeRevertVt]
+            OR          EAX,EAX
+            ; compute horizontal pnt in EBP
+            MOV         EBP,[_MaxY]
+            SETNZ       BL ; BL = RevertHz ?
+            OR          EDX,EDX
+            MOV         EAX,[SMaxX]
+            SETNZ       BH ; BH = RevertVt ?
+            MOV         EDI,[_MinY]
+            MOV         ESI,[SMinX]
+            PUSH        EBX ; save FLAGS Revert
+            MOV         ECX,[_MaxX]
+            SUB         EBP,EDI ; = (_MaxY - MinY)
+            MOV         EBX,[_MinX]
+            INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
+            SUB         EAX,ESI
+            IMUL        EDI,[_NegScanLine]
+            SUB         ECX,EBX
+            ADD         EDI,[_vlfb]
+            MOVD        mm5,EBP ; count of hline
+            MOVD        mm1,ESI ; SMinX
+            INC         EAX
+            LEA         EDI,[EDI+EBX*2]
+            INC         ECX
+            MOVD        mm6,EDI ; xmm6 = start Hline dest
+            MOVD        mm2,ECX ; xmm2 = dest hline size
+            MOV         EBX,[SMaxY]
+            SHL         EAX,Prec
+            MOV         EDI,EBP ; EDI = DeltaY
+            XOR         EDX,EDX
+            SUB         EBX,[SMinY]
+            DIV         ECX
+            INC         EBX ; Source DeltaYT
+            SHL         EBX,Prec
+            MOV         EBP,EAX
+            XOR         EDX,EDX
+            MOV         EAX,EBX
+            DIV         EDI
+            POP         EBX
+            XOR         EDX,EDX ; EDX = acc PntX
+            MOVD        mm7,[SMinY]
+            PXOR        mm4,mm4 ; xmm4 = acc pnt
+            MOVD        ECX,mm5
+            CMP         BL,0
+            JZ          SHORT .NoRevertHz
+            MOVD        mm1,[SMaxX] ; SMaxX
+            MOV         EDX,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
+            NEG         EBP ; revert Horizontal Pnt X
 .NoRevertHz:
-    CMP         BH,0
-    JZ          SHORT .NoRevertVt
-    NEG         EAX ; negate PntY
-    MOVD        mm7,[SMaxY] ; SMaxX
-    MOVD        mm4,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
+            CMP         BH,0
+            JZ          SHORT .NoRevertVt
+            NEG         EAX ; negate PntY
+            MOVD        mm7,[SMaxY] ; SMaxX
+            MOVD        mm4,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
 .NoRevertVt:
-    MOVD        mm3,EAX ; xmm3  = pntY
+            MOVD        mm3,EAX ; xmm3  = pntY
 
 .BcResize:
-        MOVQ        mm0,mm4
-        MOVD        EBX,mm1 ; + [SMinX] | [SMaxX] (if RevertHz)
-        PSRAD       mm0,Prec
-        MOVD        mm5,ECX ; save hline counter
-        PADDD       mm0,mm7 ; + [SMinY] | [SMaxY] (if RevertVt)
-        MOVD        EDI,mm6 ; start hline
-        MOVD        ESI,mm0
-        MOVD        ECX,mm2 ; dest hline size
-    IMUL      ESI,[SNegScanLine] ; - 2
-        PUSH        EDX ; save acc PntX
-    LEA       ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
-    ADD       ESI,[Svlfb] ; - 5
+            MOVQ        mm0,mm4
+            MOVD        EBX,mm1 ; + [SMinX] | [SMaxX] (if RevertHz)
+            PSRAD       mm0,Prec
+            MOVD        mm5,ECX ; save hline counter
+            PADDD       mm0,mm7 ; + [SMinY] | [SMaxY] (if RevertVt)
+            MOVD        EDI,mm6 ; start hline
+            MOVD        ESI,mm0
+            MOVD        ECX,mm2 ; dest hline size
+            IMUL        ESI,[SNegScanLine] ; - 2
+            PUSH        EDX ; save acc PntX
+            LEA         ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
+            ADD         ESI,[Svlfb] ; - 5
 
-        @InFastTextHLineDYZ16
+            @InFastTextHLineDYZ16
 
-        MOVD        ECX,mm5 ; restore hline counter
-        PADDD       mm4,mm3 ; next source hline
-        PADDD       mm6,[_NegScanLine] ; next hline
-        DEC         ECX
-        POP         EDX  ; restore acc PntX
-        JNZ         .BcResize
+            MOVD        ECX,mm5 ; restore hline counter
+            PADDD       mm4,mm3 ; next source hline
+            PADDD       mm6,[_NegScanLine] ; next hline
+            DEC         ECX
+            POP         EDX  ; restore acc PntX
+            JNZ         .BcResize
 
-        EMMS
-    POP     EDI
-    POP     EBX
-    POP     ESI
-
+            EMMS
+            POP         EDI
+            POP         EBX
+            POP         ESI
     RETURN
 
 
 _MaskResizeViewSurf16:
-  ARG SrcMaskResizeSurf16, 4, MaskResizeRevertHz, 4, MaskResizeRevertVt, 4
+    ARG SrcMaskResizeSurf16, 4, MaskResizeRevertHz, 4, MaskResizeRevertVt, 4
 
-    PUSH    ESI
-    PUSH    EBX
-    PUSH    EDI
+            PUSH        ESI
+            PUSH        EBX
+            PUSH        EDI
 
-    MOV       ESI,[EBP+SrcMaskResizeSurf16]
-    MOV       EDI,_SrcSurf
-    XOR         EBX,EBX ; store flags revert Hz and Vt
-    CopySurfDA  ; copy the source surface
+            MOV         ESI,[EBP+SrcMaskResizeSurf16]
+            MOV         EDI,_SrcSurf
+            XOR         EBX,EBX ; store flags revert Hz and Vt
+            CopySurfDA  ; copy the source surface
 
 
-    MOV       EAX,[EBP+MaskResizeRevertHz]
-    MOV       EDX,[EBP+MaskResizeRevertVt]
-    OR          EAX,EAX
-    ; compute horizontal pnt in EBP
-    MOV         EBP,[_MaxY]
-    SETNZ       BL ; BL = RevertHz ?
-    OR          EDX,EDX
-    MOV         EAX,[SMaxX]
-    SETNZ       BH ; BH = RevertVt ?
-    MOV         EDI,[_MinY]
-    MOV         ESI,[SMinX]
-    PUSH        EBX ; save FLAGS Revert
-    MOV         ECX,[_MaxX]
-    SUB         EBP,EDI ; = (_MaxY - MinY)
-    MOV         EBX,[_MinX]
-    INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
-    SUB         EAX,ESI
-    IMUL        EDI,[_NegScanLine]
-    SUB         ECX,EBX
-    ADD         EDI,[_vlfb]
-    MOVD        mm5,EBP ; count of hline
-    MOVD        mm1,ESI ; SMinX
-    INC         EAX
-    LEA         EDI,[EDI+EBX*2]
-    INC         ECX
-    MOVD        mm6,EDI ; xmm6 = start Hline dest
-    MOVD        mm2,ECX ; xmm2 = dest hline size
-    MOV         EBX,[SMaxY]
-    SHL         EAX,Prec
-    MOV         EDI,EBP ; EDI = DeltaY
-    XOR         EDX,EDX
-    SUB         EBX,[SMinY]
-    DIV         ECX
-    INC         EBX ; Source DeltaYT
-    SHL         EBX,Prec
-    MOV         EBP,EAX
-    XOR         EDX,EDX
-    MOV         EAX,EBX
-    DIV         EDI
-    POP         EBX
-    XOR         EDX,EDX ; EDX = acc PntX
-    MOVD        mm7,[SMinY]
-    PXOR        mm4,mm4 ; xmm4 = acc pnt
-    MOVD        ECX,mm5
-    CMP         BL,0
-    JZ          SHORT .NoRevertHz
-    MOVD        mm1,[SMaxX] ; SMaxX
-    MOV         EDX,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
-    NEG         EBP ; revert Horizontal Pnt X
+            MOV         EAX,[EBP+MaskResizeRevertHz]
+            MOV         EDX,[EBP+MaskResizeRevertVt]
+            OR          EAX,EAX
+            ; compute horizontal pnt in EBP
+            MOV         EBP,[_MaxY]
+            SETNZ       BL ; BL = RevertHz ?
+            OR          EDX,EDX
+            MOV         EAX,[SMaxX]
+            SETNZ       BH ; BH = RevertVt ?
+            MOV         EDI,[_MinY]
+            MOV         ESI,[SMinX]
+            PUSH        EBX ; save FLAGS Revert
+            MOV         ECX,[_MaxX]
+            SUB         EBP,EDI ; = (_MaxY - MinY)
+            MOV         EBX,[_MinX]
+            INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
+            SUB         EAX,ESI
+            IMUL        EDI,[_NegScanLine]
+            SUB         ECX,EBX
+            ADD         EDI,[_vlfb]
+            MOVD        mm5,EBP ; count of hline
+            MOVD        mm1,ESI ; SMinX
+            INC         EAX
+            LEA         EDI,[EDI+EBX*2]
+            INC         ECX
+            MOVD        mm6,EDI ; xmm6 = start Hline dest
+            MOVD        mm2,ECX ; xmm2 = dest hline size
+            MOV         EBX,[SMaxY]
+            SHL         EAX,Prec
+            MOV         EDI,EBP ; EDI = DeltaY
+            XOR         EDX,EDX
+            SUB         EBX,[SMinY]
+            DIV         ECX
+            INC         EBX ; Source DeltaYT
+            SHL         EBX,Prec
+            MOV         EBP,EAX
+            XOR         EDX,EDX
+            MOV         EAX,EBX
+            DIV         EDI
+            POP         EBX
+            XOR         EDX,EDX ; EDX = acc PntX
+            MOVD        mm7,[SMinY]
+            PXOR        mm4,mm4 ; xmm4 = acc pnt
+            MOVD        ECX,mm5
+            CMP         BL,0
+            JZ          SHORT .NoRevertHz
+            MOVD        mm1,[SMaxX] ; SMaxX
+            MOV         EDX,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
+            NEG         EBP ; revert Horizontal Pnt X
 .NoRevertHz:
-    CMP         BH,0
-    JZ          SHORT .NoRevertVt
-    NEG         EAX ; negate PntY
-    MOVD        mm7,[SMaxY] ; SMaxX
-    MOVD        mm4,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
+            CMP         BH,0
+            JZ          SHORT .NoRevertVt
+            NEG         EAX ; negate PntY
+            MOVD        mm7,[SMaxY] ; SMaxX
+            MOVD        mm4,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
 .NoRevertVt:
-    PSHUFLW   xmm7,[SMask], 0 ; xmm7 = SMask | SMask | SMask | SMask
-    MOVD        mm3,EAX ; xmm3  = pntY
-    PUNPCKLQDQ  xmm7,xmm7
+            PSHUFLW     xmm7,[SMask], 0 ; xmm7 = SMask | SMask | SMask | SMask
+            MOVD        mm3,EAX ; xmm3  = pntY
+            PUNPCKLQDQ  xmm7,xmm7
 
 .BcResize:
-        MOVQ        mm0,mm4
-        MOVD        EBX,mm1 ; + [SMinX] | [SMaxX] (if RevertHz)
-        PSRAD       mm0,Prec
-        MOVD        mm5,ECX ; save hline counter
-        PADDD       mm0,mm7 ; + [SMinY] | [SMaxY] (if RevertVt)
-        MOVD        EDI,mm6 ; start hline
-        MOVD        ESI,mm0
-        MOVD        ECX,mm2 ; dest hline size
-    IMUL      ESI,[SNegScanLine] ; - 2
-        PUSH        EDX ; save acc PntX
-    LEA       ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
-    ADD       ESI,[Svlfb] ; - 5
+            MOVQ        mm0,mm4
+            MOVD        EBX,mm1 ; + [SMinX] | [SMaxX] (if RevertHz)
+            PSRAD       mm0,Prec
+            MOVD        mm5,ECX ; save hline counter
+            PADDD       mm0,mm7 ; + [SMinY] | [SMaxY] (if RevertVt)
+            MOVD        EDI,mm6 ; start hline
+            MOVD        ESI,mm0
+            MOVD        ECX,mm2 ; dest hline size
+            IMUL        ESI,[SNegScanLine] ; - 2
+            PUSH        EDX ; save acc PntX
+            LEA         ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
+            ADD         ESI,[Svlfb] ; - 5
 
-        @InFastMaskTextHLineDYZ16
+            @InFastMaskTextHLineDYZ16
 
-        MOVD        ECX,mm5 ; restore hline counter
-        PADDD       mm4,mm3 ; next source hline
-        PADDD       mm6,[_NegScanLine] ; next hline
-        DEC         ECX
-        POP         EDX  ; restore acc PntX
-        JNZ         .BcResize
+            MOVD        ECX,mm5 ; restore hline counter
+            PADDD       mm4,mm3 ; next source hline
+            PADDD       mm6,[_NegScanLine] ; next hline
+            DEC         ECX
+            POP         EDX  ; restore acc PntX
+            JNZ         .BcResize
 
-        EMMS
-    POP     EDI
-    POP     EBX
-    POP     ESI
+            EMMS
+            POP         EDI
+            POP         EBX
+            POP         ESI
 
     RETURN
 
 
 _TransResizeViewSurf16:
-  ARG SrcTransResizeSurf16, 4, TransResizeRevertHz, 4, TransResizeRevertVt, 4, TransResizeSurf16, 4
+    ARG SrcTransResizeSurf16, 4, TransResizeRevertHz, 4, TransResizeRevertVt, 4, TransResizeSurf16, 4
 
-    PUSH    ESI
-    PUSH    EBX
-    PUSH    EDI
+            PUSH        ESI
+            PUSH        EBX
+            PUSH        EDI
 
-    MOV       ESI,[EBP+SrcTransResizeSurf16]
-    MOV       EDI,_SrcSurf
-    XOR         EBX,EBX ; store flags revert Hz and Vt
-    CopySurfDA  ; copy the source surface
+            MOV         ESI,[EBP+SrcTransResizeSurf16]
+            MOV         EDI,_SrcSurf
+            XOR         EBX,EBX ; store flags revert Hz and Vt
+            CopySurfDA  ; copy the source surface
 
-    MOV     EAX,[EBP+TransResizeSurf16] ;
-    AND     EAX,BYTE BlendMask
-    JZ      .End ; zero transparency no need to draw any thing
-    MOV     EDX,EAX ;
-    INC     EAX
+            MOV         EAX,[EBP+TransResizeSurf16] ;
+            AND         EAX,BYTE BlendMask
+            JZ          .End ; zero transparency no need to draw any thing
+            MOV         EDX,EAX ;
+            INC         EAX
 
-    XOR       DL,BlendMask ; 31-blendsrc
-    MOVD    xmm7,EAX
-    MOVD    xmm6,EDX
-    PSHUFLW   xmm7,xmm7,0
-    PSHUFLW     xmm6,xmm6,0
-    PUNPCKLQDQ  xmm7,xmm7
-    PUNPCKLQDQ  xmm6,xmm6
+            XOR         DL,BlendMask ; 31-blendsrc
+            MOVD        xmm7,EAX
+            MOVD        xmm6,EDX
+            PSHUFLW     xmm7,xmm7,0
+            PSHUFLW     xmm6,xmm6,0
+            PUNPCKLQDQ  xmm7,xmm7
+            PUNPCKLQDQ  xmm6,xmm6
 
 
-    MOV       EAX,[EBP+TransResizeRevertHz]
-    MOV       EDX,[EBP+TransResizeRevertVt]
-    OR          EAX,EAX
-    ; compute horizontal pnt in EBP
-    MOV         EBP,[_MaxY]
-    SETNZ       BL ; BL = RevertHz ?
-    OR          EDX,EDX
-    MOV         EAX,[SMaxX]
-    SETNZ       BH ; BH = RevertVt ?
-    MOV         EDI,[_MinY]
-    MOV         ESI,[SMinX]
-    PUSH        EBX ; save FLAGS Revert
-    MOV         ECX,[_MaxX]
-    SUB         EBP,EDI ; = (_MaxY - MinY)
-    MOV         EBX,[_MinX]
-    INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
-    SUB         EAX,ESI
-    IMUL        EDI,[_NegScanLine]
-    SUB         ECX,EBX
-    ADD         EDI,[_vlfb]
-    MOVD        mm5,EBP ; count of hline
-    MOVD        mm1,ESI ; SMinX
-    INC         EAX
-    LEA         EDI,[EDI+EBX*2]
-    INC         ECX
-    MOVD        mm6,EDI ; xmm6 = start Hline dest
-    MOVD        mm2,ECX ; xmm2 = dest hline size
-    MOV         EBX,[SMaxY]
-    SHL         EAX,Prec
-    MOV         EDI,EBP ; EDI = DeltaY
-    XOR         EDX,EDX
-    SUB         EBX,[SMinY]
-    DIV         ECX
-    INC         EBX ; Source DeltaYT
-    SHL         EBX,Prec
-    MOV         EBP,EAX
-    XOR         EDX,EDX
-    MOV         EAX,EBX
-    DIV         EDI
-    POP         EBX
-    XOR         EDX,EDX ; EDX = acc PntX
-    MOVD        mm7,[SMinY]
-    PXOR        mm4,mm4 ; xmm4 = acc pnt
-    MOVD        ECX,mm5
-    CMP         BL,0
-    JZ          SHORT .NoRevertHz
-    MOVD        mm1,[SMaxX] ; SMaxX
-    MOV         EDX,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
-    NEG         EBP ; revert Horizontal Pnt X
+            MOV         EAX,[EBP+TransResizeRevertHz]
+            MOV         EDX,[EBP+TransResizeRevertVt]
+            OR          EAX,EAX
+            ; compute horizontal pnt in EBP
+            MOV         EBP,[_MaxY]
+            SETNZ       BL ; BL = RevertHz ?
+            OR          EDX,EDX
+            MOV         EAX,[SMaxX]
+            SETNZ       BH ; BH = RevertVt ?
+            MOV         EDI,[_MinY]
+            MOV         ESI,[SMinX]
+            PUSH        EBX ; save FLAGS Revert
+            MOV         ECX,[_MaxX]
+            SUB         EBP,EDI ; = (_MaxY - MinY)
+            MOV         EBX,[_MinX]
+            INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
+            SUB         EAX,ESI
+            IMUL        EDI,[_NegScanLine]
+            SUB         ECX,EBX
+            ADD         EDI,[_vlfb]
+            MOVD        mm5,EBP ; count of hline
+            MOVD        mm1,ESI ; SMinX
+            INC         EAX
+            LEA         EDI,[EDI+EBX*2]
+            INC         ECX
+            MOVD        mm6,EDI ; xmm6 = start Hline dest
+            MOVD        mm2,ECX ; xmm2 = dest hline size
+            MOV         EBX,[SMaxY]
+            SHL         EAX,Prec
+            MOV         EDI,EBP ; EDI = DeltaY
+            XOR         EDX,EDX
+            SUB         EBX,[SMinY]
+            DIV         ECX
+            INC         EBX ; Source DeltaYT
+            SHL         EBX,Prec
+            MOV         EBP,EAX
+            XOR         EDX,EDX
+            MOV         EAX,EBX
+            DIV         EDI
+            POP         EBX
+            XOR         EDX,EDX ; EDX = acc PntX
+            MOVD        mm7,[SMinY]
+            PXOR        mm4,mm4 ; xmm4 = acc pnt
+            MOVD        ECX,mm5
+            CMP         BL,0
+            JZ          SHORT .NoRevertHz
+            MOVD        mm1,[SMaxX] ; SMaxX
+            MOV         EDX,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
+            NEG         EBP ; revert Horizontal Pnt X
 .NoRevertHz:
-    CMP         BH,0
-    JZ          SHORT .NoRevertVt
-    NEG         EAX ; negate PntY
-    MOVD        mm7,[SMaxY] ; SMaxX
-    MOVD        mm4,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
+            CMP         BH,0
+            JZ          SHORT .NoRevertVt
+            NEG         EAX ; negate PntY
+            MOVD        mm7,[SMaxY] ; SMaxX
+            MOVD        mm4,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
 .NoRevertVt:
-    MOVD        mm3,EAX ; xmm3  = pntY
+            MOVD        mm3,EAX ; xmm3  = pntY
 
 .BcResize:
-        MOVQ        mm0,mm4
-        MOVD        EBX,mm1 ; + [SMinX] | [SMaxX] (if RevertHz)
-        PSRAD       mm0,Prec
-        MOVD        mm5,ECX ; save hline counter
-        PADDD       mm0,mm7 ; + [SMinY] | [SMaxY] (if RevertVt)
-        MOVD        EDI,mm6 ; start hline
-        MOVD        ESI,mm0
-        MOVD        ECX,mm2 ; dest hline size
-    IMUL      ESI,[SNegScanLine] ; - 2
-        PUSH        EDX ; save acc PntX
-    LEA       ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
-    ADD       ESI,[Svlfb] ; - 5
+            MOVQ        mm0,mm4
+            MOVD        EBX,mm1 ; + [SMinX] | [SMaxX] (if RevertHz)
+            PSRAD       mm0,Prec
+            MOVD        mm5,ECX ; save hline counter
+            PADDD       mm0,mm7 ; + [SMinY] | [SMaxY] (if RevertVt)
+            MOVD        EDI,mm6 ; start hline
+            MOVD        ESI,mm0
+            MOVD        ECX,mm2 ; dest hline size
+            IMUL        ESI,[SNegScanLine] ; - 2
+            PUSH        EDX ; save acc PntX
+            LEA         ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
+            ADD         ESI,[Svlfb] ; - 5
 
-        @InFastTransTextHLineDYZ16
+            @InFastTransTextHLineDYZ16
 
-        MOVD        ECX,mm5 ; restore hline counter
-        PADDD       mm4,mm3 ; next source hline
-        PADDD       mm6,[_NegScanLine] ; next hline
-        DEC         ECX
-        POP         EDX  ; restore acc PntX
-        JNZ         .BcResize
+            MOVD        ECX,mm5 ; restore hline counter
+            PADDD       mm4,mm3 ; next source hline
+            PADDD       mm6,[_NegScanLine] ; next hline
+            DEC         ECX
+            POP         EDX  ; restore acc PntX
+            JNZ         .BcResize
 
 .End:
-        EMMS
-    POP     EDI
-    POP     EBX
-    POP     ESI
+            EMMS
+            POP         EDI
+            POP         EBX
+            POP         ESI
 
     RETURN
 
 _MaskTransResizeViewSurf16:
-  ARG SrcMaskTransResizeSurf16, 4, MaskTransResizeRevertHz, 4, MaskTransResizeRevertVt, 4, MaskTransResizeSurf16, 4
+    ARG SrcMaskTransResizeSurf16, 4, MaskTransResizeRevertHz, 4, MaskTransResizeRevertVt, 4, MaskTransResizeSurf16, 4
 
-    PUSH    ESI
-    PUSH    EBX
-    PUSH    EDI
+            PUSH        ESI
+            PUSH        EBX
+            PUSH        EDI
 
-    MOV       ESI,[EBP+SrcMaskTransResizeSurf16]
-    MOV       EDI,_SrcSurf
-    XOR         EBX,EBX ; store flags revert Hz and Vt
-    CopySurfDA  ; copy the source surface
+            MOV         ESI,[EBP+SrcMaskTransResizeSurf16]
+            MOV         EDI,_SrcSurf
+            XOR         EBX,EBX ; store flags revert Hz and Vt
+            CopySurfDA  ; copy the source surface
 
-    MOV     EAX,[EBP+MaskTransResizeSurf16] ;
-    AND     EAX,BYTE BlendMask
-    JZ      .End ; zero transparency no need to draw any thing
-    MOV     EDX,EAX ;
-    PSHUFLW     xmm0,[SMask],0
-    INC     EAX
+            MOV         EAX,[EBP+MaskTransResizeSurf16] ;
+            AND         EAX,BYTE BlendMask
+            JZ          .End ; zero transparency no need to draw any thing
+            MOV         EDX,EAX ;
+            PSHUFLW     xmm0,[SMask],0
+            INC         EAX
 
-    XOR       DL,BlendMask ; 31-blendsrc
-    MOVD    xmm7,EAX
-    MOVD    xmm6,EDX
-    PSHUFLW   xmm7,xmm7,0
-    PSHUFLW     xmm6,xmm6,0
-    PUNPCKLQDQ  xmm7,xmm7
-    PUNPCKLQDQ  xmm6,xmm6
-    PUNPCKLQDQ  xmm0,xmm0
-    MOVDQA    [QMulSrcBlend],xmm7
-    MOVDQA    [DQ16Mask],xmm0
+            XOR         DL,BlendMask ; 31-blendsrc
+            MOVD        xmm7,EAX
+            MOVD        xmm6,EDX
+            PSHUFLW     xmm7,xmm7,0
+            PSHUFLW     xmm6,xmm6,0
+            PUNPCKLQDQ  xmm7,xmm7
+            PUNPCKLQDQ  xmm6,xmm6
+            PUNPCKLQDQ  xmm0,xmm0
+            MOVDQA      [QMulSrcBlend],xmm7
+            MOVDQA      [DQ16Mask],xmm0
 
-    MOV       EAX,[EBP+MaskTransResizeRevertHz]
-    MOV       EDX,[EBP+MaskTransResizeRevertVt]
-    OR          EAX,EAX
-    ; compute horizontal pnt in EBP
-    MOV         EBP,[_MaxY]
-    SETNZ       BL ; BL = RevertHz ?
-    OR          EDX,EDX
-    MOV         EAX,[SMaxX]
-    SETNZ       BH ; BH = RevertVt ?
-    MOV         EDI,[_MinY]
-    MOV         ESI,[SMinX]
-    PUSH        EBX ; save FLAGS Revert
-    MOV         ECX,[_MaxX]
-    SUB         EBP,EDI ; = (_MaxY - MinY)
-    MOV         EBX,[_MinX]
-    INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
-    SUB         EAX,ESI
-    IMUL        EDI,[_NegScanLine]
-    SUB         ECX,EBX
-    ADD         EDI,[_vlfb]
-    MOVD        mm5,EBP ; count of hline
-    MOVD        mm1,ESI ; SMinX
-    INC         EAX
-    LEA         EDI,[EDI+EBX*2]
-    INC         ECX
-    MOVD        mm6,EDI ; xmm6 = start Hline dest
-    MOVD        mm2,ECX ; xmm2 = dest hline size
-    MOV         EBX,[SMaxY]
-    SHL         EAX,Prec
-    MOV         EDI,EBP ; EDI = DeltaY
-    XOR         EDX,EDX
-    SUB         EBX,[SMinY]
-    DIV         ECX
-    INC         EBX ; Source DeltaYT
-    SHL         EBX,Prec
-    MOV         EBP,EAX
-    XOR         EDX,EDX
-    MOV         EAX,EBX
-    DIV         EDI
-    POP         EBX
-    XOR         EDX,EDX ; EDX = acc PntX
-    MOVD        mm7,[SMinY]
-    PXOR        mm4,mm4 ; xmm4 = acc pnt
-    MOVD        ECX,mm5
-    CMP         BL,0
-    JZ          SHORT .NoRevertHz
-    MOVD        mm1,[SMaxX] ; SMaxX
-    MOV         EDX,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
-    NEG         EBP ; revert Horizontal Pnt X
+            MOV         EAX,[EBP+MaskTransResizeRevertHz]
+            MOV         EDX,[EBP+MaskTransResizeRevertVt]
+            OR          EAX,EAX
+            ; compute horizontal pnt in EBP
+            MOV         EBP,[_MaxY]
+            SETNZ       BL ; BL = RevertHz ?
+            OR          EDX,EDX
+            MOV         EAX,[SMaxX]
+            SETNZ       BH ; BH = RevertVt ?
+            MOV         EDI,[_MinY]
+            MOV         ESI,[SMinX]
+            PUSH        EBX ; save FLAGS Revert
+            MOV         ECX,[_MaxX]
+            SUB         EBP,EDI ; = (_MaxY - MinY)
+            MOV         EBX,[_MinX]
+            INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
+            SUB         EAX,ESI
+            IMUL        EDI,[_NegScanLine]
+            SUB         ECX,EBX
+            ADD         EDI,[_vlfb]
+            MOVD        mm5,EBP ; count of hline
+            MOVD        mm1,ESI ; SMinX
+            INC         EAX
+            LEA         EDI,[EDI+EBX*2]
+            INC         ECX
+            MOVD        mm6,EDI ; xmm6 = start Hline dest
+            MOVD        mm2,ECX ; xmm2 = dest hline size
+            MOV         EBX,[SMaxY]
+            SHL         EAX,Prec
+            MOV         EDI,EBP ; EDI = DeltaY
+            XOR         EDX,EDX
+            SUB         EBX,[SMinY]
+            DIV         ECX
+            INC         EBX ; Source DeltaYT
+            SHL         EBX,Prec
+            MOV         EBP,EAX
+            XOR         EDX,EDX
+            MOV         EAX,EBX
+            DIV         EDI
+            POP         EBX
+            XOR         EDX,EDX ; EDX = acc PntX
+            MOVD        mm7,[SMinY]
+            PXOR        mm4,mm4 ; xmm4 = acc pnt
+            MOVD        ECX,mm5
+            CMP         BL,0
+            JZ          SHORT .NoRevertHz
+            MOVD        mm1,[SMaxX] ; SMaxX
+            MOV         EDX,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
+            NEG         EBP ; revert Horizontal Pnt X
 .NoRevertHz:
-    CMP         BH,0
-    JZ          SHORT .NoRevertVt
-    NEG         EAX ; negate PntY
-    MOVD        mm7,[SMaxY] ; SMaxX
-    MOVD        mm4,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
+            CMP         BH,0
+            JZ          SHORT .NoRevertVt
+            NEG         EAX ; negate PntY
+            MOVD        mm7,[SMaxY] ; SMaxX
+            MOVD        mm4,[PntInitCPTDbrd+4] ; ((1<<Prec)-1)
 .NoRevertVt:
-    MOVD        mm3,EAX ; xmm3  = pntY
+            MOVD        mm3,EAX ; xmm3  = pntY
 
 .BcResize:
-        MOVQ        mm0,mm4
-        MOVD        EBX,mm1 ; + [SMinX] | [SMaxX] (if RevertHz)
-        PSRAD       mm0,Prec
-        MOVD        mm5,ECX ; save hline counter
-        PADDD       mm0,mm7 ; + [SMinY] | [SMaxY] (if RevertVt)
-        MOVD        EDI,mm6 ; start hline
-        MOVD        ESI,mm0
-        MOVD        ECX,mm2 ; dest hline size
-    IMUL      ESI,[SNegScanLine] ; - 2
-        PUSH        EDX ; save acc PntX
-    LEA       ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
-    ADD       ESI,[Svlfb] ; - 5
+            MOVQ        mm0,mm4
+            MOVD        EBX,mm1 ; + [SMinX] | [SMaxX] (if RevertHz)
+            PSRAD       mm0,Prec
+            MOVD        mm5,ECX ; save hline counter
+            PADDD       mm0,mm7 ; + [SMinY] | [SMaxY] (if RevertVt)
+            MOVD        EDI,mm6 ; start hline
+            MOVD        ESI,mm0
+            MOVD        ECX,mm2 ; dest hline size
+            IMUL        ESI,[SNegScanLine] ; - 2
+            PUSH        EDX ; save acc PntX
+            LEA         ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
+            ADD         ESI,[Svlfb] ; - 5
 
-        @InFastMaskTransTextHLineDYZ16
+            @InFastMaskTransTextHLineDYZ16
 
-        MOVD        ECX,mm5 ; restore hline counter
-        PADDD       mm4,mm3 ; next source hline
-        PADDD       mm6,[_NegScanLine] ; next hline
-        DEC         ECX
-        POP         EDX  ; restore acc PntX
-        JNZ         .BcResize
+            MOVD        ECX,mm5 ; restore hline counter
+            PADDD       mm4,mm3 ; next source hline
+            PADDD       mm6,[_NegScanLine] ; next hline
+            DEC         ECX
+            POP         EDX  ; restore acc PntX
+            JNZ         .BcResize
 
 .End:
-        EMMS
-    POP     EDI
-    POP     EBX
-    POP     ESI
+            EMMS
+            POP         EDI
+            POP         EBX
+            POP         ESI
 
     RETURN
 
@@ -2045,6 +2045,6 @@ ClFillPolyProc16:
 
 ; the main Surf 16bpp that DUGL will render to
 ;   user mostly has to set this as CurSurf unless other intermediate DgSurf
-_RendSurf     DD    0
-_RendFrontSurf    DD    0
+_RendSurf           DD    0
+_RendFrontSurf      DD    0
 

@@ -2722,9 +2722,9 @@ _PutSurfTrans16:
 ALIGN 32
 _SurfCopyTrans16:
     ARG PDstSrfT, 4, PSrcSrfT, 4, SCTrans, 4
-            PUSH    EDI
-            PUSH    ESI
-            PUSH    EBX
+            PUSH        EDI
+            PUSH        ESI
+            PUSH        EBX
 
 ; prepare col blending
             MOV         EAX,[EBP+SCTrans] ;
@@ -2853,12 +2853,12 @@ ALIGN 32
 
 _PutMaskSurfTrans16:
     ARG SMSTN16, 4, XPMSTN16, 4, YPMSTN16, 4, PMSTType16, 4, PMSTrans16, 4
-            PUSH    ESI
-            PUSH    EDI
-            PUSH    EBX
+            PUSH        ESI
+            PUSH        EDI
+            PUSH        EBX
 
-            MOV     ESI,[EBP+SMSTN16]
-            MOV     EDI,_SrcSurf
+            MOV         ESI,[EBP+SMSTN16]
+            MOV         EDI,_SrcSurf
 
             CopySurfDA  ; copy surf
 
