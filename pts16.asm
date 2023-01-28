@@ -2881,7 +2881,7 @@ _PutMaskSurfTrans16:
 
             MOV         EAX,[EBP+XPMSTN16]
             MOV         EBX,[EBP+YPMSTN16]
-            MOV          ESI,[EBP+PMSTType16]
+            MOV         ESI,[EBP+PMSTType16]
             MOVDQA      [DQ16Mask],xmm0
             MOV         ECX,EAX
             MOV         EDX,EBX
