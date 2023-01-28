@@ -142,7 +142,7 @@
         MOVQ        xmm3,[EAX] ; read new XP2 | YP2
         MOVQ        [XP2],xmm3 ; save XP2 | YP2
 
-        JMP     %%InBcCalCont
+        JMP         %%InBcCalCont
 %%FinCalcContr:
 %endmacro
 
@@ -252,7 +252,7 @@
         PUNPCKLDQ   xmm2,xmm1 ; mm2 = cpt dbrd G | (cpt dbrd G + Pnt G)
 
 ;---------------
-        JZ      %%NoFDebCol
+        JZ          %%NoFDebCol
         MOVQ        xmm0,xmm2 ; mm0 = cptDbrd G|G
         MOVQ        xmm1,xmm5 ; mm1 = cptDbrd R,R
         PSRLD       xmm0,Prec

@@ -40,8 +40,8 @@ InFillSOLID16:
       MOV           EDI,[_TPolyAdDeb+ESI+EBX*4]
         MOV         EDX,[_TPolyAdFin+ESI+EBX*4]
         CMP         EDX,EDI
-        JG              SHORT .PasSwapAd
-        XCHG            EDI,EDX
+        JG          SHORT .PasSwapAd
+        XCHG        EDI,EDX
 .PasSwapAd:
         SUB         EDX,EDI
         SHR         EDX,1
@@ -49,7 +49,7 @@ InFillSOLID16:
         @SolidHLineSSE16
         DEC         EBX
         JNS         .BcFillSolid16
-      @FILLRET
+    @FILLRET
 
 ALIGN 32
 ClipFillSOLID16:
@@ -62,7 +62,7 @@ ClipFillSOLID16:
         SUB         EBX,[FinYPoly]
         PUNPCKLQDQ  xmm0,xmm0 ; xmm0 = clr16 | clr16 | clr16 | clr16
         NEG         EBX
-        MOVD            EAX,xmm0 ; assign the 16bpp color to the low
+        MOVD        EAX,xmm0 ; assign the 16bpp color to the low
         ADD         EBP,[_vlfb]
         XOR         ECX,ECX
 ;ALIGN 4
@@ -70,13 +70,13 @@ ClipFillSOLID16:
         MOV         EDI,[_TPolyAdDeb+ESI+EBX*4]
         MOV         EDX,[_TPolyAdFin+ESI+EBX*4]
         CMP         EDX,EDI
-        JG              .PasSwapAd
-        XCHG            EDI,EDX
+        JG          .PasSwapAd
+        XCHG        EDI,EDX
 .PasSwapAd:
         CMP         EDX,[_MinX]     ; [XP2] < [_MinX]
-        JL              .PasDrwClSD
+        JL          .PasDrwClSD
         CMP         EDI,[_MaxX]     ; [XP1] > [_MaxX]
-        JG              .PasDrwClSD
+        JG          .PasDrwClSD
 
         CMP         EDX,[_MaxX]
         JLE         SHORT .NoClipMaxX
@@ -91,25 +91,25 @@ ClipFillSOLID16:
         LEA         EDI,[EBP+EDI*2] ; += xDeb *2 as 16bpp
         @SolidHLineSSE16
 .PasDrwClSD:
-        ADD             EBP,[_ScanLine]
+        ADD         EBP,[_ScanLine]
         DEC         EBX
         JNS         .BcFillSolid
 .FinClipSOLID:
-        @FILLRET
+    @FILLRET
 
 ;******* POLYTYPE = TEXT
 
 ALIGN 32
 InFillTEXT16:
         @InCalcTextCnt
-        MOV     ESI,[SSSurf] ; sauvegarde la surf Source
-        MOV     EBX,[DebYPoly] ; -
-        MOV     EDI,_SrcSurf
-        LEA     EDX,[EBX*4]    ; -
+        MOV         ESI,[SSSurf] ; sauvegarde la surf Source
+        MOV         EBX,[DebYPoly] ; -
+        MOV         EDI,_SrcSurf
+        LEA         EDX,[EBX*4]    ; -
         CopySurfDA  ; copy the source texture surface
-        SUB     EBX,[FinYPoly] ; -  EBX = DebYPoly-FinYPoly
-        NEG     EBX        ; -  EBX = FinYPoly-DebYPoly
-        LEA     EDX,[EDX+EBX*4]
+        SUB         EBX,[FinYPoly] ; -  EBX = DebYPoly-FinYPoly
+        NEG         EBX        ; -  EBX = FinYPoly-DebYPoly
+        LEA         EDX,[EDX+EBX*4]
 ALIGN 4
 .BcFillText:
         MOVD        xmm0,[_TexXDeb+EDX]
@@ -133,8 +133,7 @@ ALIGN 4
         SUB         EDX,BYTE 4
         DEC         EBX
         JNS         InFillTEXT16.BcFillText
-
-        @FILLRET
+    @FILLRET
 
 ALIGN 32
 ClipFillTEXT16:
@@ -200,9 +199,9 @@ ClipFillTEXT16:
         MOVD        EDX,xmm6
         DEC         EBX
         PADDD       xmm3,xmm4
-        JNS     .BcFillText
+        JNS         .BcFillText
 .FinClipText:
-        @FILLRET
+    @FILLRET
 
 
         ;******* POLYTYPE = MASK_TEXT
@@ -244,28 +243,28 @@ ALIGN 4
         DEC         EBX
         JNS     .BcFillMaskText
 
-        @FILLRET
+    @FILLRET
 
 ALIGN 32
 ClipFillMASK_TEXT16:
         @ClipCalcTextCnt
-        MOV        ESI,[SSSurf] ; sauvegarde la surf Source
-        MOV        EDI,_SrcSurf
+        MOV         ESI,[SSSurf] ; sauvegarde la surf Source
+        MOV         EDI,_SrcSurf
 
-        MOV        EBP,[FinYPoly]
+        MOV         EBP,[FinYPoly]
         CopySurfDA  ; copy the source texture surface
-        SUB        EBP,[_OrgY]
-        MOV        EBX,[DebYPoly] ; -
-        PSHUFLW         xmm7,[SMask], 0 ; xmm4 = SMask | SMask | SMask | SMask
-        IMUL            EBP,[_NegScanLine]
-        LEA             EDX,[EBX*4]    ; -
-        SUB        EBX,[FinYPoly] ; -
-        ADD        EBP,[_vlfb]
+        SUB         EBP,[_OrgY]
+        MOV         EBX,[DebYPoly] ; -
+        PSHUFLW     xmm7,[SMask], 0 ; xmm4 = SMask | SMask | SMask | SMask
+        IMUL        EBP,[_NegScanLine]
+        LEA         EDX,[EBX*4]    ; -
+        SUB         EBX,[FinYPoly] ; -
+        ADD         EBP,[_vlfb]
         PUNPCKLQDQ  xmm7,xmm7
-        NEG        EBX         ; -
-        ;MOVDQA      [DQ16Mask],xmm7
-        MOVD            xmm3,EBP
-        ;MOVD           xmm4,[_ScanLine]
+        NEG         EBX         ; -
+        ;MOVDQA     [DQ16Mask],xmm7
+        MOVD        xmm3,EBP
+        ;MOVD       xmm4,[_ScanLine]
 .BcFillText:
         MOVD        xmm0,[_TexXDeb+EDX+EBX*4]   ; XT1
         MOVD        xmm1,[_TexXFin+EDX+EBX*4]   ; XT2
@@ -277,8 +276,8 @@ ClipFillMASK_TEXT16:
         MOVQ        [XT1],xmm0 ; XT1 | YT1
         MOVQ        [XT2],xmm1 ; XT2 | YT2
 
-        JG              .PasSwapAd
-        XCHG            EDI,ECX
+        JG          .PasSwapAd
+        XCHG        EDI,ECX
 .PasSwapAd:
         MOVD        xmm6,EBX
         PINSRD      xmm6,EDX,1
@@ -313,7 +312,7 @@ ClipFillMASK_TEXT16:
         PADDD       xmm3,[_ScanLine]
         JNS         .BcFillText
 .FinClipText:
-        @FILLRET
+    @FILLRET
 
 
 ; POLY TYPE : RGB16
@@ -322,10 +321,10 @@ ALIGN 32
 InFillRGB16:
         @InCalcRGB_Cnt16
 
-        MOV     EBX,[DebYPoly]  ; -
-        LEA     EDX,[EBX*4] ; -
-        SUB     EBX,[FinYPoly]  ; -
-        NEG     EBX     ; -
+        MOV         EBX,[DebYPoly]  ; -
+        LEA         EDX,[EBX*4] ; -
+        SUB         EBX,[FinYPoly]  ; -
+        NEG         EBX     ; -
 ;ALIGN 4
 .BcFillRGB16:
         MOV         EDI,[_TPolyAdDeb+EDX+EBX*4]
@@ -349,7 +348,7 @@ InFillRGB16:
         DEC         EBX
         JNS     .BcFillRGB16
 
-        @FILLRET
+    @FILLRET
 
 
 ALIGN 32
@@ -375,10 +374,10 @@ ClipFillRGB16:
 
         CMP     ECX,EDI
         JG      .PasSwapAd
-        XCHG        EDI,ECX
+        XCHG    EDI,ECX
 .PasSwapAd:
-        PUSH        EDX
-        PUSH        EBX
+        PUSH    EDX
+        PUSH    EBX
         MOV     EBX,[_MinX]
         MOV     EDX,[_MaxX]
         CMP     ECX,EBX     ; [XP2] < [_MinX]
@@ -392,7 +391,8 @@ ClipFillRGB16:
         CMP     ECX,EDX     ; [XP2] > [_MaxX]
         JLE     .PasAJX2
         MOV     ECX,EDX
-.PasAJX2:   CMP     EDI,EBX     ; [XP1] < [_MinX]
+.PasAJX2:
+        CMP     EDI,EBX     ; [XP1] < [_MinX]
         JGE     .PasAJX1
         MOV     EAX,EBX
         SUB     EAX,EDI         ; EAX = [_MinX] - [XP1]
@@ -400,13 +400,13 @@ ClipFillRGB16:
 .PasAJX1:
         SUB     ECX,EDI ; XFin-xDeb
         MOV     [Plus],EAX
-        ;SHL        EDI,1 ; xDeb*2 as 16bpp
+        ;SHL    EDI,1 ; xDeb*2 as 16bpp
         INC     ECX
-        ;ADD        EDI,ESI
+        ;ADD    EDI,ESI
         LEA     EDI,[ESI+EDI*2]
         MOV     EBP,[Col1]
         MOV     EAX,[Col2]
-        PUSH        ESI
+        PUSH    ESI
         @ClipRGBHLine16
         POP     ESI
 .PasDrwClTx:
@@ -417,7 +417,7 @@ ClipFillRGB16:
         JNS     .BcFillRGB16
 .FinClipDEG:
 
-        @FILLRET
+    @FILLRET
 
 
 
@@ -429,53 +429,53 @@ InFillSOLID_BLND16:
         MOV         EBX,EAX ;
         MOV         ECX,EAX ;
         MOV         EDX,EAX ;
-        AND        EBX,[_QBlue16Mask] ; EBX = Bclr16 | Bclr16
-        SHR        EAX,24
-        AND        ECX,[_QGreen16Mask] ; ECX = Gclr16 | Gclr16
-        AND        AL,BlendMask ; remove any ineeded bits
-        JZ              .EndInBlend ; nothing 0 is the source
-        AND        EDX,[_QRed16Mask] ; EDX = Rclr16 | Rclr16
-        XOR        AL,BlendMask ; 31-blendsrc
-        MOV        EBP,EAX
-        XOR        AL,BlendMask ; 31-blendsrc
-        INC        AL
-        SHR        DX,5 ; right shift red 5bits
-        IMUL            BX,AX
-        IMUL            CX,AX
-        IMUL            DX,AX
-        MOVD            xmm3,EBX
-        MOVD            xmm4,ECX
-        MOVD            xmm5,EDX
-        PSHUFLW    xmm3,xmm3,0
-        PSHUFLW    xmm4,xmm4,0
-        PSHUFLW    xmm5,xmm5,0
-        MOV        EBX,[DebYPoly]   ; -
-        LEA        EDX,[EBX*4]  ; -
-        MOVD            xmm7,EBP
-        SUB        EBX,[FinYPoly]   ; -
-        PSHUFLW    xmm7,xmm7,0
-        NEG        EBX      ; -
+        AND         EBX,[_QBlue16Mask] ; EBX = Bclr16 | Bclr16
+        SHR         EAX,24
+        AND         ECX,[_QGreen16Mask] ; ECX = Gclr16 | Gclr16
+        AND         AL,BlendMask ; remove any ineeded bits
+        JZ          .EndInBlend ; nothing 0 is the source
+        AND         EDX,[_QRed16Mask] ; EDX = Rclr16 | Rclr16
+        XOR         AL,BlendMask ; 31-blendsrc
+        MOV         EBP,EAX
+        XOR         AL,BlendMask ; 31-blendsrc
+        INC         AL
+        SHR         DX,5 ; right shift red 5bits
+        IMUL        BX,AX
+        IMUL        CX,AX
+        IMUL        DX,AX
+        MOVD        xmm3,EBX
+        MOVD        xmm4,ECX
+        MOVD        xmm5,EDX
+        PSHUFLW     xmm3,xmm3,0
+        PSHUFLW     xmm4,xmm4,0
+        PSHUFLW     xmm5,xmm5,0
+        MOV         EBX,[DebYPoly]   ; -
+        LEA         EDX,[EBX*4]  ; -
+        MOVD        xmm7,EBP
+        SUB         EBX,[FinYPoly]   ; -
+        PSHUFLW     xmm7,xmm7,0
+        NEG         EBX      ; -
         PUNPCKLQDQ  xmm3,xmm3
         PUNPCKLQDQ  xmm4,xmm4
         PUNPCKLQDQ  xmm5,xmm5
         PUNPCKLQDQ  xmm7,xmm7
-        XOR             ECX,ECX
+        XOR         ECX,ECX
 ;ALIGN 4
 .BcFillSolid16:
-        MOV     EDI,[_TPolyAdDeb+EDX+EBX*4]
-        MOV     ESI,[_TPolyAdFin+EDX+EBX*4]
-        CMP     ESI,EDI
+        MOV         EDI,[_TPolyAdDeb+EDX+EBX*4]
+        MOV         ESI,[_TPolyAdFin+EDX+EBX*4]
+        CMP         ESI,EDI
         JG          .PasSwapAd
         XCHG        EDI,ESI
 .PasSwapAd:
-      SUB       ESI,EDI
-        SHR     ESI,1
-        INC     ESI
+        SUB         ESI,EDI
+        SHR         ESI,1
+        INC         ESI
         @SolidBlndHLine16
-        DEC     EBX
-        JNS     .BcFillSolid16
+        DEC         EBX
+        JNS         .BcFillSolid16
 .EndInBlend:
-        @FILLRET
+    @FILLRET
 
 
 ALIGN 32
@@ -484,36 +484,36 @@ ClipFillSOLID_BLND16:
         MOV         EBX,EAX ;
         MOV         ECX,EAX ;
         MOV         EDX,EAX ;
-        AND        EBX,[_QBlue16Mask] ; EBX = Bclr16 | Bclr16
-        SHR        EAX,24
-        AND        ECX,[_QGreen16Mask] ; ECX = Gclr16 | Gclr16
-        AND        AL,BlendMask ; remove any ineeded bits
-        JZ              .FinClipSOLID ; nothing 0 is the source
-        AND        EDX,[_QRed16Mask] ; EDX = Rclr16 | Rclr16
-        XOR        AL,BlendMask ; 31-blendsrc
-        MOV        EBP,EAX
-        XOR        AL,BlendMask ; 31-blendsrc
-        INC        AL
-        SHR        DX,5 ; right shift red 5bits
-        IMUL            BX,AX
-        IMUL            CX,AX
-        IMUL            DX,AX
-        MOVD            xmm3,EBX
-        MOVD            xmm4,ECX
-        MOVD            xmm5,EDX
-        MOVD            xmm7,EBP
-        PSHUFLW    xmm3,xmm3,0
-        PSHUFLW    xmm4,xmm4,0
-        PSHUFLW    xmm5,xmm5,0
-        PSHUFLW    xmm7,xmm7,0
+        AND         EBX,[_QBlue16Mask] ; EBX = Bclr16 | Bclr16
+        SHR         EAX,24
+        AND         ECX,[_QGreen16Mask] ; ECX = Gclr16 | Gclr16
+        AND         AL,BlendMask ; remove any ineeded bits
+        JZ          .FinClipSOLID ; nothing 0 is the source
+        AND         EDX,[_QRed16Mask] ; EDX = Rclr16 | Rclr16
+        XOR         AL,BlendMask ; 31-blendsrc
+        MOV         EBP,EAX
+        XOR         AL,BlendMask ; 31-blendsrc
+        INC         AL
+        SHR         DX,5 ; right shift red 5bits
+        IMUL        BX,AX
+        IMUL        CX,AX
+        IMUL        DX,AX
+        MOVD        xmm3,EBX
+        MOVD        xmm4,ECX
+        MOVD        xmm5,EDX
+        MOVD        xmm7,EBP
+        PSHUFLW     xmm3,xmm3,0
+        PSHUFLW     xmm4,xmm4,0
+        PSHUFLW     xmm5,xmm5,0
+        PSHUFLW     xmm7,xmm7,0
 
-        MOV        EBP,[FinYPoly]
-        MOV        EBX,[DebYPoly]
-        SUB        EBP,[_OrgY]
-        IMUL            EBP,[_NegScanLine]
-        LEA        EDX,[EBX*4]
+        MOV         EBP,[FinYPoly]
+        MOV         EBX,[DebYPoly]
+        SUB         EBP,[_OrgY]
+        IMUL        EBP,[_NegScanLine]
+        LEA         EDX,[EBX*4]
         PUNPCKLQDQ  xmm3,xmm3
-        SUB        EBX,[FinYPoly]
+        SUB         EBX,[FinYPoly]
         PUNPCKLQDQ  xmm4,xmm4
         NEG         EBX
         PUNPCKLQDQ  xmm5,xmm5
@@ -522,31 +522,31 @@ ClipFillSOLID_BLND16:
         XOR         ECX,ECX
 ;ALIGN 4
 .BcFillSolid:
-        MOV     EDI,[_TPolyAdDeb+EDX+EBX*4]
-        MOV     ESI,[_TPolyAdFin+EDX+EBX*4]
-        CMP     ESI,EDI
+        MOV         EDI,[_TPolyAdDeb+EDX+EBX*4]
+        MOV         ESI,[_TPolyAdFin+EDX+EBX*4]
+        CMP         ESI,EDI
         JG          .PasSwapAd
         XCHG        EDI,ESI
 .PasSwapAd:
-        CMP     ESI,[_MinX]     ; [XP2] < [_MinX]
+        CMP         ESI,[_MinX]     ; [XP2] < [_MinX]
         JL          .PasDrwClSD
-        CMP     EDI,[_MaxX]     ; [XP1] > [_MaxX]
+        CMP         EDI,[_MaxX]     ; [XP1] > [_MaxX]
         JG          .PasDrwClSD
 
-        CMP     ESI,[_MaxX]
+        CMP         ESI,[_MaxX]
         CMOVG       ESI,[_MaxX]
-        CMP     EDI,[_MinX]
+        CMP         EDI,[_MinX]
         CMOVL       EDI,[_MinX]
-        SUB     ESI,EDI
-        INC     ESI
-        LEA     EDI,[EBP+EDI*2] ; += xDeb *2 as 16bpp
+        SUB         ESI,EDI
+        INC         ESI
+        LEA         EDI,[EBP+EDI*2] ; += xDeb *2 as 16bpp
         @SolidBlndHLine16
 .PasDrwClSD:
         ADD         EBP,[_ScanLine]
-        DEC     EBX
-        JNS     .BcFillSolid
+        DEC         EBX
+        JNS        .BcFillSolid
 .FinClipSOLID:
-        @FILLRET
+    @FILLRET
 
 
 ;******* POLYTYPE = TEXT_BLND
@@ -623,8 +623,7 @@ InFillTEXT_BLND16:
         MOVD        EDX,xmm6
         DEC         EBX
         JNS         InFillTEXT_BLND16.BcFillText
-
-        @FILLRET
+    @FILLRET
 
 ALIGN 32
 ClipFillTEXT_BLND16:
@@ -735,8 +734,7 @@ ClipFillTEXT_BLND16:
         JNS         .BcFillText
 .FinClipText:
 
-
-        @FILLRET
+    @FILLRET
 
 
         ;******* POLYTYPE = MASK_TEXT_BLND
@@ -820,7 +818,7 @@ InFillMASK_TEXT_BLND16:
         DEC         EBX
         JNS         .BcFillText
 
-        @FILLRET
+    @FILLRET
 
 ALIGN 32
 ClipFillMASK_TEXT_BLND16:
@@ -929,7 +927,8 @@ ClipFillMASK_TEXT_BLND16:
         PADDD       xmm6,[_ScanLine]
         JNS         .BcFillText
 .FinClipText:
-        @FILLRET
+
+    @FILLRET
 
 
 ;******* POLYTYPE = TEXT_TRANS
@@ -985,7 +984,7 @@ ALIGN 4
         JNS         .BcFillText
         EMMS
 .End:
-        @FILLRET
+    @FILLRET
 
 ALIGN 32
 ClipFillTEXT_TRANS16:
@@ -1066,7 +1065,7 @@ ClipFillTEXT_TRANS16:
         JNS     .BcFillText
         EMMS
 .End:
-        @FILLRET
+    @FILLRET
 
 ;******* POLYTYPE = MASK_TEXT_TRANS
 ALIGN 32
@@ -1125,7 +1124,7 @@ ALIGN 4
         JNS         .BcFillMaskText
         EMMS
 .End:
-        @FILLRET
+    @FILLRET
 
 
 ALIGN 32
@@ -1213,4 +1212,4 @@ ClipFillMASK_TEXT_TRANS16:
         JNS         .BcFillText
         EMMS
 .End:
-        @FILLRET
+    @FILLRET

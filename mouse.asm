@@ -44,9 +44,9 @@ ALIGN 32
 _iSetMouseRView:
     ARG V1, 4
 
-        PUSH        EDI
-        PUSH        ESI
-        PUSH        EBX
+        PUSH    EDI
+        PUSH    ESI
+        PUSH    EBX
 
         MOV     ESI,[EBP+V1]
         MOV     EDI,MsOrgX
@@ -59,7 +59,8 @@ _iSetMouseRView:
         CMP     EAX,ECX
         JLE     .MsPasSupMxX
         MOV     EAX,ECX
-.MsPasSupMxX:   CMP     EBX,EDX
+.MsPasSupMxX:
+        CMP     EBX,EDX
         JLE     .MsPasSupMxY
         MOV     EBX,EDX
 .MsPasSupMxY:
@@ -68,7 +69,8 @@ _iSetMouseRView:
         CMP     EAX,ECX
         JGE     .MsPasInfMnX
         MOV     EAX,ECX
-.MsPasInfMnX:   CMP     EBX,EDX
+.MsPasInfMnX:
+        CMP     EBX,EDX
         JGE     .MsPasInfMnY
         MOV     EBX,EDX
 .MsPasInfMnY:
@@ -85,31 +87,31 @@ _GetMouseRView:
         PUSH        ESI
         PUSH        EDI
 
-        MOV     ECX,6
-        MOV     ESI,MsOrgX
-        MOV     EDI,[EBP+V2]
-        REP     MOVSD
+        MOV         ECX,6
+        MOV         ESI,MsOrgX
+        MOV         EDI,[EBP+V2]
+        REP         MOVSD
 
-        POP     EDI
-        POP     ESI
+        POP         EDI
+        POP         ESI
     RETURN
 
 _iSetMouseOrg:
     ARG MsXOrg, 4, MsYOrg, 4
 
-        MOV     EAX,[EBP+MsXOrg]
-        MOV     ECX,[EBP+MsYOrg]
-        MOV     EDX,EAX
-        MOV     EBP,ECX
+        MOV         EAX,[EBP+MsXOrg]
+        MOV         ECX,[EBP+MsYOrg]
+        MOV         EDX,EAX
+        MOV         EBP,ECX
 
-        SUB     EAX,[MsOrgX] ; DX
-        SUB     ECX,[MsOrgY] ; DY
-        SUB     [MsMaxX],EAX
-        SUB     [MsMinX],EAX
-        SUB     [MsMaxY],ECX
-        SUB     [MsMinY],ECX
-        MOV     [MsOrgX],EDX
-        MOV     [MsOrgY],EBP
+        SUB         EAX,[MsOrgX] ; DX
+        SUB         ECX,[MsOrgY] ; DY
+        SUB         [MsMaxX],EAX
+        SUB         [MsMinX],EAX
+        SUB         [MsMaxY],ECX
+        SUB         [MsMinY],ECX
+        MOV         [MsOrgX],EDX
+        MOV         [MsOrgY],EBP
 
     RETURN
 
@@ -128,10 +130,12 @@ _iSetMousePos:
         CMP     ECX,[MsMaxY]
         JLE     .MsPasSupMxY
         MOV     ECX,[MsMaxY]
-.MsPasSupMxY:   CMP     EAX,[MsMinX]
+.MsPasSupMxY:
+        CMP     EAX,[MsMinX]
         JGE     .MsPasInfMnX
         MOV     EAX,[MsMinX]
-.MsPasInfMnX:   CMP     ECX,[MsMinY]
+.MsPasInfMnX:
+        CMP     ECX,[MsMinY]
         JGE     .MsPasInfMnY
         MOV     ECX,[MsMinY]
 .MsPasInfMnY:
@@ -143,9 +147,9 @@ _iSetMousePos:
 _iPushMsEvent:
     ARG MsEventID, 4
 
-        PUSH        EDI
-        PUSH        ESI
-        PUSH        EBX
+        PUSH    EDI
+        PUSH    ESI
+        PUSH    EBX
 
         MOV     EAX,[MsStackEnable]
         OR      EAX,EAX

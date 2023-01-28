@@ -47,7 +47,7 @@
         SUB     EBP,ECX      ; [_MinY]-[YP1]
         JLE     SHORT %%PasAjYP1
         MOV     [YP1],EBX    ; [YP1] = [_MinY]
-        IMUL        EBP,EAX      ; EBP = DeltaY*Pente
+        IMUL    EBP,EAX      ; EBP = DeltaY*Pente
         MOV     EDX,EBP
         AND     EDX,(1 << Prec) - 1
         SHR     EBP,Prec
@@ -165,7 +165,7 @@
         JL      NEAR %%Fin
         CMP     EBP,[_MaxY]
         MOV     EBX,[XP2]
-        JG          NEAR %%Fin
+        JG      NEAR %%Fin
         ; Calcule la pente
         NEG     EAX     ; -[XP1]
         SUB     ECX,EBP     ; [YP1]-[YP2]
