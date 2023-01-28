@@ -360,8 +360,6 @@ int main(int argc,char *argv[])
 
 	DgSetCurSurf(RendSurf);
 
-	GetSurfView(&CurSurf,&MsV);
-	SetMouseRView(&MsV);
 	SelAscEnter=MsDownInChxAscii=choixBMMsDown=SelMsDown=CurProc=0;
 	SelKbButt=-1;
     InitSynch(RenderSynchBuff, NULL, 60.0f);
