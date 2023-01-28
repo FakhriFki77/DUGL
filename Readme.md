@@ -42,7 +42,7 @@ Requirement:
 
 - **CodeBlocks IDE** (https://www.codeblocks.org)
 - **MinGW** Recommended version 8.1+  (currently using http://winlibs.com - gcc-9.4.0-mingw-w64-9.0.0-r2 32bits standalone)
-- **Nasm** Recommended the latest stable 2.15.05 (https://nasm.us/)
+- **Nasm** Recommended the latest stable 2.16.01 (https://nasm.us/)
 - **LibSDL** use the latest SDL2-devel-xxx-mingw.tar.gz from website (https://libsdl.org)
 - **LibJpeg**, **LibPNG** and **ZLib** better download sources of each lib and compile with your current **MinGW** distribution for best compatibility.
 
