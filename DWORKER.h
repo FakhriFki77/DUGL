@@ -14,7 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-    contact: libdugl@hotmail.com    */
+    contact: libdugl(at)hotmail.com    */
 
 #ifndef DWORKER_H_INCLUDED
 #define DWORKER_H_INCLUDED
