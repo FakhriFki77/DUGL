@@ -14,27 +14,31 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ;
-;    contact: libdugl@hotmail.com
+;    contact: libdugl(at)hotmail.com
 ;=============================================================================
 
 %include "PARAM.asm"
 
+; enable windows/linux win32/elf32 building
+%pragma elf32 gprefix
+%pragma win32 gprefix   _
+
 ; GLOBAL Function*************************************************************
 ;*** Keyboard
-GLOBAL _iUninstallKeyboard,_IsKeyDown
-GLOBAL _iSetKbMAP,_GetKbMAP,_iDisableCurKbMAP
-GLOBAL _iPushKbDownEvent, _iPushKbReleaseEvent
-GLOBAL _GetKeyNbElt,_iGetKey,_iClearKeyCircBuff
-GLOBAL _GetAsciiNbElt,_iGetAscii,_iClearAsciiCircBuff
-GLOBAL _GetTimedKeyNbElt,_GetCurrTimeKeyDown,_iGetTimedKeyDown,_iClearTimedKeyCircBuff
+GLOBAL iUninstallKeyboard, IsKeyDown
+GLOBAL iSetKbMAP, GetKbMAP, iDisableCurKbMAP
+GLOBAL iPushKbDownEvent,  iPushKbReleaseEvent
+GLOBAL GetKeyNbElt, iGetKey, iClearKeyCircBuff
+GLOBAL GetAsciiNbElt, iGetAscii, iClearAsciiCircBuff
+GLOBAL GetTimedKeyNbElt, GetCurrTimeKeyDown, iGetTimedKeyDown, iClearTimedKeyCircBuff
 
 ; GLOBAL DATA*****************************************************************
 ;*** Keyboard
-GLOBAL _KbFLAG,_KbApp,_LastKey,_LastAscii,_CurKbMAP, _KbScanEvents
+GLOBAL KbFLAG,KbApp,LastKey,LastAscii,CurKbMAP, KbScanEvents
 
 ; EXTERN DATA
 
-EXTERN  _DgTime
+EXTERN  DgTime
 
 SECTION .text
 ALIGN 32
@@ -43,18 +47,18 @@ ALIGN 32
 ;*** KEYBOARD
 
 
-_iUninstallKeyboard:
+iUninstallKeyboard:
             PUSH        ESI
             PUSH        EDI
             PUSH        EBX
 
             ; disable current keybmap
             XOR         EAX,EAX
-            MOV         [_KbScanEvents],EAX
+            MOV         [KbScanEvents],EAX
             MOV         [AsciiCBDeb],EAX
             MOV         [AsciiCBFin],EAX
             MOV         [AsciiNbElt],EAX
-            MOV         [_LastAscii],AL
+            MOV         [LastAscii],AL
             MOV         [ValidCurKbMAP],EAX
 
             POP         EBX
@@ -62,7 +66,7 @@ _iUninstallKeyboard:
             POP         ESI
     RET
 
-_IsKeyDown:
+IsKeyDown:
     ARG NumKey, 4
 
             MOVZX       EAX,BYTE [EBP+NumKey]
@@ -70,34 +74,34 @@ _IsKeyDown:
             MOV         EDX,EAX
             SHR         ECX,3
             AND         EDX,BYTE 0x7
-            MOV         CL,[_KbApp+ECX]
+            MOV         CL,[KbApp+ECX]
             BT          ECX,EDX
             SETC        AL
 
     RETURN
 
 
-_GetTimedKeyNbElt:
+GetTimedKeyNbElt:
             MOV         EAX,[KeyTimeNbElt]
     RET
 
-_iClearTimedKeyCircBuff:
+iClearTimedKeyCircBuff:
             XOR         EAX,EAX
 
             ; disable feeding if activated
-            MOV         ECX,[_KbScanEvents]
-            MOV         [_KbScanEvents],EAX
+            MOV         ECX,[KbScanEvents]
+            MOV         [KbScanEvents],EAX
 
             MOV         [KeyTimeCBDeb],EAX
             MOV         [KeyTimeCBFin],EAX
             MOV         [KeyTimeNbElt],EAX
 
             ; restore old kb activation
-            MOV         [_KbScanEvents],ECX
+            MOV         [KbScanEvents],ECX
 
     RET
 
-_GetCurrTimeKeyDown:
+GetCurrTimeKeyDown:
     ARG TmNumKey, 4
 
             MOVZX       EAX,BYTE [EBP+TmNumKey]
@@ -106,20 +110,20 @@ _GetCurrTimeKeyDown:
             SHR         ECX,3
             AND         EDX,BYTE 0x7
 
-            MOV         CL,[_KbApp+ECX]
+            MOV         CL,[KbApp+ECX]
             BT          ECX,EDX
             JC          .KeyDown
             SETC        AL
             JMP         SHORT .End
 .KeyDown:
             MOV         EBX,[KeyFrstDownTime+EAX*4]
-            MOV         EAX,[_DgTime]
+            MOV         EAX,[DgTime]
             SUB         EAX,EBX
 .End:
     RETURN
 
 
-_iGetTimedKeyDown:
+iGetTimedKeyDown:
     ARG PTmKey, 4, PKeyTIME, 4
 
             PUSH        ESI
@@ -151,7 +155,7 @@ _iGetTimedKeyDown:
             POP         ESI
     RETURN
 
-_iGetKey:
+iGetKey:
     ARG PKey, 4, PKeyFLAG, 4
 
             PUSH        ESI
@@ -181,24 +185,24 @@ _iGetKey:
             POP         EBX
             POP         EDI
             POP         ESI
-            
+
     RETURN
 
 
-_GetKeyNbElt:
+GetKeyNbElt:
             MOV         EAX,[KeyNbElt]
     RET
 
-_iClearKeyCircBuff:
+iClearKeyCircBuff:
             XOR         EAX,EAX ; Initialisation des vars
             MOV         [KeyCBDeb],EAX
             MOV         [KeyCBFin],EAX
             MOV         [KeyNbElt],EAX
-            MOV         [_LastKey],AL
+            MOV         [LastKey],AL
     RET
 
 ;-------------------------------------
-_iSetKbMAP:
+iSetKbMAP:
     ARG PSetKM, 4
             PUSH        ESI
             PUSH        EDI
@@ -208,9 +212,9 @@ _iSetKbMAP:
             MOV         [AsciiCBDeb],EAX
             MOV         [AsciiCBFin],EAX
             MOV         [AsciiNbElt],EAX
-            MOV         [_LastAscii],AL
+            MOV         [LastAscii],AL
             MOV         ESI,[EBP+PSetKM]
-            MOV         EDI,_CurKbMAP
+            MOV         EDI,CurKbMAP
             MOV         ECX,16
             REP         MOVSD
             MOV         [ValidCurKbMAP],BYTE 1
@@ -220,12 +224,12 @@ _iSetKbMAP:
             POP         ESI
     RETURN
 
-_GetKbMAP:
+GetKbMAP:
     ARG PGetKM, 4
             PUSH        ESI
             PUSH        EDI
 
-            MOV         ESI,_CurKbMAP
+            MOV         ESI,CurKbMAP
             MOV         EDI,[EBP+PGetKM]
             MOV         ECX,16
             REP         MOVSD
@@ -234,7 +238,7 @@ _GetKbMAP:
             POP         ESI
     RETURN
 
-_iDisableCurKbMAP:
+iDisableCurKbMAP:
         PUSH        ESI
         PUSH        EDI
         PUSH        EBX
@@ -247,14 +251,14 @@ _iDisableCurKbMAP:
         MOV     [AsciiCBDeb],EAX
         MOV     [AsciiCBFin],EAX
         MOV     [AsciiNbElt],EAX
-        MOV     [_LastAscii],AL
+        MOV     [LastAscii],AL
 
         POP     EBX
         POP     EDI
         POP     ESI
         RET
 
-_iGetAscii:
+iGetAscii:
     ARG PAscii, 4, PAsciiFLAG, 4
         CMP     DWORD [ValidCurKbMAP],BYTE 0
         JNE     .KbMapActv
@@ -295,19 +299,19 @@ _iGetAscii:
         RETURN
 
 
-_GetAsciiNbElt:
+GetAsciiNbElt:
         MOV     EAX,[AsciiNbElt]
         RET
 
-_iClearAsciiCircBuff:
+iClearAsciiCircBuff:
         XOR     EAX,EAX ; Initialisation des vars
         MOV     [AsciiCBDeb],EAX
         MOV     [AsciiCBFin],EAX
         MOV     [AsciiNbElt],EAX
-        MOV     [_LastAscii],AL
+        MOV     [LastAscii],AL
         RET
 
-_iPushKbDownEvent:
+iPushKbDownEvent:
     ARG KeyCodeDownEvent, 4
         PUSH    ESI
         MOV     EAX,[EBP+KeyCodeDownEvent]
@@ -315,7 +319,7 @@ _iPushKbDownEvent:
         AND     EAX,BYTE 0xFF
         PUSH    EBX
 
-        MOV     [_LastKey],AL
+        MOV     [LastKey],AL
         XOR     EBX,EBX
         MOV     EDX,EAX
         MOV     ECX,EAX
@@ -323,10 +327,10 @@ _iPushKbDownEvent:
         SHR     ECX,3
         BTS     EBX,EDX
 
-        TEST    BL,[_KbApp+ECX]
+        TEST    BL,[KbApp+ECX]
         JNZ     .AlreadyApp
-        MOV     EDX,[_DgTime]
-        OR      [_KbApp+ECX],BL
+        MOV     EDX,[DgTime]
+        OR      [KbApp+ECX],BL
         MOV     [KeyFrstDownTime+EAX*4],EDX
 .AlreadyApp:
         CALL    TraitApp
@@ -338,7 +342,7 @@ _iPushKbDownEvent:
         POP     ESI
         RETURN
 
-_iPushKbReleaseEvent:
+iPushKbReleaseEvent:
     ARG KeyCodeReleaseEvent, 4
         PUSH    ESI
         MOV     EAX,[EBP+KeyCodeReleaseEvent]
@@ -349,13 +353,13 @@ _iPushKbReleaseEvent:
         XOR     EBX,EBX
         MOV     EDX,EAX
         MOV     ECX,EAX
-        MOV     BYTE [_LastKey],BL
+        MOV     BYTE [LastKey],BL
         AND     EDX,BYTE 0x7
         SHR     ECX,3
         BTS     EBX,EDX
         NOT     EBX
 
-        AND     [_KbApp+ECX],BL
+        AND     [KbApp+ECX],BL
         CALL    TraitTimeKey
         CALL    TraitRel
 
@@ -392,7 +396,7 @@ _iPushKbReleaseEvent:
         endstruc
 
 TraitAscii:
-        PUSH        EAX
+        PUSH    EAX
         CMP     DWORD [ValidCurKbMAP],0
         JE      .PasTraitAscii ;-----------------------
 
@@ -420,21 +424,23 @@ TraitAscii:
         OR      ECX,ECX
         JZ      .PasAddAscii
 .BcScanNormKb:
-        MOV     EBX,[_KbFLAG]
+        MOV     EBX,[KbFLAG]
         TEST    EBX,[EDI+NormKeyb.MaskNo]
         JNZ     .PasScanNormKb
 
         AND     EBX,[EDI+NormKeyb.MaskYes]
         MOV     EBP,[EDI+NormKeyb.DefActiv]
-.BcTestMYes:    TEST        EBX,1
+.BcTestMYes:
+        TEST    EBX,1
         JZ      .PasIncActiv
         INC     EBP
-.PasIncActiv:   SHR     EBX,1
+.PasIncActiv:
+        SHR     EBX,1
         JNZ     .BcTestMYes
-        TEST        EBP,1
+        TEST    EBP,1
         JZ      .PasScanNormKb
 .PasTestKbMYes:
-        CALL        ScanNormKb
+        CALL    ScanNormKb
         OR      EAX,EAX
         JNZ     .FinScanNormKb
 .PasScanNormKb:
@@ -455,13 +461,13 @@ TraitAscii:
 .BcScanPrefix:
         CMP     DL,[EDI+PrefixKeyb.code]
         JNE     .PasTstPrefix
-        MOV     EBX,[_KbFLAG]
+        MOV     EBX,[KbFLAG]
         TEST    EBX,[EDI+PrefixKeyb.MaskNo]
         JNZ     .PasTstPrefix
         AND     EBX,[EDI+PrefixKeyb.MaskYes]
         MOV     EBP,[EDI+PrefixKeyb.DefActiv]
 .BcTestMYes2:
-        TEST        EBX,1
+        TEST    EBX,1
         JZ      .PasIncActiv2
         INC     EBP
 .PasIncActiv2:
@@ -491,21 +497,23 @@ TraitAscii:
         MOV     EDI,[ESI+PrefixKeyb.TabNormKeyb]
         MOV     DH,[ESI+PrefixKeyb.DefaultAscii]
 .PBcScanNormKb:
-        MOV     EBX,[_KbFLAG]
-        TEST        EBX,[EDI+NormKeyb.MaskNo]
+        MOV     EBX,[KbFLAG]
+        TEST    EBX,[EDI+NormKeyb.MaskNo]
         JNZ     .PPasScanNormKb
 
         AND     EBX,[EDI+NormKeyb.MaskYes]
         MOV     EBP,[EDI+NormKeyb.DefActiv]
-.PBcTestMYes:   TEST        EBX,1
+.PBcTestMYes:
+        TEST    EBX,1
         JZ      .PPasIncActiv
         INC     EBP
-.PPasIncActiv:  SHR     EBX,1
+.PPasIncActiv:
+        SHR     EBX,1
         JNZ     .PBcTestMYes
-        TEST        EBP,1
+        TEST    EBP,1
         JZ      .PPasScanNormKb
 .PPasTestKbMYes:
-        CALL        ScanNormKb
+        CALL    ScanNormKb
         OR      EAX,EAX
         JNZ     .PFinScanNormKb
 .PPasScanNormKb:
@@ -515,7 +523,7 @@ TraitAscii:
 .PFinScanNormKb:
         OR      EAX,EAX
         JZ      .PPasAddAscii
-        CALL        AddAsciiCB
+        CALL    AddAsciiCB
         JMP     .PasTraitAscii
 .PPasAddAscii:
         ;--- Test si Bouton Prefix II-------------------------------
@@ -524,26 +532,28 @@ TraitAscii:
 .BcScanPrefix3:
         CMP     DL,[EDI+PrefixKeyb.code]
         JNE     .PasTstPrefix3
-        MOV     EBX,[_KbFLAG]
+        MOV     EBX,[KbFLAG]
         TEST    EBX,[EDI+PrefixKeyb.MaskNo]
         JNZ     .PasTstPrefix3
         AND     EBX,[EDI+PrefixKeyb.MaskYes]
         MOV     EBP,[EDI+PrefixKeyb.DefActiv]
-.BcTestMYes3:   TEST        EBX,1
+.BcTestMYes3:
+        TEST    EBX,1
         JZ      .PasIncActiv3
         INC     EBP
-.PasIncActiv3:  SHR     EBX,1
+.PasIncActiv3:
+        SHR     EBX,1
         JNZ     .BcTestMYes3
-        TEST        EBP,1
+        TEST    EBP,1
         JZ      .PasTstPrefix3
         XOR     EAX,EAX
         MOV     AL,DH
-        PUSH        EDI
-        CALL        AddAsciiCB
+        PUSH    EDI
+        CALL    AddAsciiCB
         XOR     EAX,EAX
         POP     EDI
         MOV     AL,[EDI+PrefixKeyb.DefaultAscii]
-        CALL        AddAsciiCB
+        CALL    AddAsciiCB
 
         JMP     .PasTraitAscii
 .PasTstPrefix3:
@@ -602,7 +612,7 @@ AddAsciiCB:
         MOV     ECX,[AsciiCBFin]
         MOV     EBX,[AsciiNbElt]
         LEA     EDX,[ECX+1]
-        MOV     ESI,[_KbFLAG]
+        MOV     ESI,[KbFLAG]
         MOV     [AsciiCircBuff+ECX],AL
         MOV     [AsciiKbFLAG+ECX*4],ESI
 
@@ -621,7 +631,7 @@ AddAsciiCB:
         MOV     ECX,[AsciiCBDeb]
         XOR     EBX,EBX
         LEA     EDX,[ECX+1]
-        MOV     ESI,[_KbFLAG]
+        MOV     ESI,[KbFLAG]
         MOV     [AsciiCircBuff+ECX],AL
         MOV     [AsciiKbFLAG+ECX*4],ESI
         AND     EDX,BYTE 0x1f
@@ -645,7 +655,7 @@ TraitTimeKey:
         JZ      .FinTimeTrtKey ; sature
         CMP     DWORD [KeyTimeNbElt],32
         JGE     .FinTimeTrtKey
-        MOV     ESI,[_DgTime]
+        MOV     ESI,[DgTime]
         MOV     ECX,[KeyTimeCBFin]
         SUB     ESI,[KeyFrstDownTime+EAX*4]
         JZ      .NoKbTime
@@ -672,7 +682,7 @@ TraitKey:
         CMP     EBX,BYTE 32
         JGE     .FinTrtKey ; satured
         MOV     ECX,[KeyCBFin]
-        MOV     ESI,[_KbFLAG]
+        MOV     ESI,[KbFLAG]
         LEA     EDX,[ECX+1]
         MOV     [KeyCircBuff+ECX],AL
         MOV     [KeyKbFLAG+ECX*4],ESI
@@ -700,10 +710,10 @@ TraitApp:
         JMP     SHORT .FinTrtLock
 .TrouveLock:
         LODSD
-        TEST        [_KbFLAG],EAX
+        TEST    [KbFLAG],EAX
         JNZ     .PasInvLock
         LODSD
-        XOR     [_KbFLAG],EAX
+        XOR     [KbFLAG],EAX
         ;CALL       UpDateLEDS
 .PasInvLock:
 .FinTrtLock:
@@ -719,16 +729,16 @@ TraitApp:
         LODSD
         CMP     EAX,EDX
         JNE     .PasTstIns
-        MOV     EBX,[_KbFLAG]
+        MOV     EBX,[KbFLAG]
         LODSD
-        TEST        EBX,EAX   ; MaskNo
+        TEST    EBX,EAX   ; MaskNo
         JNZ     .PasTstIns
         LODSD
         AND     EBX,EAX   ; MaskYes
         LODSD
         MOV     EBP,EAX   ; DefActiv
 .PBcTestMYes:
-        TEST        EBX,1
+        TEST    EBX,1
         JZ      .PPasIncActiv
         INC     EBP
 .PPasIncActiv:
@@ -737,7 +747,7 @@ TraitApp:
         LODSD
         TEST    EBP,1
         JZ      .FinTstIns
-        XOR     [_KbFLAG],EAX
+        XOR     [KbFLAG],EAX
 .PasInvIns:
         JMP     SHORT .FinTstIns
 .PasTstIns:
@@ -757,7 +767,7 @@ TraitApp:
         JMP     SHORT .FinTrtNorm
 .TrouveNorm:
         LODSD
-        OR      [_KbFLAG],EAX
+        OR      [KbFLAG],EAX
         DEC     ECX
         JNZ     .BcTrtNorm
 .FinTrtNorm:
@@ -780,10 +790,10 @@ TraitRel:
         JMP     SHORT .FinTrtSp
 .TrouveSp:
         LODSD
-        TEST        [_KbFLAG],EAX
+        TEST    [KbFLAG],EAX
         JNZ     .PasDesacSp
         LODSD
-        AND     [_KbFLAG],EAX
+        AND     [KbFLAG],EAX
 .PasDesacSp:
 .FinTrtSp:
         MOV     ECX,[NbKbFLAGRel] ; traite Norm -------------
@@ -798,7 +808,7 @@ TraitRel:
         JMP     SHORT .FinTrtNorm
 .TrouveNorm:
         LODSD
-        AND     [_KbFLAG],EAX
+        AND     [KbFLAG],EAX
         DEC     ECX
         JNZ     .BcTrtNorm
 .FinTrtNorm:
@@ -866,11 +876,11 @@ NbKbNonAscii    DD  14
 TbNonAscii:     DB  0x36,0x2a,0x1d,0x38, 0xb7,0x46,0x45,0x3a
                 DB  0xd2,0x9d,0xb8,0xdb, 0xdc,0xdd,0,0
 
-_KbScanEvents   DD  0
+KbScanEvents    DD  0
 
 SECTION .bss   ALIGN=32
 
-_CurKbMAP:       ;-----------------------
+CurKbMAP:       ;-----------------------
 SignKb          RESD    1; == 'KMAP'
 SizeKb          RESD    1
 KbMapPtr        RESD    1
@@ -884,8 +894,8 @@ resv2Kb         RESD    3
 CurPrefixKb     RESD    1
 ValidCurKbMAP   RESD    1
 resvKb          RESD    2;-------------------
-_KbFLAG         RESD    1
-_KbApp          RESD    8
+KbFLAG          RESD    1
+KbApp           RESD    8
 KeyFrstDownTime RESD    256
 KeyTimeEvents   RESD    32
 KeyTimeKyEvents RESB    32
@@ -903,8 +913,8 @@ AsciiNbElt      RESD    1
 KeyNbElt        RESD    1
 KeyTimeNbElt    RESD    1
 
-_LastKey        RESB    1
-_LastAscii      RESB    1
+LastKey         RESB    1
+LastAscii       RESB    1
 ScanAscii       RESB    1
 ExtKey          RESB    1
 PauseKey        RESB    1

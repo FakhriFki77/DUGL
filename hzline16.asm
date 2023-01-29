@@ -14,7 +14,7 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ;
-;    contact: libdugl@hotmail.com
+;    contact: libdugl(at)hotmail.com
 ;=============================================================================
 
 
@@ -421,13 +421,13 @@ ALIGN 4
         JZ          %%CasDYZ
         OR          EBP,EBP   ; EBP = DXT
         JZ          %%CasDXZ
-%%CasNorm:  
+%%CasNorm:
         @InTextHLineNorm16
         JMP         %%FinInTextHLg
-%%CasDXZ:   
+%%CasDXZ:
         @InTextHLineDXZ16
         JMP         %%FinInTextHLg
-%%CasDYZ:   
+%%CasDYZ:
         @InTextHLineDYZ16
 %%FinInTextHLg:
 %endmacro
@@ -444,13 +444,13 @@ ALIGN 4
         JZ          %%CasDYZ
         SUB         EBP,[XT1]   ; EBP = DX
         JZ          %%CasDXZ
-%%CasNorm:  
+%%CasNorm:
         @ClipTextHLineNorm16
         JMP         %%FinInTextHLg
-%%CasDXZ:   
+%%CasDXZ:
         @ClipTextHLineDXZ16
         JMP         %%FinInTextHLg
-%%CasDYZ:   
+%%CasDYZ:
         @ClipTextHLineDYZ16
 %%FinInTextHLg:
 %endmacro
@@ -547,7 +547,7 @@ ALIGN 4
 %%StBAp:
         AND         CL,3
         JZ          %%FinSHLine
-%%BcStBAp:  
+%%BcStBAp:
         @AjAdNormB16
         MOV         AX,[ESI+EBX]
         DEC         CL
@@ -568,7 +568,7 @@ ALIGN 4
         CDQ
         IDIV        DWORD [Plus2]
         JMP         SHORT %%DivPPlusY
-%%PDivPPlusY:   
+%%PDivPPlusY:
         XOR         EAX,EAX
 %%DivPPlusY:
         MOV         EBP,EAX ; [PntPlusY]
@@ -581,7 +581,7 @@ ALIGN 4
         JLE         %%PosPntPlusY
         LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusY:
-%%BcStBAv:  
+%%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv
         @AjAdDXZ16
@@ -652,7 +652,7 @@ ALIGN 4
         CDQ
         IDIV        DWORD [Plus2]
         JMP         SHORT %%DivPPlusY
-%%PDivPPlusY:   
+%%PDivPPlusY:
         XOR         EAX,EAX
 %%DivPPlusY:
         MOV         EBP,EAX  ;[PntPlusX]
@@ -664,7 +664,7 @@ ALIGN 4
         JGE         %%PosPntPlusX
         LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusX:
-%%BcStBAv:  
+%%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv
         @AjAdDYZ16
@@ -738,13 +738,13 @@ ALIGN 4
         JZ          %%CasDYZ
         OR          EBP,EBP   ; EBP = DXT
         JZ          %%CasDXZ
-%%CasNorm:  
+%%CasNorm:
         @InMaskTextHLineNorm16
         JMP         %%FinInTextHLg
-%%CasDXZ:   
+%%CasDXZ:
         @InMaskTextHLineDXZ16
         JMP         %%FinInTextHLg
-%%CasDYZ:   
+%%CasDYZ:
         @InMaskTextHLineDYZ16
 %%FinInTextHLg:
 %endmacro
@@ -968,7 +968,7 @@ ALIGN 4
 %%StBAp:
         AND         CL,3
         JZ          %%FinSHLine
-%%BcStBAp:  
+%%BcStBAp:
         @AjAdDXZ16
         MOV         AX,[ESI+EBX]
 %%LastB:
@@ -1078,7 +1078,7 @@ ALIGN 4
 %%StBAp:
         AND         CL,3
         JZ          %%FinSHLine
-%%BcStBAp:  
+%%BcStBAp:
         @AjAdDYZ16
         MOV         AX,[ESI+EBX*2]
 %%LastB:
@@ -1104,13 +1104,13 @@ ALIGN 4
         JZ          %%CasDYZ
         SUB         EBP,[XT1]   ; EBP = DX
         JZ          %%CasDXZ
-%%CasNorm:  
+%%CasNorm:
         @ClipMaskTextHLineNorm16
         JMP         %%FinInTextHLg
-%%CasDXZ:   
+%%CasDXZ:
         @ClipMaskTextHLineDXZ16
         JMP         %%FinInTextHLg
-%%CasDYZ:   
+%%CasDYZ:
         @ClipMaskTextHLineDYZ16
 %%FinInTextHLg:
 %endmacro
@@ -1123,7 +1123,7 @@ ALIGN 4
         CDQ
         IDIV        DWORD [Plus2]
         JMP         SHORT %%DivPPlusY
-%%PDivPPlusY:   
+%%PDivPPlusY:
         XOR         EAX,EAX
 %%DivPPlusY:
         IMUL        ESI,[SNegScanLine]    ; - 2'
@@ -1139,7 +1139,7 @@ ALIGN 4
         CDQ
         IDIV        DWORD [Plus2]
         JMP         SHORT %%DivPPlusX
-%%PDivPPlusX:   
+%%PDivPPlusX:
         XOR         EAX,EAX
 %%DivPPlusX:
         MOV         EBP,[PntPlusY] ; - 1
@@ -1268,7 +1268,7 @@ ALIGN 4
         JLE         %%PosPntPlusY
         LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusY:
-%%BcStBAv:  
+%%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv
         @AjAdDXZ16
@@ -1367,7 +1367,7 @@ ALIGN 4
         CDQ
         IDIV        DWORD [Plus2]
         JMP         SHORT %%DivPPlusY
-%%PDivPPlusY:   
+%%PDivPPlusY:
         XOR         EAX,EAX
 %%DivPPlusY:
         IMUL        ESI,[SNegScanLine]
@@ -1380,7 +1380,7 @@ ALIGN 4
         JGE         %%PosPntPlusX
         LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusX:
-%%BcStBAv:  
+%%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv
         @AjAdDYZ16
@@ -1849,9 +1849,9 @@ ALIGN 4
 %endmacro
 
 %macro  @SolidBlndQ 0
-        PAND            xmm0,[_QBlue16Mask]
-        PAND            xmm1,[_QGreen16Mask]
-        PAND            xmm2,[_QRed16Mask]
+        PAND            xmm0,[QBlue16Mask]
+        PAND            xmm1,[QGreen16Mask]
+        PAND            xmm2,[QRed16Mask]
         PMULLW      xmm0,xmm7 ; [blend_src]
         PSRLW           xmm2,5
         PMULLW      xmm1,xmm7 ; [blend_src]
@@ -1861,9 +1861,9 @@ ALIGN 4
         PADDW           xmm2,xmm5
         PSRLW           xmm0,5
         PSRLW           xmm1,5
-        PAND            xmm2,[_QRed16Mask]
+        PAND            xmm2,[QRed16Mask]
         ;PAND       mm0,[QBlue16Mask]
-        PAND            xmm1,[_QGreen16Mask]
+        PAND            xmm1,[QGreen16Mask]
         POR        xmm0,xmm2
         POR        xmm0,xmm1
 %endmacro
@@ -2003,9 +2003,9 @@ ALIGN 4
 %macro  @InSolidTextBlndQ 0
         MOVDQA      xmm1,xmm0
         MOVDQA      xmm2,xmm0
-        PAND        xmm0,[_QBlue16Mask]
-        PAND        xmm1,[_QGreen16Mask]
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm0,[QBlue16Mask]
+        PAND        xmm1,[QGreen16Mask]
+        PAND        xmm2,[QRed16Mask]
         PMULLW      xmm0,xmm7 ; * QMulSrcBlend
         PSRLW       xmm2,5
         PMULLW      xmm1,xmm7
@@ -2015,9 +2015,9 @@ ALIGN 4
         PADDW       xmm2,xmm5 ; * QRed16Blend
         PSRLW       xmm0,5
         PSRLW       xmm1,5
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm2,[QRed16Mask]
         ;PAND       mm0,[QBlue16Mask]
-        PAND        xmm1,[_QGreen16Mask]
+        PAND        xmm1,[QGreen16Mask]
         POR         xmm0,xmm2
         POR         xmm0,xmm1
 %endmacro
@@ -2025,7 +2025,7 @@ ALIGN 4
 %macro  @InSolidTextBlndW 0
         MOVDQA      xmm2,xmm0 ; R
         PUNPCKLWD   xmm0,xmm0 ; G | B
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm2,[QRed16Mask]
         PAND        xmm0,[WBGR16Mask]
         PSRLW       xmm2,5
         PMULLW      xmm0,xmm7 ; * QMulSrcBlend
@@ -2033,7 +2033,7 @@ ALIGN 4
         PADDW       xmm0,[WBGR16Blend]
         PADDW       xmm2,xmm5 ; * QRed16Blend
         PSRLW       xmm0,5
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm2,[QRed16Mask]
         PAND        xmm0,[WBGR16Mask]
 
         PSHUFLW     xmm1,xmm0,(0<<6) | (3<<4) | (2<<2) | (1)
@@ -2045,9 +2045,9 @@ ALIGN 4
 %macro  @SolidTextBlndQ 0
         MOVDQA      xmm1,xmm0
         MOVDQA      xmm2,xmm0
-        PAND        xmm0,[_QBlue16Mask]
-        PAND        xmm1,[_QGreen16Mask]
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm0,[QBlue16Mask]
+        PAND        xmm1,[QGreen16Mask]
+        PAND        xmm2,[QRed16Mask]
         PMULLW      xmm0,[QMulSrcBlend]
         PSRLW       xmm2,5
         PMULLW      xmm1,[QMulSrcBlend]
@@ -2057,9 +2057,9 @@ ALIGN 4
         PADDW       xmm2,[QRed16Blend]
         PSRLW       xmm0,5
         PSRLW       xmm1,5
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm2,[QRed16Mask]
         ;PAND       mm0,[QBlue16Mask]
-        PAND        xmm1,[_QGreen16Mask]
+        PAND        xmm1,[QGreen16Mask]
         POR         xmm0,xmm2
         POR         xmm0,xmm1
 %endmacro
@@ -2068,7 +2068,7 @@ ALIGN 4
         MOVD        xmm0,EAX
         MOVD        xmm2,EAX ; R
         PUNPCKLWD   xmm0,xmm0 ; G | B
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm2,[QRed16Mask]
         PAND        xmm0,[WBGR16Mask]
         PSRLW       xmm2,5
         PMULLW      xmm0,[QMulSrcBlend]
@@ -2076,7 +2076,7 @@ ALIGN 4
         PADDW       xmm0,[WBGR16Blend]
         PADDW       xmm2,[QRed16Blend]
         PSRLW       xmm0,5
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm2,[QRed16Mask]
         PAND        xmm0,[WBGR16Mask]
 
         PSHUFLW     xmm1,xmm0,(0<<6) | (3<<4) | (2<<2) | (1)
@@ -2088,7 +2088,7 @@ ALIGN 4
 %macro  @SolidTextBlndW_xmm0 0
         MOVDQA      xmm2,xmm0 ; R
         PUNPCKLWD   xmm0,xmm0 ; G | B
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm2,[QRed16Mask]
         PAND        xmm0,[WBGR16Mask]
         PSRLW       xmm2,5
         PMULLW      xmm0,[QMulSrcBlend]
@@ -2096,7 +2096,7 @@ ALIGN 4
         PADDW       xmm0,[WBGR16Blend]
         PADDW       xmm2,[QRed16Blend]
         PSRLW       xmm0,5
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm2,[QRed16Mask]
         PAND        xmm0,[WBGR16Mask]
 
         PSHUFLW     xmm1,xmm0,(0<<6) | (3<<4) | (2<<2) | (1)
@@ -3155,12 +3155,12 @@ ALIGN 4
 %macro  @ClipMaskTextBlndHLineDXZ16  0
         MOV         ESI,[YT1]   ; - 1
         SHL         EAX,Prec
-        IMUL            ESI,[SNegScanLine] ; - 2
+        IMUL        ESI,[SNegScanLine] ; - 2
         CMP         DWORD [Plus2],0
-        MOV             EBX,[XT1]
-        JZ              %%PDivPPlusY
+        MOV         EBX,[XT1]
+        JZ          %%PDivPPlusY
         CDQ
-        IDIV            DWORD [Plus2]
+        IDIV        DWORD [Plus2]
         JMP         SHORT %%DivPPlusY
 %%PDivPPlusY:
         XOR         EAX,EAX
@@ -3192,20 +3192,20 @@ ALIGN 4
 
         JMP         %%BcStBAv
 %%FPasStBAv:
-        TEST            CX,0xFFFC
-        JZ              %%StBAp
+        TEST        CX,0xFFFC
+        JZ          %%StBAp
 ;ALIGN 4
 %%StoMMX:
-      @AjAdDXZ16
-      PINSRW      xmm0,[ESI+EBX], 0
         @AjAdDXZ16
-      PINSRW      xmm0,[ESI+EBX], 1
+        PINSRW      xmm0,[ESI+EBX], 0
         @AjAdDXZ16
-      PINSRW      xmm0,[ESI+EBX], 2
+        PINSRW      xmm0,[ESI+EBX], 1
+        @AjAdDXZ16
+        PINSRW      xmm0,[ESI+EBX], 2
         SUB         CX,BYTE 4
         @AjAdDXZ16
         TEST        CX,0xFFFC
-      PINSRW      xmm0,[ESI+EBX], 3
+        PINSRW      xmm0,[ESI+EBX], 3
         JZ          %%StoLastQ
 
         @AjAdDXZ16
@@ -3224,13 +3224,13 @@ ALIGN 4
 
         PCMPEQW     xmm1,xmm7
         PCMPEQW     xmm4,xmm7
-        PANDN           xmm1,xmm0
-        PAND            xmm5,xmm4
+        PANDN       xmm1,xmm0
+        PAND        xmm5,xmm4
         POR         xmm1,xmm5
 
         SUB         CX,BYTE 4
         MOVDQU      [EDI],xmm1
-        TEST            CX,0xFFFC
+        TEST        CX,0xFFFC
         LEA         EDI,[EDI+16]
         JNZ         %%StoMMX
         JMP         %%StBAp
@@ -3251,12 +3251,12 @@ ALIGN 4
 
 %%StBAp:
         AND         CL,3
-        JZ              %%FinSHLine
+        JZ          %%FinSHLine
 %%BcStBAp:
         @AjAdDXZ16
         MOV         AX,[ESI+EBX]
         CMP         AX,[SMask]
-        JZ              %%NoDWAp
+        JZ          %%NoDWAp
         @SolidTextBlndW
         PEXTRW      [EDI],xmm2,0
 %%NoDWAp:
@@ -3272,42 +3272,42 @@ ALIGN 4
 %macro  @ClipMaskTextBlndHLineDYZ16 0
 
         MOV         EBX,[XT1]
-        MOV     ESI,[YT1]
-        SUB     EBP,EBX
-        MOV     EAX,EBP
+        MOV         ESI,[YT1]
+        SUB         EBP,EBX
+        MOV         EAX,EBP
         SHL         EAX,Prec
-        CMP     DWORD [Plus2],0
+        CMP         DWORD [Plus2],0
         JZ          %%PDivPPlusY
         CDQ
         IDIV        DWORD [Plus2]
-        JMP     SHORT %%DivPPlusY
+        JMP         SHORT %%DivPPlusY
 %%PDivPPlusY:
-        XOR     EAX,EAX
+        XOR         EAX,EAX
 %%DivPPlusY:
-        MOV     EBP,EAX  ;[PntPlusX]
+        MOV         EBP,EAX  ;[PntPlusX]
         IMUL        ESI,[SNegScanLine]
-        MOV     EDX,[Plus]
-        LEA     ESI,[ESI+EBX*2] ; + XT1 * 2 as 16bpp
+        MOV         EDX,[Plus]
+        LEA         ESI,[ESI+EBX*2] ; + XT1 * 2 as 16bpp
         IMUL        EDX,EBP ;+[PntPlusX]
-        ADD     ESI,[Svlfb]
+        ADD         ESI,[Svlfb]
         OR          EAX,EAX
-        JGE     %%PosPntPlusX
-        LEA     EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
+        JGE         %%PosPntPlusX
+        LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusX:
 %%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv
         @AjAdDYZ16
-        MOV     AX,[ESI+EBX*2]
-        CMP     AX,[SMask]
+        MOV         AX,[ESI+EBX*2]
+        CMP         AX,[SMask]
         JZ          %%NoDWAv
         @SolidTextBlndW
-        PEXTRW  [EDI],xmm2,0
+        PEXTRW      [EDI],xmm2,0
 %%NoDWAv:
-        DEC     ECX
-        LEA     EDI,[EDI+2]
+        DEC         ECX
+        LEA         EDI,[EDI+2]
         JZ          %%FinSHLine
-        JMP     %%BcStBAv
+        JMP         %%BcStBAv
 
 %%FPasStBAv:
         TEST        CX,0xFFFC
@@ -3315,16 +3315,16 @@ ALIGN 4
 ;ALIGN 4
 %%StoMMX:
         @AjAdDYZ16
-        PINSRW  xmm0,[ESI+EBX*2], 0
+        PINSRW      xmm0,[ESI+EBX*2], 0
         @AjAdDYZ16
-        PINSRW  xmm0,[ESI+EBX*2], 1
+        PINSRW      xmm0,[ESI+EBX*2], 1
         @AjAdDYZ16
-        PINSRW  xmm0,[ESI+EBX*2], 2
+        PINSRW      xmm0,[ESI+EBX*2], 2
         @AjAdDYZ16
-        SUB     CX, BYTE 4
-        PINSRW  xmm0,[ESI+EBX*2], 3
+        SUB         CX, BYTE 4
+        PINSRW      xmm0,[ESI+EBX*2], 3
         TEST        CX,0xFFFC
-        JZ         %%StoLastQ
+        JZ          %%StoLastQ
 
         @AjAdDYZ16
         PINSRW      xmm0,[ESI+EBX*2], 4
@@ -3553,10 +3553,10 @@ ALIGN 4
 %endmacro
 
 %macro  @ClipTransTextHLine16  0
-        MOV     EAX,[YT2]
-        MOV     EBP,[XT2]
-        SUB     EAX,[YT1]   ; EAX = DY
-        SUB     EBP,[XT1]   ; EBP = DX
+        MOV         EAX,[YT2]
+        MOV         EBP,[XT2]
+        SUB         EAX,[YT1]   ; EAX = DY
+        SUB         EBP,[XT1]   ; EBP = DX
         @ClipTransTextHLineNorm16
 %endmacro
 
@@ -3622,8 +3622,8 @@ ALIGN 4
 
         JMP         %%BcStBAv
 %%FPasStBAv:
-        TEST    CX,0xFFFC
-        JZ      %%StBAp
+        TEST        CX,0xFFFC
+        JZ          %%StBAp
 ;ALIGN 4
 %%StoMMX:
         @AjAdNormQ16
@@ -3684,7 +3684,7 @@ ALIGN 4
         DEC     CL
         PEXTRW      [EDI],xmm0,0
         LEA         EDI,[EDI+2]
-        JNZ     %%BcStBAp
+        JNZ         %%BcStBAp
 %%PasStBAp:
 %%FinSHLine:
 %endmacro
@@ -3955,8 +3955,8 @@ ALIGN 4
 
         JMP         %%BcStBAv
 %%FPasStBAv:
-        TEST    CX,0xFFFC
-        JZ      %%StBAp
+        TEST        CX,0xFFFC
+        JZ          %%StBAp
 ;ALIGN 4
 %%StoMMX:
         @AjAdNormQ16
@@ -4045,9 +4045,9 @@ ALIGN 4
 %endmacro
 
 %macro  @ClipMaskTransTextHLine16  0
-        MOV     EAX,[YT2]
-        MOV     EBP,[XT2]
-        SUB     EAX,[YT1]   ; EAX = DY
-        SUB     EBP,[XT1]   ; EBP = DX
+        MOV         EAX,[YT2]
+        MOV         EBP,[XT2]
+        SUB         EAX,[YT1]   ; EAX = DY
+        SUB         EBP,[XT1]   ; EBP = DX
         @ClipMaskTransTextHLineNorm16
 %endmacro

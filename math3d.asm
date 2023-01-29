@@ -14,36 +14,40 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ;
-;    contact: libdugl@hotmail.com
+;    contact: libdugl(at)hotmail.com
 ;=============================================================================
 
 
 %include "PARAM.asm"
 
+; enable windows/linux win32/elf32 building
+%pragma elf32 gprefix
+%pragma win32 gprefix   _
+
 ; GLOBAL Function*************************************************************
-GLOBAL _DistanceDVEC4,_DistancePow2DVEC4,_DotDVEC4,_LengthDVEC4,_NormalizeDVEC4, _LerpDVEC4Res
-GLOBAL _MulValDVEC4,_MulValDVEC4Res,_MulValDVEC4Array,_MulDVEC4,_MulDVEC4Res,_MulDVEC4Array
-GLOBAL _AddDVEC4,_AddDVEC4Res,_AddDVEC4Array
-GLOBAL _SubDVEC4,_SubDVEC4Res,_CrossDVEC4
+GLOBAL DistanceDVEC4, DistancePow2DVEC4, DotDVEC4, LengthDVEC4, NormalizeDVEC4,  LerpDVEC4Res
+GLOBAL MulValDVEC4, MulValDVEC4Res, MulValDVEC4Array, MulDVEC4, MulDVEC4Res, MulDVEC4Array
+GLOBAL AddDVEC4, AddDVEC4Res, AddDVEC4Array
+GLOBAL SubDVEC4, SubDVEC4Res, CrossDVEC4
 
-GLOBAL _DVEC4Array2DVec4i,_DVEC4Array2DVec4iNT,_DVEC4iArray2DVec4,_DVEC4iArray2DVec4NT,_ClipDVEC4Array
-GLOBAL _CopyDVEC4,_CopyDVEC4NT,_StoreDVEC4,_StoreDVEC4NT
+GLOBAL DVEC4Array2DVec4i, DVEC4Array2DVec4iNT, DVEC4iArray2DVec4, DVEC4iArray2DVec4NT, ClipDVEC4Array
+GLOBAL CopyDVEC4, CopyDVEC4NT, StoreDVEC4, StoreDVEC4NT
 
-GLOBAL _FetchDAAMinBBoxDVEC4Array,_FetchDAABBoxDVEC4Array, _EqualDVEC4
-GLOBAL _DVEC4InAAMinBBox,_DVEC4MaskInAAMinBBox, _DVEC4ArrayIdxCountInAAMinBBox,_DVEC4ArrayIdxCountInMapAAMinBBox
-GLOBAL _DVEC4MinRes,_DVEC4MaxRes,_DVEC4MinXYZ,_DVEC4MaxXYZ
+GLOBAL FetchDAAMinBBoxDVEC4Array, FetchDAABBoxDVEC4Array,  EqualDVEC4
+GLOBAL DVEC4InAAMinBBox, DVEC4MaskInAAMinBBox, DVEC4ArrayIdxCountInAAMinBBox, DVEC4ArrayIdxCountInMapAAMinBBox
+GLOBAL DVEC4MinRes, DVEC4MaxRes, DVEC4MinXYZ, DVEC4MaxXYZ
 
 
-GLOBAL _DMatrix4MulDMatrix4,_DMatrix4MulDMatrix4Res_DMatrix4MulDMatrix4Persp,_DMatrix4MulDVEC4ArrayPerspRes
-GLOBAL _DMatrix4MulDVEC4ArrayPerspResNT,_DMatrix4MulDVEC4Array,_DMatrix4MulDVEC4ArrayRes,_DMatrix4MulDVEC4ArrayResNT
-GLOBAL _DMatrix4MulDVEC4ArrayResDVec4i,_DMatrix4MulDVEC4ArrayResDVec4iNT
-GLOBAL _DMatrix4MulDVEC4ArrayResDVec2i,_DMatrix4MulDVEC4ArrayResDVec2iNT
+GLOBAL DMatrix4MulDMatrix4, DMatrix4MulDMatrix4Res_DMatrix4MulDMatrix4Persp, DMatrix4MulDVEC4ArrayPerspRes
+GLOBAL DMatrix4MulDVEC4ArrayPerspResNT, DMatrix4MulDVEC4Array, DMatrix4MulDVEC4ArrayRes, DMatrix4MulDVEC4ArrayResNT
+GLOBAL DMatrix4MulDVEC4ArrayResDVec4i, DMatrix4MulDVEC4ArrayResDVec4iNT
+GLOBAL DMatrix4MulDVEC4ArrayResDVec2i, DMatrix4MulDVEC4ArrayResDVec2iNT
 
 SECTION .text
 ALIGN 32
 [BITS 32]
 
-_DistanceDVEC4:
+DistanceDVEC4:
         ARG    DistDVEC1P, 4, DistDVEC2P, 4, DistFResP, 4
 
             MOV         EAX,[EBP+DistDVEC1P]
@@ -61,7 +65,7 @@ _DistanceDVEC4:
 
         RETURN
 
-_DistancePow2DVEC4:
+DistancePow2DVEC4:
         ARG    DistDVEC1Pow2P, 4, DistDVEC2Pow2P, 4, DistPow2FResP, 4
 
             MOV         EAX,[EBP+DistDVEC1Pow2P]
@@ -79,7 +83,7 @@ _DistancePow2DVEC4:
         RETURN
 
 ; v1.x*v2.x + v1.y*v2.y + v1.z*v2.z
-_DotDVEC4:
+DotDVEC4:
         ARG    DotDVEC1P, 4, DotDVEC2P, 4, DotFResP, 4
 
             MOV         EAX,[EBP+DotDVEC1P]
@@ -95,7 +99,7 @@ _DotDVEC4:
 
         RETURN
 
-_LengthDVEC4:
+LengthDVEC4:
         ARG    LenDVECP, 4, LenFResP, 4
 
             MOV         EAX,[EBP+LenDVECP]
@@ -111,7 +115,7 @@ _LengthDVEC4:
 
         RETURN
 
-_NormalizeDVEC4:
+NormalizeDVEC4:
         ARG    NormDVECP, 4
 
             MOV         EAX,[EBP+NormDVECP]
@@ -133,7 +137,7 @@ _NormalizeDVEC4:
         RETURN
 
 ;([v1.y * v2.z - v1.z * v2.y],  [v1.z * v2.x - v1.x * v2.z],  [v1.x * v2.y - v1.y * v2.x])
-_CrossDVEC4:
+CrossDVEC4:
         ARG    CrossDVEC1P, 4, CrossDVEC2P, 4, CrossResDVECP, 4
 
             MOV         EAX,[EBP+CrossDVEC1P]
@@ -153,7 +157,7 @@ _CrossDVEC4:
         RETURN
 
 ; vRes = v1 + ((v2 - v1) * alpha)
-_LerpDVEC4Res:
+LerpDVEC4Res:
         ARG    LerpALPHA, 4, LerpDVEC1P, 4, LerpDVEC2P, 4, LerpResDVECP, 4
 
             MOV         EAX,[EBP+LerpDVEC1P]
@@ -171,7 +175,7 @@ _LerpDVEC4Res:
         RETURN
 
 ;([v1.x * v2.x],  [v1.y * v2.y],  [v1.z * v2.z])
-_MulDVEC4:
+MulDVEC4:
         ARG    MulDVEC1P, 4, MulDVEC2P, 4
 
             MOV         EAX,[EBP+MulDVEC1P]
@@ -184,7 +188,7 @@ _MulDVEC4:
         RETURN
 
 ;([v1.x * v2.x],  [v1.y * v2.y],  [v1.z * v2.z])
-_MulDVEC4Res:
+MulDVEC4Res:
         ARG    MulDVEC1ResP, 4, MulDVEC2ResP, 4, DVEC4ResMulP, 4
 
             MOV         EAX,[EBP+MulDVEC1ResP]
@@ -197,7 +201,7 @@ _MulDVEC4Res:
 
         RETURN
 
-_MulValDVEC4:
+MulValDVEC4:
         ARG    MulVDVECP, 4, MulVF, 4
 
             MOV         EAX,[EBP+MulVDVECP]
@@ -209,7 +213,7 @@ _MulValDVEC4:
 
         RETURN
 
-_MulValDVEC4Res:
+MulValDVEC4Res:
         ARG    MulVDVECResP, 4, MulVFRes, 4, MulDestDVECResP, 4
 
             MOV         EAX,[EBP+MulVDVECResP]
@@ -222,16 +226,16 @@ _MulValDVEC4Res:
 
         RETURN
 
-_MulDVEC4Array:
+MulDVEC4Array:
         ARG    MulDVECArrayP, 4, MulArraySize, 4, MulDVECP, 4
 
             MOV         ECX,[EBP+MulDVECP]
             MOV         EAX,[EBP+MulDVECArrayP]
             MOVDQA      xmm0,[ECX]
             MOV         ECX,[EBP+MulArraySize]
-            JMP         SHORT _MulValDVEC4Array.DoMul
+            JMP         SHORT MulValDVEC4Array.DoMul
 
-_MulValDVEC4Array:
+MulValDVEC4Array:
         ARG    MulVDVECArrayP, 4, MulValArraySize, 4, MulVArrayF, 4
 
             MOVD        xmm0,[EBP+MulVArrayF]
@@ -265,7 +269,7 @@ _MulValDVEC4Array:
 
 
 ;([v1.x + v2.x],  [v1.y + v2.y],  [v1.z + v2.z])
-_AddDVEC4:
+AddDVEC4:
         ARG    AddDVEC1P, 4, AddDVEC2P, 4
 
             MOV         EAX,[EBP+AddDVEC1P]
@@ -277,7 +281,7 @@ _AddDVEC4:
 
         RETURN
 
-_AddDVEC4Res:
+AddDVEC4Res:
         ARG    AddDVEC1ResP, 4, AddDVEC2ResP, 4, DVEC4ResAddP, 4
 
             MOV         EAX,[EBP+AddDVEC1ResP]
@@ -290,7 +294,7 @@ _AddDVEC4Res:
 
         RETURN
 
-_AddDVEC4Array:
+AddDVEC4Array:
         ARG    AddDVECArrayP, 4, AddDVECArraySize, 4, AddDVECP, 4
 
             MOV         EAX,[EBP+AddDVECP]
@@ -323,7 +327,7 @@ _AddDVEC4Array:
         RETURN
 
 ;([v1.x - v2.x],  [v1.y - v2.y],  [v1.z - v2.z])
-_SubDVEC4:
+SubDVEC4:
         ARG    SubDVEC1P, 4, SubDVEC2P, 4
 
             MOV         EAX,[EBP+SubDVEC1P]
@@ -335,7 +339,7 @@ _SubDVEC4:
 
         RETURN
 
-_SubDVEC4Res:
+SubDVEC4Res:
         ARG    SubDVEC1ResP, 4, SubDVEC2ResP, 4, DVEC4ResSubP, 4
 
             MOV         EAX,[EBP+SubDVEC1ResP]
@@ -350,7 +354,7 @@ _SubDVEC4Res:
 
 ; Conversion / Clip ================
 
-_DVEC4Array2DVec4i:
+DVEC4Array2DVec4i:
         ARG    DVEC4iDstP, 4, DVEC4SrcP, 4, VEC4Array2iCount, 4
 
             MOV         EAX,[EBP+DVEC4iDstP]
@@ -381,7 +385,7 @@ _DVEC4Array2DVec4i:
 
         RETURN
 
-_DVEC4iArray2DVec4:
+DVEC4iArray2DVec4:
         ARG    DVEC4DstP, 4, DVEC4iSrcP, 4, VEC4Array2Count, 4
 
             MOV         EAX,[EBP+DVEC4DstP]
@@ -412,7 +416,7 @@ _DVEC4iArray2DVec4:
 
         RETURN
 
-_DVEC4Array2DVec4iNT:
+DVEC4Array2DVec4iNT:
         ARG    DVEC4iDstNTP, 4, DVEC4SrcNTP, 4, VEC4Array2iNTCount, 4
 
             MOV         EAX,[EBP+DVEC4iDstNTP]
@@ -443,7 +447,7 @@ _DVEC4Array2DVec4iNT:
 
         RETURN
 
-_DVEC4iArray2DVec4NT:
+DVEC4iArray2DVec4NT:
         ARG    DVEC4DstNTP, 4, DVEC4iSrcNTP, 4, VEC4Array2NTCount, 4
 
             MOV         EAX,[EBP+DVEC4DstNTP]
@@ -474,7 +478,7 @@ _DVEC4iArray2DVec4NT:
 
         RETURN
 
-_ClipDVEC4Array:
+ClipDVEC4Array:
         ARG    DVEC4ArrayClipP, 4, DVEC4ArrayCount, 4, VEC4ClipMinP, 4, VEC4ClipMaxP, 4
 
             MOV         ECX,[EBP+VEC4ClipMaxP]
@@ -513,7 +517,7 @@ _ClipDVEC4Array:
 
         RETURN
 
-_CopyDVEC4:
+CopyDVEC4:
         ARG    DVEC4CopyDstP, 4, DVEC4CopySrcP, 4, VEC4CopyCount, 4
 
             MOV         EAX,[EBP+DVEC4CopyDstP]
@@ -559,7 +563,7 @@ _CopyDVEC4:
 
         RETURN
 
-_CopyDVEC4NT:
+CopyDVEC4NT:
         ARG    DVEC4CopyNTDstP, 4, DVEC4CopyNTSrcP, 4, VEC4CopyNTCount, 4
 
             MOV         EAX,[EBP+DVEC4CopyNTDstP]
@@ -605,7 +609,7 @@ _CopyDVEC4NT:
 
         RETURN
 
-_StoreDVEC4:
+StoreDVEC4:
         ARG    DVEC4storeDstP, 4, DVEC4storeSrcP, 4, VEC4storeCount, 4
 
             MOV         EAX,[EBP+DVEC4storeDstP]
@@ -641,7 +645,7 @@ _StoreDVEC4:
 
         RETURN
 
-_StoreDVEC4NT:
+StoreDVEC4NT:
         ARG    DVEC4storeNTDstP, 4, DVEC4storeNTSrcP, 4, VEC4storeNTCount, 4
 
             MOV         EAX,[EBP+DVEC4storeNTDstP]
@@ -679,7 +683,7 @@ _StoreDVEC4NT:
 
 ; search/AABBox/Filtering
 
-_FetchDAAMinBBoxDVEC4Array:
+FetchDAAMinBBoxDVEC4Array:
         ARG    DVEC4ArrayFMBBoxP, 4, DVEC4ArrayFMBBoxCount, 4, FAAMBBoxP, 4
 
             MOV         ECX,[EBP+DVEC4ArrayFMBBoxCount]
@@ -720,7 +724,7 @@ _FetchDAAMinBBoxDVEC4Array:
 
         RETURN
 
-_FetchDAABBoxDVEC4Array:
+FetchDAABBoxDVEC4Array:
         ARG    DVEC4ArrayFBBoxP, 4, DVEC4ArrayFBBoxCount, 4, FAABBoxP, 4
 
             MOV         ECX,[EBP+DVEC4ArrayFBBoxCount]
@@ -788,7 +792,7 @@ _FetchDAABBoxDVEC4Array:
 
 ; compare equality of x,y and z
 ;ALIGN 32
-_EqualDVEC4:
+EqualDVEC4:
         ARG    DVEC4Equal1P, 4, DVEC4Equal2P, 4
 
             MOV         ECX,[EBP+DVEC4Equal1P]
@@ -807,7 +811,7 @@ _EqualDVEC4:
         RETURN
 
 
-_DVEC4InAAMinBBox:
+DVEC4InAAMinBBox:
         ARG    DVEC4PosP, 4, AAMinBBoxLimitsP, 4
 
             MOV         ECX,[EBP+DVEC4PosP]
@@ -829,7 +833,7 @@ _DVEC4InAAMinBBox:
 
         RETURN
 
-_DVEC4ArrayIdxCountInAAMinBBox:
+DVEC4ArrayIdxCountInAAMinBBox:
         ARG    DVEC4ArrayInAABBP, 4, IdxsInDVEC4ArrayP, 4, IdxsInDVEC4ArrayCount, 4, InIdxsAAMinBBoxLimitsP, 4
 
             PUSH        ESI
@@ -872,7 +876,7 @@ _DVEC4ArrayIdxCountInAAMinBBox:
 
         RETURN
 
-_DVEC4ArrayIdxCountInMapAAMinBBox:
+DVEC4ArrayIdxCountInMapAAMinBBox:
         ARG    DVEC4ArrayInMapAABBP, 4, IdxsInMapDVEC4ArrayP, 4, IdxsInMapDVEC4ArrayCount, 4, InMapIdxsAAMinBBoxLimitsP, 4, InMapCharP, 4
 
             PUSH        ESI
@@ -916,7 +920,7 @@ _DVEC4ArrayIdxCountInMapAAMinBBox:
 
         RETURN
 
-_DVEC4MaskInAAMinBBox:
+DVEC4MaskInAAMinBBox:
         ARG    DVEC4MaskPosP, 4, AAMinBBoxLimitsMaskP, 4, IPosMaskXYZD, 4
 
             MOV         ECX,[EBP+DVEC4MaskPosP]
@@ -938,7 +942,7 @@ _DVEC4MaskInAAMinBBox:
 
         RETURN
 
-_DVEC4MinRes:
+DVEC4MinRes:
         ARG    MinDVEC1ResP, 4, MinDVEC2ResP, 4, DVEC4ResMinP, 4
 
             MOV         EAX,[EBP+MinDVEC1ResP]
@@ -950,7 +954,7 @@ _DVEC4MinRes:
 
         RETURN
 
-_DVEC4MaxRes:
+DVEC4MaxRes:
         ARG    MaxDVEC1ResP, 4, MaxDVEC2ResP, 4, DVEC4ResMaxP, 4
 
             MOV         EAX,[EBP+MaxDVEC1ResP]
@@ -962,7 +966,7 @@ _DVEC4MaxRes:
 
         RETURN
 
-_DVEC4MinXYZ:
+DVEC4MinXYZ:
         ARG    MinDVEC4XYZP, 4, ResXYZMinP, 4
 
             MOV         EAX,[EBP+MinDVEC4XYZP]
@@ -974,7 +978,7 @@ _DVEC4MinXYZ:
 
         RETURN
 
-_DVEC4MaxXYZ:
+DVEC4MaxXYZ:
         ARG    MaxDVEC4XYZP, 4, ResXYZMaxP, 4
 
             MOV         EAX,[EBP+MaxDVEC4XYZP]
@@ -988,7 +992,7 @@ _DVEC4MaxXYZ:
 
 ; DMatrix4 ===================
 
-_DMatrix4MulDVEC4Array:
+DMatrix4MulDVEC4Array:
         ARG    DMAT4MulVEC4ArrayP, 4, DVEC4ArrayMulMAT4P, 4, DVEC4ArrayMulMAT4Count, 4
 
             MOV         ECX,[EBP+DVEC4ArrayMulMAT4Count]
@@ -1052,7 +1056,7 @@ _DMatrix4MulDVEC4Array:
         RETURN
 
 
-_DMatrix4MulDVEC4ArrayRes:
+DMatrix4MulDVEC4ArrayRes:
         ARG    DMAT4MulVEC4ArrayResP, 4, DVEC4ArrayMulMAT4SrcP, 4, DVEC4ArrayMulMAT4CountRes, 4, DVEC4ArrayMulMAT4ResP, 4
 
             MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountRes]
@@ -1118,7 +1122,7 @@ _DMatrix4MulDVEC4ArrayRes:
 
         RETURN
 
-_DMatrix4MulDVEC4PerspArray:
+DMatrix4MulDVEC4PerspArray:
         ARG    DMAT4MulVEC4ArrayPerspP, 4, DVEC4ArrayMulMAT4PerspP, 4, DVEC4ArrayMulMAT4CountPersp, 4
 
             MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountPersp]
@@ -1154,7 +1158,7 @@ _DMatrix4MulDVEC4PerspArray:
         RETURN
 
 
-_DMatrix4MulDVEC4ArrayPerspRes:
+DMatrix4MulDVEC4ArrayPerspRes:
         ARG    DMAT4MulVEC4ArrayResPerspP, 4, DVEC4ArrayMulMAT4SrcPerspP, 4, DVEC4ArrayMulMAT4CountResPersp, 4, DVEC4ArrayMulMAT4ResPerspP, 4
 
             MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResPersp]
@@ -1192,7 +1196,7 @@ _DMatrix4MulDVEC4ArrayPerspRes:
 
         RETURN
 
-_DMatrix4MulDVEC4ArrayPerspResNT:
+DMatrix4MulDVEC4ArrayPerspResNT:
         ARG    DMAT4MulVEC4ArrayResPerspNTP, 4, DVEC4ArrayMulMAT4SrcPerspNTP, 4, DVEC4ArrayMulMAT4CountResPerspNT, 4, DVEC4ArrayMulMAT4ResPerspNTP, 4
 
             MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResPerspNT]
@@ -1230,7 +1234,7 @@ _DMatrix4MulDVEC4ArrayPerspResNT:
 
         RETURN
 
-_DMatrix4MulDVEC4ArrayResDVec4i:
+DMatrix4MulDVEC4ArrayResDVec4i:
         ARG     DMAT4MulVEC4ArrayResiP, 4, DVEC4ArrayMulMAT4SrciP, 4, DVEC4ArrayMulMAT4CountResi, 4, DVEC4ArrayMulMAT4ResiP, 4
 
             MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResi]
@@ -1298,7 +1302,7 @@ _DMatrix4MulDVEC4ArrayResDVec4i:
 
         RETURN
 
-_DMatrix4MulDVEC4ArrayResDVec2i:
+DMatrix4MulDVEC4ArrayResDVec2i:
         ARG    DMAT4MulVEC4ArrayRes2iP, 4, DVEC4ArrayMulMAT4Src2iP, 4, DVEC2iArrayMulMAT4CountResi, 4, DVEC2iArrayMulMAT4ResiP, 4
             MOV         ECX,[EBP+DVEC2iArrayMulMAT4CountResi]
             MOV         EAX,[EBP+DMAT4MulVEC4ArrayRes2iP]
@@ -1365,7 +1369,7 @@ _DMatrix4MulDVEC4ArrayResDVec2i:
 
         RETURN
 
-_DMatrix4MulDVEC4ArrayResDVec2iNT:
+DMatrix4MulDVEC4ArrayResDVec2iNT:
         ARG    DMAT4MulVEC4ArrayRes2iNTP, 4, DVEC4ArrayMulMAT4Src2iNTP, 4, DVEC2iArrayMulMAT4CountResiNT, 4, DVEC2iArrayMulMAT4ResiNTP, 4
 
             MOV         ECX,[EBP+DVEC2iArrayMulMAT4CountResiNT]
@@ -1434,7 +1438,7 @@ _DMatrix4MulDVEC4ArrayResDVec2iNT:
 
         RETURN
 
-_DMatrix4MulDVEC4ArrayResNT:
+DMatrix4MulDVEC4ArrayResNT:
         ARG    DMAT4MulVEC4ArrayResNTP, 4, DVEC4ArrayMulMAT4SrcNTP, 4, DVEC4ArrayMulMAT4CountResNT, 4, DVEC4ArrayMulMAT4ResNTP, 4
 
             MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResNT]
@@ -1500,7 +1504,7 @@ _DMatrix4MulDVEC4ArrayResNT:
 
         RETURN
 
-_DMatrix4MulDVEC4ArrayResDVec4iNT:
+DMatrix4MulDVEC4ArrayResDVec4iNT:
         ARG    DMAT4MulVEC4ArrayResiNTP, 4, DVEC4ArrayMulMAT4SrciNTP, 4, DVEC4ArrayMulMAT4CountResiNT, 4, DVEC4ArrayMulMAT4ResiNTP, 4
 
             MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResiNT]
@@ -1568,7 +1572,7 @@ _DMatrix4MulDVEC4ArrayResDVec4iNT:
 
         RETURN
 
-_DMatrix4MulDMatrix4:
+DMatrix4MulDMatrix4:
         ARG    DMAT4MulLeftP, 4, DMAT4MulRightP, 4
 
             MOV         EAX,[EBP+DMAT4MulLeftP]
@@ -1590,9 +1594,9 @@ _DMatrix4MulDMatrix4:
             ADDPS       xmm1,xmm3
             ADDPS       xmm1,xmm0
             MOVDQA      [EAX],xmm1
-            JMP         SHORT _DMatrix4MulDMatrix4Res.FinishLast3Rows
+            JMP         SHORT DMatrix4MulDMatrix4Res.FinishLast3Rows
 
-_DMatrix4MulDMatrix4Res:
+DMatrix4MulDMatrix4Res:
         ARG    DMAT4MulLeftResP, 4, DMAT4MulRightResP, 4, DMAT4MulResP, 4
 
             MOV         EAX,[EBP+DMAT4MulLeftResP]
@@ -1665,6 +1669,5 @@ SECTION .data   ALIGN=32
 DQ_CONST_ONE        DD      1.0, 1.0, 1.0, 1.0
 
 
-SECTION .bss   ALIGN=32
 
 

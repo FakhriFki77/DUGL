@@ -14,17 +14,21 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ;
-;    contact: libdugl@hotmail.com
+;    contact: libdugl(at)hotmail.com
 ;=============================================================================
 
 %include "PARAM.asm"
 
+; enable windows/linux win32/elf32 building
+%pragma elf32 gprefix
+%pragma win32 gprefix   _
+
 ; GLOBAL Function*************************************************************
-GLOBAL _iSetMouseRView,_GetMouseRView,_iSetMouseOrg,_iSetMousePos
-GLOBAL _iEnableMsEvntsStack,_iDisableMsEvntsStack,_iClearMsEvntsStack,_iGetMsEvent, _iPushMsEvent
+GLOBAL iSetMouseRView, GetMouseRView, iSetMouseOrg, iSetMousePos
+GLOBAL iEnableMsEvntsStack, iDisableMsEvntsStack, iClearMsEvntsStack, iGetMsEvent, iPushMsEvent
 
 ; GLOBAL DATA*****************************************************************
-GLOBAL _MsX,_MsY,_MsZ,_MsButton,_MsSpeedHz,_MsSpeedVt,_MsAccel
+GLOBAL MsX,MsY,MsZ,MsButton,MsSpeedHz,MsSpeedVt,MsAccel
 
 
 ; Mouse Event Structure **************************
@@ -41,7 +45,7 @@ SECTION .text
 ALIGN 32
 [BITS 32]
 
-_iSetMouseRView:
+iSetMouseRView:
     ARG V1, 4
 
         PUSH    EDI
@@ -52,8 +56,8 @@ _iSetMouseRView:
         MOV     EDI,MsOrgX
         MOV     ECX,6
         REP     MOVSD
-        MOV     EAX,[_MsX]
-        MOV     EBX,[_MsY]
+        MOV     EAX,[MsX]
+        MOV     EBX,[MsY]
         MOV     ECX,[MsMaxX]
         MOV     EDX,[MsMaxY]
         CMP     EAX,ECX
@@ -74,15 +78,15 @@ _iSetMouseRView:
         JGE     .MsPasInfMnY
         MOV     EBX,EDX
 .MsPasInfMnY:
-        MOV     [_MsY],EBX
-        MOV     [_MsX],EAX
+        MOV     [MsY],EBX
+        MOV     [MsX],EAX
 
         POP     EBX
         POP     ESI
         POP     EDI
     RETURN
 
-_GetMouseRView:
+GetMouseRView:
     ARG V2, 4
         PUSH        ESI
         PUSH        EDI
@@ -96,7 +100,7 @@ _GetMouseRView:
         POP         ESI
     RETURN
 
-_iSetMouseOrg:
+iSetMouseOrg:
     ARG MsXOrg, 4, MsYOrg, 4
 
         MOV         EAX,[EBP+MsXOrg]
@@ -115,7 +119,7 @@ _iSetMouseOrg:
 
     RETURN
 
-_iSetMousePos:
+iSetMousePos:
     ARG MouseX, 4, MouseY, 4
 
         MOV     EAX,[EBP+MouseX]
@@ -139,12 +143,12 @@ _iSetMousePos:
         JGE     .MsPasInfMnY
         MOV     ECX,[MsMinY]
 .MsPasInfMnY:
-        MOV     [_MsX],EAX
-        MOV     [_MsY],ECX
+        MOV     [MsX],EAX
+        MOV     [MsY],ECX
 
     RETURN
 
-_iPushMsEvent:
+iPushMsEvent:
     ARG MsEventID, 4
 
         PUSH    EDI
@@ -161,11 +165,11 @@ _iPushMsEvent:
         AND     ECX,0xFF ; rotate value 256->0
         IMUL    ECX,MouseEvent.Size
         LEA     EDI,[MsEventsStack+ECX] ; EDI point to the new Evt Elmnt
-        MOV     EAX,[_MsX]
-        MOV     EBX,[_MsY]
-        MOV     ECX,[_MsZ]
+        MOV     EAX,[MsX]
+        MOV     EBX,[MsY]
+        MOV     ECX,[MsZ]
 
-        MOV     EDX,[_MsButton]
+        MOV     EDX,[MsButton]
         MOV     [EDI+MouseEvent.MsX],EAX
         MOV     [EDI+MouseEvent.MsY],EBX
         MOV     [EDI+MouseEvent.MsZ],ECX
@@ -184,7 +188,7 @@ _iPushMsEvent:
 
 
 ; mouse event stack function
-_iEnableMsEvntsStack:
+iEnableMsEvntsStack:
         XOR     EAX,EAX
         MOV     [MsStackNbElt],EAX
         MOV     [MsStackStart],EAX
@@ -192,20 +196,20 @@ _iEnableMsEvntsStack:
         MOV     [MsStackEnable],EAX
     RET
 
-_iDisableMsEvntsStack:
+iDisableMsEvntsStack:
         XOR     EAX,EAX
         MOV     [MsStackEnable],EAX
         MOV     [MsStackNbElt],EAX
         MOV     [MsStackStart],EAX
         RET
 
-_iClearMsEvntsStack:
+iClearMsEvntsStack:
         XOR     EAX,EAX
         MOV     [MsStackNbElt],EAX
         MOV     [MsStackStart],EAX
     RET
 
-_iGetMsEvent:
+iGetMsEvent:
         ARG MsEvnt, 4
 
         MOV     EAX,[MsStackNbElt]
@@ -250,13 +254,13 @@ _iGetMsEvent:
 
 SECTION .bss   ALIGN=32
 
-_MsX            RESD    1
-_MsY            RESD    1
-_MsZ            RESD    1
-_MsButton       RESD    1
-_MsSpeedHz      RESD    1
-_MsSpeedVt      RESD    1
-_MsAccel        RESD    1
+MsX             RESD    1
+MsY             RESD    1
+MsZ             RESD    1
+MsButton        RESD    1
+MsSpeedHz       RESD    1
+MsSpeedVt       RESD    1
+MsAccel         RESD    1
 MsMickeyX       RESD    1
 MsMickeyY       RESD    1
 MsRestMickeyX   RESD    1

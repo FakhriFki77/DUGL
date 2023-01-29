@@ -14,7 +14,7 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ;
-;    contact: libdugl@hotmail.com
+;    contact: libdugl(at)hotmail.com
 ;=============================================================================
 
 
@@ -336,12 +336,12 @@
 ; used xmm: xmm0
 ;********************************************************
 %macro  @TransBlndQ_QMulSrcBlend 0
-        PAND        xmm0,[_QBlue16Mask]
-        PAND        xmm3,[_QBlue16Mask]
-        PAND        xmm1,[_QGreen16Mask]
-        PAND        xmm4,[_QGreen16Mask]
-        PAND        xmm2,[_QRed16Mask]
-        PAND        xmm5,[_QRed16Mask]
+        PAND        xmm0,[QBlue16Mask]
+        PAND        xmm3,[QBlue16Mask]
+        PAND        xmm1,[QGreen16Mask]
+        PAND        xmm4,[QGreen16Mask]
+        PAND        xmm2,[QRed16Mask]
+        PAND        xmm5,[QRed16Mask]
         PMULLW      xmm0,[QMulSrcBlend] ; [blend_src]
         PMULLW      xmm3,xmm6 ; [blend_dst]
         PSRLW       xmm2,5
@@ -356,9 +356,9 @@
         PADDW       xmm2,xmm5
         PSRLW       xmm0,5
         PSRLW       xmm1,5
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm2,[QRed16Mask]
         ;PAND       mm0,[QBlue16Mask]
-        PAND        xmm1,[_QGreen16Mask]
+        PAND        xmm1,[QGreen16Mask]
         POR         xmm0,xmm2
         POR         xmm0,xmm1
 %endmacro
@@ -535,8 +535,8 @@
 %macro  @FastSolidTextBlndQ 0
         MOVDQA      xmm1,xmm0
         MOVDQA      xmm2,xmm0
-        PAND        xmm0,[_QBlue16Mask]
-        PAND        xmm1,[_QGreen16Mask]
+        PAND        xmm0,[QBlue16Mask]
+        PAND        xmm1,[QGreen16Mask]
         PAND        xmm2,xmm6 ; [_QRed16Mask]
         PMULLW      xmm0,xmm7 ; * QMulSrcBlend
         PSRLW       xmm2,5
@@ -549,7 +549,7 @@
         PSRLW       xmm1,5
         PAND        xmm2,xmm6 ; [_QRed16Mask]
         ;PAND       mm0,[QBlue16Mask]
-        PAND        xmm1,[_QGreen16Mask]
+        PAND        xmm1,[QGreen16Mask]
         POR         xmm0,xmm2
         POR         xmm0,xmm1
 %endmacro
@@ -637,9 +637,9 @@
 %macro  @FastSolidTextBlndQ_QRed16Mask 0
         MOVDQA      xmm1,xmm0
         MOVDQA      xmm2,xmm0
-        PAND        xmm0,[_QBlue16Mask]
-        PAND        xmm1,[_QGreen16Mask]
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm0,[QBlue16Mask]
+        PAND        xmm1,[QGreen16Mask]
+        PAND        xmm2,[QRed16Mask]
         PMULLW      xmm0,xmm7 ; * QMulSrcBlend
         PSRLW       xmm2,5
         PMULLW      xmm1,xmm7
@@ -649,9 +649,9 @@
         PADDW       xmm2,xmm5 ; * QRed16Blend
         PSRLW       xmm0,5
         PSRLW       xmm1,5
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm2,[QRed16Mask]
         ;PAND       mm0,[QBlue16Mask]
-        PAND        xmm1,[_QGreen16Mask]
+        PAND        xmm1,[QGreen16Mask]
         POR         xmm0,xmm2
         POR         xmm0,xmm1
 %endmacro
@@ -659,7 +659,7 @@
 %macro  @FastSolidTextBlndW_QRed16Mask 0
         MOVDQA      xmm2,xmm0 ; R
         PUNPCKLWD   xmm0,xmm0 ; G | B
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm2,[QRed16Mask]
         PAND        xmm0,[WBGR16Mask]
         PSRLW       xmm2,5
         PMULLW      xmm0,xmm7 ; * QMulSrcBlend
@@ -667,7 +667,7 @@
         PADDW       xmm0,[WBGR16Blend]
         PADDW       xmm2,xmm5 ; * QRed16Blend
         PSRLW       xmm0,5
-        PAND        xmm2,[_QRed16Mask]
+        PAND        xmm2,[QRed16Mask]
         PAND        xmm0,[WBGR16Mask]
 
         PSHUFLW     xmm1,xmm0,(0<<6) | (3<<4) | (2<<2) | (1)

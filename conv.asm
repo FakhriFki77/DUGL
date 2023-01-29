@@ -14,23 +14,27 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ;
-;    contact: libdugl@hotmail.com
+;    contact: libdugl(at)hotmail.com
 ;=============================================================================
 
 %include "PARAM.asm"
 
+; enable windows/linux win32/elf32 building
+%pragma elf32 gprefix
+%pragma win32 gprefix   _
+
 ; GLOBAL Function*************************************************************
-GLOBAL _Blur16, _ConvB8ToB16Pal
+GLOBAL Blur16, ConvB8ToB16Pal
 
 ; EXTERN GLOBAL VARS
-EXTERN _QBlue16Mask, _QGreen16Mask, _QRed16Mask
+EXTERN QBlue16Mask, QGreen16Mask, QRed16Mask
 
 SECTION .text
 ALIGN 32
 [BITS 32]
 
 ; convert a 8bpp paletted buffer to 16bpp (5:6:5:rgb) buffer
-_ConvB8ToB16Pal:
+ConvB8ToB16Pal:
     ARG    PC816BuffImgSrc, 4, PC816BuffImgDst, 4, PC816ImgResHz, 4, PC816ImgResVt, 4, PC816SrcPal, 4
 
         PUSH        ESI
@@ -193,7 +197,7 @@ _ConvB8ToB16Pal:
         SHR         EAX,3 ; EAX~=EAX/6
 %endmacro
 
-_Blur16:
+Blur16:
     ARG    PB16BuffImgDst, 4, PB16BuffImgSrc, 4, PB16ImgResHz, 4, PB16ImgResVt, 4, PB16StartLine, 4, PB16EndLine, 4
 
         PUSH        ESI
@@ -274,12 +278,12 @@ _Blur16:
         MOVDQ2Q     mm1,xmm1
         MOVDQ2Q     mm4,xmm1
 
-        PAND        xmm0,[_QBlue16Mask]
-        PAND        xmm1,[_QBlue16Mask]
-        PAND        mm0,[_QGreen16Mask]
-        PAND        mm1,[_QGreen16Mask]
-        PAND        mm3,[_QRed16Mask]
-        PAND        mm4,[_QRed16Mask]
+        PAND        xmm0,[QBlue16Mask]
+        PAND        xmm1,[QBlue16Mask]
+        PAND        mm0,[QGreen16Mask]
+        PAND        mm1,[QGreen16Mask]
+        PAND        mm3,[QRed16Mask]
+        PAND        mm4,[QRed16Mask]
         PSRLW       mm3,3
         PSRLW       mm4,3
         MOVDQA      xmm2,xmm0 ; save first  B
@@ -311,8 +315,8 @@ _Blur16:
         PSRLW       mm2,3
         ;PSLLW       mm5,4
         ;AND        xmm2,[QBlue16Mask]
-        PAND        mm5,[_QRed16Mask]
-        PAND        mm2,[_QGreen16Mask]
+        PAND        mm5,[QRed16Mask]
+        PAND        mm2,[QGreen16Mask]
         MOVD        EDX,xmm2
         POR         mm2,mm5
         MOVD        EAX,mm2
@@ -352,9 +356,9 @@ _Blur16:
         ;PSLLW       mm5,3
         ;PAND       xmm0,[QBlue16Mask]
         PSRLQ       xmm0,16
-        PAND        mm3,[_QRed16Mask]
+        PAND        mm3,[QRed16Mask]
         MOVDQ2Q     mm1,xmm0
-        PAND        mm0,[_QGreen16Mask]
+        PAND        mm0,[QGreen16Mask]
         PSRLQ       mm3,16
         PSRLQ       mm0,16
         POR         mm1,mm3
@@ -411,7 +415,7 @@ _Blur16:
         LEA         ECX,[EBX-2]  ; resHz - 2
         MOV         [EDI],AX
 
-        MOVQ        xmm3,[_QBlue16Mask]
+        MOVQ        xmm3,[QBlue16Mask]
         LEA         EDI,[EDI+2]
         MOVQ        xmm4,[QMul8SecondW]
         MOVQ        xmm5,[QMul8ThirdW]
@@ -432,12 +436,12 @@ _Blur16:
         PAND        xmm0,xmm3 ; [QBlue16Mask]
         PAND        xmm1,xmm3 ; [QBlue16Mask]
         PAND        xmm2,xmm3 ; [QBlue16Mask]
-        PAND        mm0,[_QGreen16Mask]
-        PAND        mm1,[_QGreen16Mask]
-        PAND        mm2,[_QGreen16Mask]
-        PAND        mm3,[_QRed16Mask]
-        PAND        mm4,[_QRed16Mask]
-        PAND        mm5,[_QRed16Mask]
+        PAND        mm0,[QGreen16Mask]
+        PAND        mm1,[QGreen16Mask]
+        PAND        mm2,[QGreen16Mask]
+        PAND        mm3,[QRed16Mask]
+        PAND        mm4,[QRed16Mask]
+        PAND        mm5,[QRed16Mask]
         PSRLW       mm3,4
         PSRLW       mm4,4
         PSRLW       mm5,4
@@ -468,8 +472,8 @@ _Blur16:
         PADDW       mm5, mm7 ; = SUM 3 lines R
         PSRLW       xmm2,4
         PSRLW       mm2,4  ;PSLLW       mm5,4  ;PAND        xmm2,[QBlue16Mask]
-        PAND        mm5,[_QRed16Mask]
-        PAND        mm2,[_QGreen16Mask]
+        PAND        mm5,[QRed16Mask]
+        PAND        mm2,[QGreen16Mask]
         MOVD        EDX,xmm2
         POR         mm2,mm5
         MOVD        EAX,mm2
@@ -501,9 +505,9 @@ _Blur16:
         PADDW       mm4, mm7 ; = SUM 3 lines R
         PSRLW       xmm1,4
         PSRLW       mm1,4     ;PSLLW       mm4,4    ;PAND       xmm1,[QBlue16Mask]
-        PAND        mm4,[_QRed16Mask]
+        PAND        mm4,[QRed16Mask]
         PSRLQ       xmm1,16
-        PAND        mm1,[_QGreen16Mask]
+        PAND        mm1,[QGreen16Mask]
         MOVDQ2Q     mm0,xmm1
         PSRLQ       mm1,16
         PSRLQ       mm4,16
@@ -576,12 +580,12 @@ _Blur16:
         MOVDQ2Q     mm1,xmm1
         MOVDQ2Q     mm4,xmm1
 
-        PAND        xmm0,[_QBlue16Mask]
-        PAND        xmm1,[_QBlue16Mask]
-        PAND        mm0,[_QGreen16Mask]
-        PAND        mm1,[_QGreen16Mask]
-        PAND        mm3,[_QRed16Mask]
-        PAND        mm4,[_QRed16Mask]
+        PAND        xmm0,[QBlue16Mask]
+        PAND        xmm1,[QBlue16Mask]
+        PAND        mm0,[QGreen16Mask]
+        PAND        mm1,[QGreen16Mask]
+        PAND        mm3,[QRed16Mask]
+        PAND        mm4,[QRed16Mask]
         PSRLW       mm3,3
         PSRLW       mm4,3
         MOVDQA      xmm2,xmm0 ; save first  B
@@ -613,8 +617,8 @@ _Blur16:
         PSRLW       mm2,3
         ;PSLLW       mm5,4
         ;AND        xmm2,[QBlue16Mask]
-        PAND        mm5,[_QRed16Mask]
-        PAND        mm2,[_QGreen16Mask]
+        PAND        mm5,[QRed16Mask]
+        PAND        mm2,[QGreen16Mask]
         MOVD        EDX,xmm2
         POR         mm2,mm5
         MOVD        EAX,mm2
@@ -653,9 +657,9 @@ _Blur16:
         ;PSLLW       mm5,3
         ;PAND       xmm0,[QBlue16Mask]
         PSRLQ       xmm0,16
-        PAND        mm3,[_QRed16Mask]
+        PAND        mm3,[QRed16Mask]
         MOVDQ2Q     mm1,xmm0
-        PAND        mm0,[_QGreen16Mask]
+        PAND        mm0,[QGreen16Mask]
         PSRLQ       mm3,16
         PSRLQ       mm0,16
         POR         mm1,mm3
@@ -702,9 +706,3 @@ QMul3SecondW    DW  1,3,1,1,1,1,1,1
 QMul3ThirdW     DW  1,1,3,1,1,1,1,1
 DQAdd2          DD  2,0,0,0
 
-
-SECTION .bss   ALIGN=32
-
-;LastAddMM_B        RESQ    2
-;LastAddMM_G        RESQ    2
-;LastAddMM_R        RESQ    2

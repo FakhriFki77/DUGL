@@ -14,33 +14,37 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ;
-;    contact: libdugl@hotmail.com
+;    contact: libdugl(at)hotmail.com
 ;=============================================================================
 
 
 %include "PARAM.asm"
 %include "DGUTILS.asm"
 
-; GLOBAL Functions
-GLOBAL  _DgSetCurSurf, _DgSetSrcSurf, _DgGetCurSurf, _GetMaxResVSetSurf
-GLOBAL  _DgClear16, _ClearSurf16, _InBar16, _DgPutPixel16, _DgCPutPixel16, _DgGetPixel16, _DgCGetPixel16, _DgSurfCGetPixel16, _DgSurfCPutPixel16
+; enable windows/linux win32/elf32 building
+%pragma elf32 gprefix
+%pragma win32 gprefix   _
 
-GLOBAL  _line16,_Line16,_linemap16,_LineMap16,_lineblnd16,_LineBlnd16, _linemapblnd16,_LineMapBlnd16
-GLOBAL  _Poly16, _PutSurf16,_PutMaskSurf16,_PutSurfBlnd16,_PutMaskSurfBlnd16,_PutSurfTrans16,_PutMaskSurfTrans16
-GLOBAL  _SurfCopy, _SurfMaskCopy16, _SurfCopyBlnd16,_SurfMaskCopyBlnd16,_SurfCopyTrans16,_SurfMaskCopyTrans16
-GLOBAL  _ResizeViewSurf16,_MaskResizeViewSurf16,_TransResizeViewSurf16,_MaskTransResizeViewSurf16,_BlndResizeViewSurf16,_MaskBlndResizeViewSurf16
-GLOBAL  _SetFONT, _GetFONT, _OutText16, _WidthText,_WidthPosText,_PosWidthText
+; GLOBAL Functions
+GLOBAL  DgSetCurSurf, DgSetSrcSurf, DgGetCurSurf, GetMaxResVSetSurf
+GLOBAL  DgClear16, ClearSurf16, InBar16, DgPutPixel16, DgCPutPixel16, DgGetPixel16, DgCGetPixel16, DgSurfCGetPixel16, DgSurfCPutPixel16
+
+GLOBAL  line16, Line16, linemap16, LineMap16, lineblnd16, LineBlnd16, linemapblnd16, LineMapBlnd16
+GLOBAL  Poly16, PutSurf16, PutMaskSurf16, PutSurfBlnd16, PutMaskSurfBlnd16, PutSurfTrans16, PutMaskSurfTrans16
+GLOBAL  SurfCopy, SurfMaskCopy16, SurfCopyBlnd16, SurfMaskCopyBlnd16, SurfCopyTrans16, SurfMaskCopyTrans16
+GLOBAL  ResizeViewSurf16, MaskResizeViewSurf16, TransResizeViewSurf16, MaskTransResizeViewSurf16, BlndResizeViewSurf16, MaskBlndResizeViewSurf16
+GLOBAL  SetFONT, GetFONT, OutText16, WidthText, WidthPosText, PosWidthText
 
 ; GLOBAL Variables
-GLOBAL _CurSurf, _RendFrontSurf, _RendSurf, _SrcSurf
-GLOBAL _TPolyAdDeb, _TPolyAdFin, _TexXDeb, _TexXFin, _TexYDeb, _TexYFin, _PColDeb, _PColFin
-GLOBAL  _CurFONT, _FntPtr, _FntHaut, _FntDistLgn, _FntLowPos, _FntHighPos
-GLOBAL  _FntSens, _FntTab, _FntX, _FntY, _FntCol
+GLOBAL  CurSurf, RendFrontSurf, RendSurf, SrcSurf
+GLOBAL  TPolyAdDeb, TPolyAdFin, TexXDeb, TexXFin, TexYDeb, TexYFin, PColDeb, PColFin
+GLOBAL  CurFONT, FntPtr, FntHaut, FntDistLgn, FntLowPos, FntHighPos
+GLOBAL  FntSens, FntTab, FntX, FntY, FntCol
 
-GLOBAL  _vlfb,_rlfb,_ResH,_ResV,_MaxX,_MaxY,_MinX,_MinY,_OrgY,_OrgX,_SizeSurf,_OffVMem
-GLOBAL  _BitsPixel,_ScanLine,_Mask,_NegScanLine
+GLOBAL  vlfb,rlfb,ResH,ResV, MaxX, MaxY, MinX, MinY, OrgY, OrgX, SizeSurf,OffVMem
+GLOBAL  BitsPixel, ScanLine,Mask,NegScanLine
 
-GLOBAL _QBlue16Mask,_QGreen16Mask,_QRed16Mask
+GLOBAL  QBlue16Mask, QGreen16Mask, QRed16Mask
 
 
 ; GLOBAL Constants
@@ -66,16 +70,16 @@ SECTION .text  ALIGN=32
 %include "fill16.asm"
 
 ALIGN 32
-_DgSetCurSurf:
+DgSetCurSurf:
     ARG S1, 4
 
             PUSH        ESI
             PUSH        EDI
 
             MOV         ESI,[EBP+S1]
-            CMP         DWORD [ESI+_ResV-_CurSurf], MaxResV
+            CMP         DWORD [ESI+ResV-CurSurf], MaxResV
             JG          .Error
-            MOV         EDI,_CurSurf
+            MOV         EDI,CurSurf
             CopySurfSNA
             OR          EAX,BYTE -1
             JMP         SHORT .Ok
@@ -87,19 +91,19 @@ _DgSetCurSurf:
 
     RETURN
 
-_GetMaxResVSetSurf:
+GetMaxResVSetSurf:
             MOV         EAX,MaxResV
             RET
 
 ALIGN 32
-_DgSetSrcSurf:
+DgSetSrcSurf:
     ARG SrcS, 4
 
             PUSH        EDI
             PUSH        ESI
 
             MOV         ESI,[EBP+SrcS]
-            MOV         EDI,_SrcSurf
+            MOV         EDI,SrcSurf
             CopySurfDA
 
             POP         ESI
@@ -108,13 +112,13 @@ _DgSetSrcSurf:
     RETURN
 
 ALIGN 32
-_DgGetCurSurf:
+DgGetCurSurf:
   ARG SGet, 4
 
             PUSH        EDI
             PUSH        ESI
 
-            MOV         ESI,_CurSurf
+            MOV         ESI,CurSurf
             MOV         EDI,[EBP+SGet]
             CopySurfSA
 
@@ -124,7 +128,7 @@ _DgGetCurSurf:
     RETURN
 
 ALIGN 32
-_SurfCopy:
+SurfCopy:
   ARG PDstSrf, 4, PSrcSrf, 4
 
             PUSH        EDI
@@ -133,10 +137,10 @@ _SurfCopy:
 
             MOV         ESI,[EBP+PSrcSrf]
             MOV         EDI,[EBP+PDstSrf]
-            MOV         EBX,[ESI+_SizeSurf-_CurSurf]
+            MOV         EBX,[ESI+SizeSurf-CurSurf]
 
-            MOV         EDI,[EDI+_rlfb-_CurSurf]
-            MOV         ESI,[ESI+_rlfb-_CurSurf]
+            MOV         EDI,[EDI+rlfb-CurSurf]
+            MOV         ESI,[ESI+rlfb-CurSurf]
             XOR         ECX,ECX
             TEST        EDI,0x7
             JZ          .CpyMMX
@@ -229,14 +233,14 @@ _SurfCopy:
     RETURN
 
 
-_DgClear16:
+DgClear16:
     ARG clrcol16, 4
 
             PUSH        EDI
 
             MOVD        xmm0,[EBP+clrcol16]
-            MOV         EDX,[_SizeSurf]
-            MOV         EDI,[_rlfb]
+            MOV         EDX,[SizeSurf]
+            MOV         EDI,[rlfb]
             PSHUFLW     xmm0,xmm0,0
             XOR         ECX,ECX
             PUNPCKLQDQ  xmm0,xmm0
@@ -248,138 +252,138 @@ _DgClear16:
             POP     EDI
     RETURN
 
-_DgPutPixel16:
+DgPutPixel16:
     ARG PPX, 4, PPY, 4, PPCOL16, 4
 
-            MOV         EDX,[_NegScanLine]
+            MOV         EDX,[NegScanLine]
             MOV         ECX,[EBP+PPX]
             IMUL        EDX,[EBP+PPY]
             MOV         EAX,[EBP+PPCOL16]
-            ADD         EDX,[_vlfb]
+            ADD         EDX,[vlfb]
             MOV         [EDX+ECX*2],AX
 
     RETURN
 
-_DgCPutPixel16:
+DgCPutPixel16:
     ARG CPPX, 4, CPPY, 4, CPPCOL16, 4
 
             MOV         EDX,[EBP+CPPY]
             MOV         ECX,[EBP+CPPX]
-            CMP         EDX,[_MaxY]
+            CMP         EDX,[MaxY]
             JG          SHORT .Clip
-            CMP         ECX,[_MaxX]
+            CMP         ECX,[MaxX]
             JG          SHORT .Clip
-            CMP         EDX,[_MinY]
+            CMP         EDX,[MinY]
             JL          SHORT .Clip
-            CMP         ECX,[_MinX]
+            CMP         ECX,[MinX]
             JL          SHORT .Clip
 
-            IMUL        EDX,[_NegScanLine]
+            IMUL        EDX,[NegScanLine]
             MOV         EAX,[EBP+CPPCOL16]
-            ADD         EDX,[_vlfb]
+            ADD         EDX,[vlfb]
             MOV         [EDX+ECX*2],AX
 .Clip:
 
     RETURN
 
-_DgGetPixel16:
+DgGetPixel16:
     ARG GPPX, 4, GPPY, 4
 
-            MOV         EDX,[_NegScanLine]
+            MOV         EDX,[NegScanLine]
             MOV         ECX,[EBP+GPPX]
             IMUL        EDX,[EBP+GPPY]
-            ADD         EDX,[_vlfb]
+            ADD         EDX,[vlfb]
             MOVZX       EAX,WORD [EDX+ECX*2]
 
     RETURN
 
-_DgCGetPixel16:
+DgCGetPixel16:
     ARG CGPPX, 4, CGPPY, 4
 
             MOV         EDX,[EBP+CGPPY]
             MOV         ECX,[EBP+CGPPX]
             MOV         EAX,0xFFFFFFFF
-            CMP         EDX,[_MaxY]
+            CMP         EDX,[MaxY]
             JG          SHORT .Clip
-            CMP         ECX,[_MaxX]
+            CMP         ECX,[MaxX]
             JG          SHORT .Clip
-            CMP         EDX,[_MinY]
+            CMP         EDX,[MinY]
             JL          SHORT .Clip
-            CMP         ECX,[_MinX]
+            CMP         ECX,[MinX]
             JL          SHORT .Clip
 
-            IMUL        EDX,[_NegScanLine]
-            ADD         EDX,[_vlfb]
+            IMUL        EDX,[NegScanLine]
+            ADD         EDX,[vlfb]
             MOVZX       EAX,WORD [EDX+ECX*2]
 .Clip:
 
     RETURN
 
-_DgSurfCGetPixel16:
+DgSurfCGetPixel16:
     ARG PSURFCGP, 4, SCGPPX, 4, SCGPPY, 4
 
             MOV         EDX,[EBP+SCGPPY]
             MOV         ECX,[EBP+SCGPPX]
             MOV         EAX,0xFFFFFFFF
             MOV         EBP,[EBP+PSURFCGP]
-            CMP         EDX,[EBP+_MaxY-_CurSurf]
+            CMP         EDX,[EBP+MaxY-CurSurf]
             JG          SHORT .Clip
-            CMP         ECX,[EBP+_MaxX-_CurSurf]
+            CMP         ECX,[EBP+MaxX-CurSurf]
             JG          SHORT .Clip
-            CMP         EDX,[EBP+_MinY-_CurSurf]
+            CMP         EDX,[EBP+MinY-CurSurf]
             JL          SHORT .Clip
-            CMP         ECX,[EBP+_MinX-_CurSurf]
+            CMP         ECX,[EBP+MinX-CurSurf]
             JL          SHORT .Clip
 
-            IMUL        EDX,[EBP+_NegScanLine-_CurSurf]
-            ADD         EDX,[EBP+_vlfb-_CurSurf]
+            IMUL        EDX,[EBP+NegScanLine-CurSurf]
+            ADD         EDX,[EBP+vlfb-CurSurf]
             MOVZX       EAX,WORD [EDX+ECX*2]
 .Clip:
 
     RETURN
 
-_DgSurfCPutPixel16:
+DgSurfCPutPixel16:
     ARG PSURFCPP, 4, SCPPPX, 4, SCPPPY, 4, SCPPCOL, 4
 
             MOV         EAX,[EBP+PSURFCGP]
             MOV         EDX,[EBP+SCPPPY]
             MOV         ECX,[EBP+SCPPPX]
-            CMP         EDX,[EAX+_MaxY-_CurSurf]
+            CMP         EDX,[EAX+MaxY-CurSurf]
             JG          SHORT .Clip
-            CMP         ECX,[EAX+_MaxX-_CurSurf]
+            CMP         ECX,[EAX+MaxX-CurSurf]
             JG          SHORT .Clip
-            CMP         EDX,[EAX+_MinY-_CurSurf]
+            CMP         EDX,[EAX+MinY-CurSurf]
             JL          SHORT .Clip
-            CMP         ECX,[EAX+_MinX-_CurSurf]
+            CMP         ECX,[EAX+MinX-CurSurf]
             JL          SHORT .Clip
 
-            IMUL        EDX,[EAX+_NegScanLine-_CurSurf]
+            IMUL        EDX,[EAX+NegScanLine-CurSurf]
             MOV         ECX,[EBP+SCPPCOL]
-            ADD         EDX,[EAX+_vlfb-_CurSurf]
+            ADD         EDX,[EAX+vlfb-CurSurf]
             MOV         [EDX+ECX*2],CX
 .Clip:
 
     RETURN
 
-_ClearSurf16:
+ClearSurf16:
     ARG ClearSurf16Col, 4
 
             PUSH        ESI
             PUSH        EBX
             PUSH        EDI
 
-            MOVDQA      xmm1,[_MaxX] ; = MaxX | MaxY | MinX | MinY
+            MOVDQA      xmm1,[MaxX] ; = MaxX | MaxY | MinX | MinY
             MOVD        xmm0,[EBP+ClearSurf16Col]
             PEXTRD      EDI,xmm1,3 ; MinY
             PSHUFLW     xmm0,xmm0, 0 ; xmm0 = clr16 | clr16 | clr16 | clr16
             PEXTRD      ESI,xmm1,1 ; MaxY
             PUNPCKLQDQ  xmm0,xmm0
             PEXTRD      ECX,xmm1,0 ; MaxX
-            PEXTRD      EBX,xmm1,2 ; _MinX
-            SUB         ESI,EDI ; = (_MaxY - MinY)
-            JMP         SHORT _InBar16.CommonInBar16
+            PEXTRD      EBX,xmm1,2 ; MinX
+            SUB         ESI,EDI ; = (MaxY - MinY)
+            JMP         SHORT InBar16.CommonInBar16
 
-_InBar16:
+InBar16:
     ARG InRect16MinX, 4, InRect16MinY, 4, InRect16MaxX, 4, InRect16MaxY, 4, InRect16Col, 4
 
             PUSH        ESI
@@ -392,14 +396,14 @@ _InBar16:
             MOV         ESI,[EBP+InRect16MaxY]
             PUNPCKLQDQ  xmm0,xmm0
             MOV         ECX,[EBP+InRect16MaxX]
-            SUB         ESI,EDI ; = (_MaxY - MinY)
+            SUB         ESI,EDI ; = (MaxY - MinY)
             MOV         EBX,[EBP+InRect16MinX]
 .CommonInBar16:
             JLE         .EndInBar ; MinY >= MaxY ? exit
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             LEA         EBP,[ESI+1]
             SUB         ECX,EBX
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             INC         ECX
             LEA         EDI,[EDI+EBX*2]
             MOV         ESI,ECX ; ESI = dest hline size
@@ -412,7 +416,7 @@ _InBar16:
 
             @SolidHLineSSE16
 
-            ADD         EBX,[_NegScanLine] ; next hline
+            ADD         EBX,[NegScanLine] ; next hline
             DEC         EBP
             JNZ         .BcBar
 
@@ -427,34 +431,34 @@ _InBar16:
 ;===========================
 ;=================== FONT ==
 
-_SetFONT:
+SetFONT:
     ARG SF, 4
 
             MOV         EAX,[EBP+SF]
             MOVDQU      xmm0,[EAX]
             MOVDQU      xmm1,[EAX+16]
-            MOVDQA      [_CurFONT],xmm0
-            MOVDQA      [_CurFONT+16],xmm1
+            MOVDQA      [CurFONT],xmm0
+            MOVDQA      [CurFONT+16],xmm1
 
     RETURN
 
-_GetFONT:
+GetFONT:
     ARG CF, 4
 
             MOV         EAX,[EBP+CF]
-            MOVDQA      xmm0,[_CurFONT]
-            MOVDQA      xmm1,[_CurFONT+16]
+            MOVDQA      xmm0,[CurFONT]
+            MOVDQA      xmm1,[CurFONT+16]
             MOVDQU      [EAX],xmm0
             MOVDQU      [EAX+16],xmm1
 
     RETURN
 
-_WidthText:
+WidthText:
     ARG LStr, 4
             PUSH        EBX
             PUSH        ESI
 
-            MOV         EBX,[_FntPtr]
+            MOV         EBX,[FntPtr]
             XOR         ECX,ECX
             OR          EBX,EBX
             JZ          .FinLargText
@@ -473,7 +477,7 @@ _WidthText:
             MOV         AL,32
             MOVSX       EDX,BYTE [EBX+EAX*8+4] ; space
             XOR         EAX,EAX
-            MOV         AL,[_FntTab]
+            MOV         AL,[FntTab]
             IMUL        EDX,EAX
             ADD         ECX,EDX
             JMP         SHORT .BcCalcLarg
@@ -495,14 +499,14 @@ _WidthText:
             POP         EBX
     RETURN
 
-_WidthPosText:
+WidthPosText:
     ARG LPStr, 4, LPPos, 4
 
             PUSH        EBX
             PUSH        EDI
             PUSH        ESI
 
-            MOV         EBX,[_FntPtr]
+            MOV         EBX,[FntPtr]
             XOR         ECX,ECX
             OR          EBX,EBX
             JZ          .FinLargText
@@ -528,7 +532,7 @@ _WidthPosText:
             MOV         AL,32
             MOVSX       EDX,BYTE [EBX+EAX*8+4] ; space
             XOR         EAX,EAX
-            MOV         AL,[_FntTab]
+            MOV         AL,[FntTab]
             IMUL        EDX,EAX
             ADD         ECX,EDX
             JMP         SHORT .BcCalcLarg
@@ -552,13 +556,13 @@ _WidthPosText:
             POP         EBX
     RETURN
 
-_PosWidthText:
+PosWidthText:
     ARG PLStr, 4, PLLarg, 4
             PUSH        EBX
             PUSH        EDI
             PUSH        ESI
 
-            MOV         EBX,[_FntPtr]
+            MOV         EBX,[FntPtr]
             XOR         ECX,ECX
             OR          EBX,EBX
             JZ          .FinPosLargText
@@ -581,7 +585,7 @@ _PosWidthText:
             MOV         AL,32
             MOVSX       EDX,BYTE [EBX+EAX*8+4] ; space
             XOR         EAX,EAX
-            MOV         AL,[_FntTab]
+            MOV         AL,[FntTab]
             IMUL        EDX,EAX
             OR          EDX,EDX
             JS          .NegTab
@@ -614,7 +618,7 @@ _PosWidthText:
 
 
 ALIGN 32
-_OutText16:
+OutText16:
     ARG Str16, 4
             PUSH        EBX
             PUSH        EDI
@@ -622,7 +626,7 @@ _OutText16:
 
             MOV         ESI,[EBP+Str16]
             XOR         EAX,EAX
-            MOV         EBX,[_FntPtr]
+            MOV         EBX,[FntPtr]
 .BcOutChar:
             OR          AL,[ESI]
             JZ          .FinOutText
@@ -652,37 +656,37 @@ _OutText16:
             JNS         .GauchDroit
             JZ          SHORT .RienZero1
             LEA         EAX,[ESI+1]
-            ADD         [_FntX],EAX
+            ADD         [FntX],EAX
 .GauchDroit:
 .RienZero1:
-            MOV         EBP,[_FntX]  ; MinX
-            ADD         EDI,[_FntY]  ; MinY
+            MOV         EBP,[FntX]  ; MinX
+            ADD         EDI,[FntY]  ; MinY
             LEA         EBX,[EBP+EDX-1] ; MaxX: EBX=MinX+Larg-1
             LEA         ESI,[EDI+ECX-1] ; MaxY: ESI=MinY+Haut-1
 
-            CMP         EBX,[_MaxX]
+            CMP         EBX,[MaxX]
             JG          .CharClip
-            CMP         ESI,[_MaxY]
+            CMP         ESI,[MaxY]
             JG          .CharClip
-            CMP         EBP,[_MinX]
+            CMP         EBP,[MinX]
             JL          .CharClip
-            CMP         EDI,[_MinY]
+            CMP         EDI,[MinY]
             JL          .CharClip
 ;****** trace caractere IN *****************************
 .CharIn:
-            MOV         ECX,[_ScanLine]
+            MOV         ECX,[ScanLine]
             MOV         EBP,EDX ;Largeur
             IMUL        EDI,ECX
             LEA         ECX,[ECX+EDX*2]
             NEG         EDI
             MOV         [ChPlus],ECX
-            ADD         EDI,[_FntX]
-            ADD         EDI,[_FntX]
+            ADD         EDI,[FntX]
+            ADD         EDI,[FntX]
             MOV         EDX,[ChHaut]
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             XOR         EAX,EAX
             MOVD        ESI,xmm6
-            MOV         EAX,[_FntCol]
+            MOV         EAX,[FntCol]
 .LdNext:
             MOV         EBX,[ESI]
             MOV         CL,32
@@ -712,19 +716,19 @@ _OutText16:
             JMP         .FinDrChar
 ;****** Trace Caractere Clip ***************************
 .CharClip:
-            CMP         EBX,[_MinX]
+            CMP         EBX,[MinX]
             JL          .FinDrChar
-            CMP         ESI,[_MinY]
+            CMP         ESI,[MinY]
             JL          .FinDrChar
-            CMP         EBP,[_MaxX]
+            CMP         EBP,[MaxX]
             JG          .FinDrChar
-            CMP         EDI,[_MaxY]
+            CMP         EDI,[MaxY]
             JG          .FinDrChar
             ; traitement MaxX********************************************
-            CMP         EBX,[_MaxX] ; MaxX>_MaxX
+            CMP         EBX,[MaxX] ; MaxX>MaxX
             MOV         EAX,EBX
             JLE         .PasApPlus
-            SUB         EAX,[_MaxX] ; DXAp = EAX = MaxX-_MaxX
+            SUB         EAX,[MaxX] ; DXAp = EAX = MaxX-MaxX
             SUB         EDX,EAX   ; EDX = Larg-DXAp
             CMP         EAX,BYTE 32
             JL          SHORT .PasApPlus
@@ -735,7 +739,7 @@ _OutText16:
             MOV         [ChApPlus],EAX
 .ApPlus:
             ; traitement MinX********************************************
-            MOV         EAX,[_MinX]
+            MOV         EAX,[MinX]
             SUB         EAX,EBP
             JLE         .PasAvPlus
             SUB         EDX,EAX
@@ -764,18 +768,18 @@ _OutText16:
             MOV         [ChAvDecal],AL
 .AvPlus:
     ; handling MaxY********************************************
-            CMP         ESI,[_MaxY] ; MaxY>_MaxY
+            CMP         ESI,[MaxY] ; MaxY>MaxY
             MOV         EAX,ESI
             JLE         .PasSupMaxY
-            SUB         EAX,[_MaxY] ; DY = EAX = MaxY-_MaxY
+            SUB         EAX,[MaxY] ; DY = EAX = MaxY-MaxY
             SUB         ECX,EAX   ; ECX = Haut-DY
 .PasSupMaxY:
     ; handling MinY********************************************
-            MOV         EAX,[_MinY]
+            MOV         EAX,[MinY]
             SUB         EAX,EDI
             JLE         .PasInfMinY
             SUB         ECX,EAX
-            MOV         EDI,[_MinY]
+            MOV         EDI,[MinY]
             CMP         DWORD [ChLarg],BYTE 32
             JLE         .Larg1DD
 .Larg2DD:
@@ -791,7 +795,7 @@ _OutText16:
             MOV         [ChHaut],ECX
             MOV         [ChLarg],EDX
 ;************************************************
-            MOV         ECX,[_ScanLine]
+            MOV         ECX,[ScanLine]
             MOV         EBP,EDX ;Largeur
             IMUL        EDI,ECX
             XOR         EAX,EAX
@@ -799,14 +803,14 @@ _OutText16:
             MOV         AL,[ChAvDecal]
             NEG         EDI
             MOV         [ChPlus],ECX
-            ADD         EDI,[_FntX]
-            ADD         EDI,[_FntX]  ; 2*_FntX 16bpp
+            ADD         EDI,[FntX]
+            ADD         EDI,[FntX]  ; 2*FntX 16bpp
             LEA         EDI,[EDI+EAX*2]      ; EDI +=2*ChAvDecal
             MOV         EDX,[ChHaut]
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOVD        ESI,xmm6
 
-            MOV         EAX,[_FntCol]  ;*************
+            MOV         EAX,[FntCol]  ;*************
             ADD         ESI,[ChAvPlus]
             MOV         EBX,[ESI]
             MOV         CL,[ChAvDecal]
@@ -851,42 +855,42 @@ _OutText16:
             OR          ESI,ESI
             JS          SHORT .DroitGauch
             JZ          SHORT .RienZero2
-            ADD         [_FntX],ESI
+            ADD         [FntX],ESI
 .DroitGauch:
 .RienZero2:
             OR          ESI,ESI
             JNS         SHORT .GauchDroit2
             JZ          .RienZero3
-            MOV         EAX,[_FntX]
+            MOV         EAX,[FntX]
             DEC         EAX
-            MOV         [_FntX],EAX
+            MOV         [FntX],EAX
 .GauchDroit2:
 .RienZero3:
             JMP         SHORT .Norm
 
 .DebNextLigne:
-            MOVZX       EAX,BYTE [_FntDistLgn] ;***debut trait Cas sp
-            MOV         EBX,[_FntY]
+            MOVZX       EAX,BYTE [FntDistLgn] ;***debut trait Cas sp
+            MOV         EBX,[FntY]
             SUB         EBX,EAX
-            MOV         [_FntY],EBX
+            MOV         [FntY],EBX
 .DebLigne:
-            CMP         BYTE [_FntSens], 0
+            CMP         BYTE [FntSens], 0
             JE          SHORT .GchDrt
-            MOV         EBX,[_MaxX]
+            MOV         EBX,[MaxX]
             JMP         SHORT .DrtGch
 .GchDrt:
-            MOV         EBX,[_MinX]
+            MOV         EBX,[MinX]
 .DrtGch:
-            MOV         [_FntX],EBX
+            MOV         [FntX],EBX
             JMP         SHORT .Norm
 .TabCar:
             MOV         AL,32      ; TAB
-            MOV         ESI,[_FntX]
-            MOVZX       ECX,BYTE [_FntTab]
+            MOV         ESI,[FntX]
+            MOVZX       ECX,BYTE [FntTab]
             MOVSX       EAX,BYTE [EBX+EAX*8+4] ; PlusX
             IMUL        ECX,EAX
             ADD         ESI,ECX
-            MOV         [_FntX],ESI ;***********fin trait Cas sp
+            MOV         [FntX],ESI ;***********fin trait Cas sp
 .Norm:
             XOR         EAX,EAX
             POP         ESI
@@ -902,7 +906,7 @@ _OutText16:
 
 ; == xxxResizeViewSurf16 =====================================
 
-_ResizeViewSurf16:
+ResizeViewSurf16:
     ARG SrcResizeSurf16, 4, ResizeRevertHz, 4, ResizeRevertVt, 4
 
             PUSH        ESI
@@ -910,7 +914,7 @@ _ResizeViewSurf16:
             PUSH        EDI
 
             MOV         ESI,[EBP+SrcResizeSurf16]
-            MOV         EDI,_SrcSurf
+            MOV         EDI,SrcSurf
             XOR         EBX,EBX ; store flags revert Hz and Vt
             CopySurfDA  ; copy the source surface
 
@@ -919,22 +923,22 @@ _ResizeViewSurf16:
             MOV         EDX,[EBP+ResizeRevertVt]
             OR          EAX,EAX
             ; compute horizontal pnt in EBP
-            MOV         EBP,[_MaxY]
+            MOV         EBP,[MaxY]
             SETNZ       BL ; BL = RevertHz ?
             OR          EDX,EDX
             MOV         EAX,[SMaxX]
             SETNZ       BH ; BH = RevertVt ?
-            MOV         EDI,[_MinY]
+            MOV         EDI,[MinY]
             MOV         ESI,[SMinX]
             PUSH        EBX ; save FLAGS Revert
-            MOV         ECX,[_MaxX]
-            SUB         EBP,EDI ; = (_MaxY - MinY)
-            MOV         EBX,[_MinX]
-            INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
+            MOV         ECX,[MaxX]
+            SUB         EBP,EDI ; = (MaxY - MinY)
+            MOV         EBX,[MinX]
+            INC         EBP ; = Delta_Y = (MaxY - MinY) + 1
             SUB         EAX,ESI
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             SUB         ECX,EBX
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOVD        mm5,EBP ; count of hline
             MOVD        mm1,ESI ; SMinX
             INC         EAX
@@ -991,7 +995,7 @@ _ResizeViewSurf16:
 
             MOVD        ECX,mm5 ; restore hline counter
             PADDD       mm4,mm3 ; next source hline
-            PADDD       mm6,[_NegScanLine] ; next hline
+            PADDD       mm6,[NegScanLine] ; next hline
             DEC         ECX
             POP         EDX  ; restore acc PntX
             JNZ         .BcResize
@@ -1003,7 +1007,7 @@ _ResizeViewSurf16:
     RETURN
 
 
-_MaskResizeViewSurf16:
+MaskResizeViewSurf16:
     ARG SrcMaskResizeSurf16, 4, MaskResizeRevertHz, 4, MaskResizeRevertVt, 4
 
             PUSH        ESI
@@ -1011,7 +1015,7 @@ _MaskResizeViewSurf16:
             PUSH        EDI
 
             MOV         ESI,[EBP+SrcMaskResizeSurf16]
-            MOV         EDI,_SrcSurf
+            MOV         EDI,SrcSurf
             XOR         EBX,EBX ; store flags revert Hz and Vt
             CopySurfDA  ; copy the source surface
 
@@ -1020,22 +1024,22 @@ _MaskResizeViewSurf16:
             MOV         EDX,[EBP+MaskResizeRevertVt]
             OR          EAX,EAX
             ; compute horizontal pnt in EBP
-            MOV         EBP,[_MaxY]
+            MOV         EBP,[MaxY]
             SETNZ       BL ; BL = RevertHz ?
             OR          EDX,EDX
             MOV         EAX,[SMaxX]
             SETNZ       BH ; BH = RevertVt ?
-            MOV         EDI,[_MinY]
+            MOV         EDI,[MinY]
             MOV         ESI,[SMinX]
             PUSH        EBX ; save FLAGS Revert
-            MOV         ECX,[_MaxX]
-            SUB         EBP,EDI ; = (_MaxY - MinY)
-            MOV         EBX,[_MinX]
-            INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
+            MOV         ECX,[MaxX]
+            SUB         EBP,EDI ; = (MaxY - MinY)
+            MOV         EBX,[MinX]
+            INC         EBP ; = Delta_Y = (MaxY - MinY) + 1
             SUB         EAX,ESI
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             SUB         ECX,EBX
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOVD        mm5,EBP ; count of hline
             MOVD        mm1,ESI ; SMinX
             INC         EAX
@@ -1094,7 +1098,7 @@ _MaskResizeViewSurf16:
 
             MOVD        ECX,mm5 ; restore hline counter
             PADDD       mm4,mm3 ; next source hline
-            PADDD       mm6,[_NegScanLine] ; next hline
+            PADDD       mm6,[NegScanLine] ; next hline
             DEC         ECX
             POP         EDX  ; restore acc PntX
             JNZ         .BcResize
@@ -1107,7 +1111,7 @@ _MaskResizeViewSurf16:
     RETURN
 
 
-_TransResizeViewSurf16:
+TransResizeViewSurf16:
     ARG SrcTransResizeSurf16, 4, TransResizeRevertHz, 4, TransResizeRevertVt, 4, TransResizeSurf16, 4
 
             PUSH        ESI
@@ -1115,7 +1119,7 @@ _TransResizeViewSurf16:
             PUSH        EDI
 
             MOV         ESI,[EBP+SrcTransResizeSurf16]
-            MOV         EDI,_SrcSurf
+            MOV         EDI,SrcSurf
             XOR         EBX,EBX ; store flags revert Hz and Vt
             CopySurfDA  ; copy the source surface
 
@@ -1138,22 +1142,22 @@ _TransResizeViewSurf16:
             MOV         EDX,[EBP+TransResizeRevertVt]
             OR          EAX,EAX
             ; compute horizontal pnt in EBP
-            MOV         EBP,[_MaxY]
+            MOV         EBP,[MaxY]
             SETNZ       BL ; BL = RevertHz ?
             OR          EDX,EDX
             MOV         EAX,[SMaxX]
             SETNZ       BH ; BH = RevertVt ?
-            MOV         EDI,[_MinY]
+            MOV         EDI,[MinY]
             MOV         ESI,[SMinX]
             PUSH        EBX ; save FLAGS Revert
-            MOV         ECX,[_MaxX]
-            SUB         EBP,EDI ; = (_MaxY - MinY)
-            MOV         EBX,[_MinX]
-            INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
+            MOV         ECX,[MaxX]
+            SUB         EBP,EDI ; = (MaxY - MinY)
+            MOV         EBX,[MinX]
+            INC         EBP ; = Delta_Y = (MaxY - MinY) + 1
             SUB         EAX,ESI
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             SUB         ECX,EBX
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOVD        mm5,EBP ; count of hline
             MOVD        mm1,ESI ; SMinX
             INC         EAX
@@ -1210,7 +1214,7 @@ _TransResizeViewSurf16:
 
             MOVD        ECX,mm5 ; restore hline counter
             PADDD       mm4,mm3 ; next source hline
-            PADDD       mm6,[_NegScanLine] ; next hline
+            PADDD       mm6,[NegScanLine] ; next hline
             DEC         ECX
             POP         EDX  ; restore acc PntX
             JNZ         .BcResize
@@ -1223,7 +1227,7 @@ _TransResizeViewSurf16:
 
     RETURN
 
-_MaskTransResizeViewSurf16:
+MaskTransResizeViewSurf16:
     ARG SrcMaskTransResizeSurf16, 4, MaskTransResizeRevertHz, 4, MaskTransResizeRevertVt, 4, MaskTransResizeSurf16, 4
 
             PUSH        ESI
@@ -1231,7 +1235,7 @@ _MaskTransResizeViewSurf16:
             PUSH        EDI
 
             MOV         ESI,[EBP+SrcMaskTransResizeSurf16]
-            MOV         EDI,_SrcSurf
+            MOV         EDI,SrcSurf
             XOR         EBX,EBX ; store flags revert Hz and Vt
             CopySurfDA  ; copy the source surface
 
@@ -1257,22 +1261,22 @@ _MaskTransResizeViewSurf16:
             MOV         EDX,[EBP+MaskTransResizeRevertVt]
             OR          EAX,EAX
             ; compute horizontal pnt in EBP
-            MOV         EBP,[_MaxY]
+            MOV         EBP,[MaxY]
             SETNZ       BL ; BL = RevertHz ?
             OR          EDX,EDX
             MOV         EAX,[SMaxX]
             SETNZ       BH ; BH = RevertVt ?
-            MOV         EDI,[_MinY]
+            MOV         EDI,[MinY]
             MOV         ESI,[SMinX]
             PUSH        EBX ; save FLAGS Revert
-            MOV         ECX,[_MaxX]
-            SUB         EBP,EDI ; = (_MaxY - MinY)
-            MOV         EBX,[_MinX]
-            INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
+            MOV         ECX,[MaxX]
+            SUB         EBP,EDI ; = (MaxY - MinY)
+            MOV         EBX,[MinX]
+            INC         EBP ; = Delta_Y = (MaxY - MinY) + 1
             SUB         EAX,ESI
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             SUB         ECX,EBX
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOVD        mm5,EBP ; count of hline
             MOVD        mm1,ESI ; SMinX
             INC         EAX
@@ -1329,7 +1333,7 @@ _MaskTransResizeViewSurf16:
 
             MOVD        ECX,mm5 ; restore hline counter
             PADDD       mm4,mm3 ; next source hline
-            PADDD       mm6,[_NegScanLine] ; next hline
+            PADDD       mm6,[NegScanLine] ; next hline
             DEC         ECX
             POP         EDX  ; restore acc PntX
             JNZ         .BcResize
@@ -1344,15 +1348,15 @@ _MaskTransResizeViewSurf16:
 
 
 
-_BlndResizeViewSurf16:
+BlndResizeViewSurf16:
     ARG SrcBlndResizeSurf16, 4, BlndResizeRevertHz, 4, BlndResizeRevertVt, 4, ColBlndResizeSurf16, 4
 
             PUSH        ESI
             PUSH        EBX
             PUSH        EDI
 
-            MOV           ESI,[EBP+SrcBlndResizeSurf16]
-            MOV           EDI,_SrcSurf
+            MOV         ESI,[EBP+SrcBlndResizeSurf16]
+            MOV         EDI,SrcSurf
             CopySurfDA  ; copy the source surface
 
 
@@ -1361,11 +1365,11 @@ _BlndResizeViewSurf16:
             MOV         EBX,EAX ;
             MOV         ECX,EAX ;
             MOV         EDX,EAX ;
-            AND         EBX,[_QBlue16Mask] ; EBX = Bclr16 | Bclr16
+            AND         EBX,[QBlue16Mask] ; EBX = Bclr16 | Bclr16
             SHR         EAX,24
-            AND         ECX,[_QGreen16Mask] ; ECX = Gclr16 | Gclr16
+            AND         ECX,[QGreen16Mask] ; ECX = Gclr16 | Gclr16
             AND         AL,BlendMask ; remove any ineeded bits
-            AND         EDX,[_QRed16Mask] ; EDX = Rclr16 | Rclr16
+            AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
             XOR         AL,BlendMask ; 31-blendsrc
             MOV         EDI,EAX
             XOR         AL,BlendMask ; 31-blendsrc
@@ -1390,29 +1394,29 @@ _BlndResizeViewSurf16:
             PUNPCKLQDQ  xmm4,xmm4
             PUNPCKLQDQ  xmm5,xmm5
             PUNPCKLQDQ  xmm7,xmm7
-            MOVDQA      xmm6,[_QRed16Mask]
+            MOVDQA      xmm6,[QRed16Mask]
 
             MOV         EAX,[EBP+BlndResizeRevertHz]
             XOR         EBX,EBX ; store flags revert Hz and Vt
             MOV         EDX,[EBP+BlndResizeRevertVt]
             OR          EAX,EAX
             ; compute horizontal pnt in EBP
-            MOV         EBP,[_MaxY]
+            MOV         EBP,[MaxY]
             SETNZ       BL ; BL = RevertHz ?
             OR          EDX,EDX
             MOV         EAX,[SMaxX]
             SETNZ       BH ; BH = RevertVt ?
-            MOV         EDI,[_MinY]
+            MOV         EDI,[MinY]
             MOV         ESI,[SMinX]
             PUSH        EBX ; save FLAGS Revert
-            MOV         ECX,[_MaxX]
-            SUB         EBP,EDI ; = (_MaxY - MinY)
-            MOV         EBX,[_MinX]
-            INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
+            MOV         ECX,[MaxX]
+            SUB         EBP,EDI ; = (MaxY - MinY)
+            MOV         EBX,[MinX]
+            INC         EBP ; = Delta_Y = (MaxY - MinY) + 1
             SUB         EAX,ESI
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             SUB         ECX,EBX
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOVD        mm5,EBP ; count of hline
             MOVD        mm1,ESI ; SMinX
             INC         EAX
@@ -1469,7 +1473,7 @@ _BlndResizeViewSurf16:
 
             MOVD        ECX,mm5 ; restore hline counter
             PADDD       mm4,mm3 ; next source hline
-            PADDD       mm6,[_NegScanLine] ; next hline
+            PADDD       mm6,[NegScanLine] ; next hline
             DEC         ECX
             POP         EDX  ; restore acc PntX
             JNZ         .BcResize
@@ -1482,7 +1486,7 @@ _BlndResizeViewSurf16:
 
     RETURN
 
-_MaskBlndResizeViewSurf16:
+MaskBlndResizeViewSurf16:
   ARG SrcMaskBlndResizeSurf16, 4, MaskBlndResizeRevertHz, 4, MaskBlndResizeRevertVt, 4, ColMaskBlndResizeSurf16, 4
 
             PUSH        ESI
@@ -1490,7 +1494,7 @@ _MaskBlndResizeViewSurf16:
             PUSH        EDI
 
             MOV         ESI,[EBP+SrcMaskBlndResizeSurf16]
-            MOV         EDI,_SrcSurf
+            MOV         EDI,SrcSurf
             CopySurfDA  ; copy the source surface
 
 
@@ -1501,11 +1505,11 @@ _MaskBlndResizeViewSurf16:
             MOV         EBX,EAX ;
             MOV         ECX,EAX ;
             MOV         EDX,EAX ;
-            AND         EBX,[_QBlue16Mask] ; EBX = Bclr16 | Bclr16
+            AND         EBX,[QBlue16Mask] ; EBX = Bclr16 | Bclr16
             SHR         EAX,24
-            AND         ECX,[_QGreen16Mask] ; ECX = Gclr16 | Gclr16
+            AND         ECX,[QGreen16Mask] ; ECX = Gclr16 | Gclr16
             AND         AL,BlendMask ; remove any ineeded bits
-            AND         EDX,[_QRed16Mask] ; EDX = Rclr16 | Rclr16
+            AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
             XOR         AL,BlendMask ; 31-blendsrc
             MOV         EDI,EAX
             XOR         AL,BlendMask ; 31-blendsrc
@@ -1537,22 +1541,22 @@ _MaskBlndResizeViewSurf16:
             MOV         EDX,[EBP+MaskBlndResizeRevertVt]
             OR          EAX,EAX
             ; compute horizontal pnt in EBP
-            MOV         EBP,[_MaxY]
+            MOV         EBP,[MaxY]
             SETNZ       BL ; BL = RevertHz ?
             OR          EDX,EDX
             MOV         EAX,[SMaxX]
             SETNZ       BH ; BH = RevertVt ?
-            MOV         EDI,[_MinY]
+            MOV         EDI,[MinY]
             MOV         ESI,[SMinX]
             PUSH        EBX ; save FLAGS Revert
-            MOV         ECX,[_MaxX]
-            SUB         EBP,EDI ; = (_MaxY - MinY)
-            MOV         EBX,[_MinX]
-            INC         EBP ; = Delta_Y = (_MaxY - MinY) + 1
+            MOV         ECX,[MaxX]
+            SUB         EBP,EDI ; = (MaxY - MinY)
+            MOV         EBX,[MinX]
+            INC         EBP ; = Delta_Y = (MaxY - MinY) + 1
             SUB         EAX,ESI
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             SUB         ECX,EBX
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOVD        mm5,EBP ; count of hline
             MOVD        mm1,ESI ; SMinX
             INC         EAX
@@ -1608,7 +1612,7 @@ _MaskBlndResizeViewSurf16:
 
             MOVD        ECX,mm5 ; restore hline counter
             PADDD       mm4,mm3 ; next source hline
-            PADDD       mm6,[_NegScanLine] ; next hline
+            PADDD       mm6,[NegScanLine] ; next hline
             DEC         ECX
             POP         EDX  ; restore acc PntX
             JNZ         .BcResize
@@ -1631,7 +1635,7 @@ DEL_POLY_FLAG_DBL_SIDED16 EQU 0x7FFFFFFF
 ;****************************************************************************
 
 ALIGN 32
-_Poly16:
+Poly16:
     ARG PtrListPt16, 4, SSurf16, 4, TypePoly16, 4, ColPoly16, 4
 
             PUSH        ESI
@@ -1706,18 +1710,18 @@ _Poly16:
 
 ; poly clipper ? dans l'ecran ? hors de l'ecran ?
             ;JMP      .PolyClip
-            CMP         EAX,[_MaxX]
+            CMP         EAX,[MaxX]
             JG          .PolyClip
-            CMP         ECX,[_MinX]
+            CMP         ECX,[MinX]
             JL          .PolyClip
-            CMP         EBX,[_MaxY]
+            CMP         EBX,[MaxY]
             JG          .PolyClip
-            CMP         EDX,[_MinY]
+            CMP         EDX,[MinY]
             JL          .PolyClip
 
 ; trace Poly non Clipper  **************************************************
 
-            MOV         ECX,[_OrgY]  ; calcule DebYPoly, FinYPoly
+            MOV         ECX,[OrgY]  ; calcule DebYPoly, FinYPoly
             MOV         EAX,[ESI+EDI*4]
             ADD         EDX,ECX
             ADD         EBX,ECX
@@ -1734,13 +1738,13 @@ _Poly16:
             ;JMP        .PasDrawPoly
 .PolyClip:
 ; outside view ? now draw !
-            CMP         EAX,[_MinX]
+            CMP         EAX,[MinX]
             JL          .PasDrawPoly
-            CMP         EBX,[_MinY]
+            CMP         EBX,[MinY]
             JL          .PasDrawPoly
-            CMP         ECX,[_MaxX]
+            CMP         ECX,[MaxX]
             JG          .PasDrawPoly
-            CMP         EDX,[_MaxY]
+            CMP         EDX,[MaxY]
             JG          .PasDrawPoly
 
 ; Drop too big poly
@@ -1755,10 +1759,10 @@ _Poly16:
             ADD         EDX,EBX ; restor MaxX
 
 ; trace Poly Clipper  ******************************************************
-            MOV         EAX,[_MaxY] ; determine DebYPoly, FinYPoly
-            MOV         ECX,[_MinY]
+            MOV         EAX,[MaxY] ; determine DebYPoly, FinYPoly
+            MOV         ECX,[MinY]
             CMP         EBX,EAX
-            MOV         EBP,[_OrgY]   ; Ajuste [DebYPoly],[FinYPoly]
+            MOV         EBP,[OrgY]   ; Ajuste [DebYPoly],[FinYPoly]
             CMOVG       EBX,EAX
             CMP         EDX,ECX
             MOV         EAX,[ESI+EDI*4]
@@ -1873,25 +1877,25 @@ _Poly16:
 SECTION .bss   ALIGN=32
 ; Main DGSurf
 ; All graphic functions render on DGSurf pointed here
-_CurSurf:
-_ScanLine         RESD  1
-_rlfb             RESD  1
-_OrgX             RESD  1
-_OrgY             RESD  1
-_MaxX             RESD  1
-_MaxY             RESD  1
-_MinX             RESD  1
-_MinY             RESD  1;-----------------------
-_Mask             RESD  1
-_ResH             RESD  1
-_ResV             RESD  1
-_vlfb             RESD  1
-_NegScanLine      RESD  1
-_OffVMem          RESD  1
-_BitsPixel        RESD  1
-_SizeSurf         RESD  1;-----------------------
+CurSurf:
+ScanLine          RESD  1
+rlfb              RESD  1
+OrgX              RESD  1
+OrgY              RESD  1
+MaxX              RESD  1
+MaxY              RESD  1
+MinX              RESD  1
+MinY              RESD  1;-----------------------
+Mask              RESD  1
+ResH              RESD  1
+ResV              RESD  1
+vlfb              RESD  1
+NegScanLine       RESD  1
+OffVMem           RESD  1
+BitsPixel         RESD  1
+SizeSurf          RESD  1;-----------------------
 ; source DgSurf mainly used to point to texture, sprites ..
-_SrcSurf:
+SrcSurf:
 SScanLine         RESD  1
 Srlfb             RESD  1
 SOrgX             RESD  1
@@ -1923,11 +1927,11 @@ YT2               RESD  1
 Col1              RESD  1
 Col2              RESD  1
 revCol            RESD  1
-_CurViewVSurf     RESD  1;-----------------------
-PMaxX             RESD  1
-PMaxY             RESD  1
-PMinX             RESD  1
-PMinY             RESD  1
+CurViewVSurf      RESD  1;-----------------------
+PutSurfMaxX       RESD  1
+PutSurfMaxY       RESD  1
+PutSurfMinX       RESD  1
+PutSurfMinY       RESD  1
 NbPPoly           RESD  1
 DebYPoly          RESD  1
 FinYPoly          RESD  1
@@ -1941,26 +1945,26 @@ PlusY             RESD  1
 SSSurf            RESD  1
 Plus2             RESD  1;-----------------------
 ; poly16 array
-_TPolyAdDeb       RESD  MaxResV
-_TPolyAdFin       RESD  MaxResV
-_TexXDeb          RESD  MaxResV
-_TexXFin          RESD  MaxResV
-_TexYDeb          RESD  MaxResV
-_TexYFin          RESD  MaxResV
-_PColDeb          RESD  MaxResV
-_PColFin          RESD  MaxResV
+TPolyAdDeb        RESD  MaxResV
+TPolyAdFin        RESD  MaxResV
+TexXDeb           RESD  MaxResV
+TexXFin           RESD  MaxResV
+TexYDeb           RESD  MaxResV
+TexYFin           RESD  MaxResV
+PColDeb           RESD  MaxResV
+PColFin           RESD  MaxResV
 
-_CurFONT:
-_FntPtr           RESD  1
-_FntHaut          RESB  1
-_FntDistLgn       RESB  1
-_FntLowPos        RESB  1
-_FntHighPos       RESB  1
-_FntSens          RESB  1
-_FntTab           RESB  3 ; 2 DB reserved
-_FntX             RESD  1
-_FntY             RESD  1
-_FntCol           RESD  1
+CurFONT:
+FntPtr            RESD  1
+FntHaut           RESB  1
+FntDistLgn        RESB  1
+FntLowPos         RESB  1
+FntHighPos        RESB  1
+FntSens           RESB  1
+FntTab            RESB  3 ; 2 DB reserved
+FntX              RESD  1
+FntY              RESD  1
+FntCol            RESD  1
 FntResv           RESD  2 ;---------------------
 ChHaut            RESD  1
 ChLarg            RESD  1
@@ -1979,10 +1983,6 @@ clr               RESD  1
 Temp              RESD  1
 PlusCol           RESD  1
 PtrTbDegCol       RESD  1 ;-----------
-PutSurfMaxX       RESD  1
-PutSurfMaxY       RESD  1
-PutSurfMinX       RESD  1
-PutSurfMinY       RESD  1 ;------------------------
 QBlue16Blend      RESD  4
 QGreen16Blend     RESD  4
 QRed16Blend       RESD  4
@@ -2019,11 +2019,11 @@ RGBFinMask_GII  DD  ((1<<Prec)-1),0,0,0
 RGBFinMask_III  DD  0,0,0,0
 
 ; BLENDING 16BPP ----------
-_QBlue16Mask    DW  CMaskB_RGB16,CMaskB_RGB16,CMaskB_RGB16,CMaskB_RGB16
+QBlue16Mask     DW  CMaskB_RGB16,CMaskB_RGB16,CMaskB_RGB16,CMaskB_RGB16
 Q2Blue16Mask    DW  CMaskB_RGB16,CMaskB_RGB16,CMaskB_RGB16,CMaskB_RGB16
-_QGreen16Mask   DW  CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16
+QGreen16Mask    DW  CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16
 Q2Green16Mask   DW  CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16
-_QRed16Mask     DW  CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16
+QRed16Mask      DW  CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16
 Q2Red16Mask     DW  CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16
 WBGR16Mask      DW  CMaskB_RGB16,CMaskG_RGB16,CMaskR_RGB16,CMaskR_RGB16
 W2BGR16Mask     DW  CMaskB_RGB16,CMaskG_RGB16,CMaskR_RGB16,CMaskR_RGB16
@@ -2045,6 +2045,6 @@ ClFillPolyProc16:
 
 ; the main Surf 16bpp that DUGL will render to
 ;   user mostly has to set this as CurSurf unless other intermediate DgSurf
-_RendSurf           DD    0
-_RendFrontSurf      DD    0
+RendSurf            DD    0
+RendFrontSurf       DD    0
 

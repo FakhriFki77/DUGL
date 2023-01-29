@@ -14,13 +14,18 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ;
-;    contact: libdugl@hotmail.com
+;    contact: libdugl(at)hotmail.com
 ;=============================================================================
 
 %include "PARAM.asm"
 
+; enable windows/linux win32/elf32 building
+%pragma elf32 gprefix
+%pragma win32 gprefix   _
+
+
 ; GLOBAL Function*************************************************************
-GLOBAL  _InRLE,_OutRLE,_SizeOutRLE,_InLZW
+GLOBAL  InRLE, OutRLE, SizeOutRLE, InLZW
 
 SECTION .text
 ALIGN 32
@@ -33,7 +38,7 @@ ClrAb       EQU 256
 EndOF       EQU 257
 
 
-_InLZW:
+InLZW:
     ARG    InBuffLZW, 4, OutLZW, 4, LenOutLZW, 4
 
         PUSH        EDI
@@ -178,14 +183,14 @@ GetLZWCode:
 ;///////////////////////////////////////////
 ; PCX RLE //////////////////////////////////
 
-_InRLE:
-    ARG InBuffRLE, 4, OutRLE, 4, LenOutRLE, 4
+InRLE:
+    ARG InBuffRLE, 4, POutRLE, 4, LenOutRLE, 4
 
         PUSH        EDI
         PUSH        ESI
 
         MOV         EDX,[EBP+LenOutRLE]
-        MOV         EDI,[EBP+OutRLE]
+        MOV         EDI,[EBP+POutRLE]
         MOV         ESI,[EBP+InBuffRLE]
         ADD         EDX,EDI
 .BcInRLE:
@@ -206,10 +211,10 @@ _InRLE:
 
         POP         ESI
         POP         EDI
-        
+
     RETURN
 
-_OutRLE:
+OutRLE:
     ARG OutBuffRLE, 4, InRLE, 4, LenInRLE, 4, ResHzRLE, 4
 
         PUSH        EDI
@@ -288,9 +293,9 @@ _OutRLE:
         POP         ESI
         POP         EDI
     RETURN
-    
 
-_SizeOutRLE:
+
+SizeOutRLE:
     ARG    SzInRLE, 4, SzLenInRLE, 4, SzResHzRLE, 4
 
         PUSH        EDI
@@ -360,7 +365,7 @@ _SizeOutRLE:
         POP     EBX
         POP     ESI
         POP     EDI
-        
+
     RETURN
 
 

@@ -14,7 +14,7 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ;
-;    contact: libdugl@hotmail.com
+;    contact: libdugl(at)hotmail.com
 ;=============================================================================
 
 
@@ -23,7 +23,7 @@
 ;****************************************************************************
 ; calcule adresse physique du contour
 
-; IN: XP1,YP1,XP2,YP2,EBX: Index _TPolyAdFin,EAX: XP1, EDI XP2,ECX: YP1,ESI; YP2:EBP[_ScanLine]
+; IN: XP1,YP1,XP2,YP2,EBX: Index TPolyAdFin,EAX: XP1, EDI XP2,ECX: YP1,ESI; YP2:EBP[ScanLine]
 ; condition XP1<XP2 && YP1<YP2
 %macro  @InContourGch16 0
         CMP         EAX,EDI
@@ -36,19 +36,19 @@
         NEG         ECX ; = [YP2]-[YP1] counter in ECX
         MOVD        xmm4,[PntInitCPTDbrd+EDX*4] ; count Dbdr In xmm4
 
-        IMUL        EDI,ESI ; YP1*_ScanLine
+        IMUL        EDI,ESI ; YP1*ScanLine
         SHL         EAX,Prec
         CDQ
-        ADD         EDI,[_vlfb]
+        ADD         EDI,[vlfb]
         IDIV        ECX
         MOVD        EBP,xmm0 ; [XP1]
-        ADD         EBX,[_OrgY]
+        ADD         EBX,[OrgY]
         LEA         EDI,[EDI+EBP*2] ; 2*XP1 as 16bpp
         TEST        CL,1
         MOVD        EDX,xmm4 ; Dbrd Counter in EDX
-        LEA         EBP,[_TPolyAdDeb+EBX*4]
+        LEA         EBP,[TPolyAdDeb+EBX*4]
 %endmacro
-; IN : XP1, YP1, XP2, YP2, EBX: Index dans _TPolyAdFin, EAX : XP1, ECX : YP1
+; IN : XP1, YP1, XP2, YP2, EBX: Index dans TPolyAdFin, EAX : XP1, ECX : YP1
 ; condition XP1<XP2 && YP1>YP2
 
 %macro  @InContourDrt16 0
@@ -61,14 +61,14 @@
         XCHG        EDI,EBP  ; swap [XP2] <=> [YP2]
         SHL         EAX,Prec
         IMUL        EDI,ESI
-        ADD         EBX,[_OrgY]
-        ADD         EDI,[_vlfb]
+        ADD         EBX,[OrgY]
+        ADD         EDI,[vlfb]
         CDQ
         IDIV        ECX
         LEA         EDI,[EDI+EBP*2] ; +=2*XP2 as 16bpp
         MOVD        EDX,xmm4
         TEST        CL,1
-        LEA         EBP,[_TPolyAdFin+EBX*4]
+        LEA         EBP,[TPolyAdFin+EBX*4]
 %endmacro
 
 ;**************************
@@ -76,7 +76,7 @@
 ;**************************
 ;calcule du contour du polygone lorsqu'il est totalement dans l'ecran
 %macro  @InCalculerContour16    0
-        MOVD        xmm1,[_NegScanLine]
+        MOVD        xmm1,[NegScanLine]
 ;ALIGN 4
 %%InBcCalCont:
         MOVD        xmm2,EDX     ; save EDX counter
@@ -148,7 +148,7 @@
 
 
 ;*************************************************************
-; compute RGB16 Start and end contour in _PColDEb and _PColFin
+; compute RGB16 Start and end contour in _PColDEb and PColFin
 ;*************************************************************
 
 %macro  @InCalcRGB_Cnt16    0
@@ -246,7 +246,7 @@
         PUNPCKLDQ   xmm4,xmm1 ; mm4 = cpt dbrd B | (cpt dbrd B + Pnt B)
         PUNPCKLDQ   xmm5,xmm0 ; mm5 = cpt dbrd R | (cpt dbrd R + Pnt R)
         MOVQ        xmm1,xmm2 ; = cpt Dbrd G|G
-        ADD         EBX,[_OrgY]
+        ADD         EBX,[OrgY]
         TEST        CL,1
         PADDD       xmm1,xmm3
         PUNPCKLDQ   xmm2,xmm1 ; mm2 = cpt dbrd G | (cpt dbrd G + Pnt G)
@@ -266,7 +266,7 @@
         PADDD       xmm4,xmm6 ; = cptDbrd B|B + Pnt B|B
         PSRLD       xmm0,Prec
         POR         xmm1,xmm0
-        MOVD        [_PColDeb+EBX*4],xmm1
+        MOVD        [PColDeb+EBX*4],xmm1
         INC         EBX
 %%NoFDebCol:
 ;---------------
@@ -289,7 +289,7 @@
         PSRLD       xmm0,Prec
         POR         xmm1,xmm0
 
-        MOVQ        [_PColDeb+EBX*4],xmm1
+        MOVQ        [PColDeb+EBX*4],xmm1
         DEC         ECX
         LEA         EBX,[EBX+2]
         JNZ         NEAR %%BcCntRGBDeb
@@ -319,7 +319,7 @@
         PUNPCKLDQ   xmm4,xmm1 ; mm4 = cpt dbrd B | (cpt dbrd B - Pnt B)
         PUNPCKLDQ   xmm5,xmm0 ; mm5 = cpt dbrd R | (cpt dbrd R - Pnt R)
         MOVQ        xmm1,xmm2 ; = cpt Dbrd G|G
-        ADD         EBX,[_OrgY]
+        ADD         EBX,[OrgY]
         TEST        CL,1
         PSUBD       xmm1,xmm3
         PUNPCKLDQ   xmm2,xmm1 ; mm2 = cpt dbrd G | (cpt dbrd G - Pnt G)
@@ -338,7 +338,7 @@
         PSUBD       xmm4,xmm6 ; = cptDbrd B|B + Pnt B|B
         PSRLD       xmm0,Prec
         POR         xmm1,xmm0
-        MOVD        [_PColFin+EBX*4],xmm1
+        MOVD        [PColFin+EBX*4],xmm1
         INC         EBX
 %%NoFFinCol:
 ;---------------
@@ -361,7 +361,7 @@
         PSUBD       xmm4,xmm6 ; = cptDbrd B|B + Pnt B|B
         PSRLD       xmm0,Prec
         POR         xmm1,xmm0
-        MOVQ        [_PColFin+EBX*4],xmm1
+        MOVQ        [PColFin+EBX*4],xmm1
         DEC         ECX
         LEA         EBX,[EBX+2]
         JNZ         %%BcCntRGBFin
@@ -480,15 +480,15 @@
         MOVD        xmm3,[RGBDebMask_GGG+EDI+8] ; mm3 : CptDbrdRed
 
 ;**** Deb Aj Deb **********************
-        CMP         EAX,[_MinY] ; YP2 < _MinY ?
+        CMP         EAX,[MinY] ; YP2 < MinY ?
         JL          %%PasClCrLn
-        CMP         ESI,[_MaxY] ; YP1 > _MaxY ?
+        CMP         ESI,[MaxY] ; YP1 > MaxY ?
         JG          %%PasClCrLn
-        CMP         ESI,[_MinY] ; YP1 >= _MinY ?
+        CMP         ESI,[MinY] ; YP1 >= MinY ?
         JGE         %%PasAjYP1
-        MOV         EBX,[_MinY] ; EBX = _MinY
+        MOV         EBX,[MinY] ; EBX = MinY
         MOVD        EDI,xmm6        ; EDI = Pnt Blue
-        SUB         EBX,ESI     ; EBX = _MinY - YP1
+        SUB         EBX,ESI     ; EBX = MinY - YP1
         MOVD        EDX,xmm7        ; EDX = Pnt Red
         IMUL        EBP,EBX ; PntGreen*DeltaY
         IMUL        EDI,EBX ; PntBlue*DeltaY
@@ -498,19 +498,19 @@
         IMUL        EDX,EBX ; PntREd*DeltaY
         ;POR        mm0,mm1 ; mm0 : +CptDbrdBlue | +CptDbrdGreen
         PUNPCKLDQ   xmm0,xmm1 ; mm0 : +CptDbrdBlue | +CptDbrdGreen
-        MOV         ESI,[_MinY]
+        MOV         ESI,[MinY]
         MOVD        xmm1,EDX ; mm1 : +CptDbrdRed | -
         PADDD       xmm2,xmm0 ; mm2+= CptDbrd B | G
         PADDD       xmm3,xmm1 ; mm3+= CptDbrd R | -
-%%PasAjYP1: CMP     EAX,[_MaxY]  ; YP2 <= _MaxY
+%%PasAjYP1: CMP     EAX,[MaxY]  ; YP2 <= MaxY
         JLE         %%PasAjYP2
-        MOV         EAX,[_MaxY]
+        MOV         EAX,[MaxY]
 %%PasAjYP2:
 ;**** Fin Aj Deb **********************
         MOV         ECX,EAX ; = Clip YP2
         MOV         EBX,ESI ; = clipped YP1
         SUB         ECX,ESI ; - Clip YP1
-        ADD         EBX,[_OrgY]
+        ADD         EBX,[OrgY]
         INC         ECX
         ; mm2, mm3 : cptDbrd B,G,R
         ; mm6, mm7 : pnt     B,G,R
@@ -542,7 +542,7 @@
 
         PADDD       xmm3,xmm7 ; = cptDbrd R - Pnt R
 
-        MOV         [_PColDeb+EBX*4],EAX
+        MOV         [PColDeb+EBX*4],EAX
         DEC         ECX
         LEA         EBX,[EBX+1]
         JNZ         NEAR %%BcCntRGBDeb
@@ -553,15 +553,15 @@
         MOVQ        xmm2,[RGBFinMask_GGG+EDI] ; mm2 : CptDbrdBlue | CptDbrdGreen
         MOVD        xmm3,[RGBFinMask_GGG+EDI+8] ; mm3 : CptDbrdRed
 ;**** Deb Aj Fin **********************
-        CMP         ESI,[_MinY] ; YP1 < _MinY ?
+        CMP         ESI,[MinY] ; YP1 < MinY ?
         JL          %%PasClCrLn
-        CMP         EAX,[_MaxY] ; YP2 > _MaxY ?
+        CMP         EAX,[MaxY] ; YP2 > MaxY ?
         JG          %%PasClCrLn
-        CMP         EAX,[_MinY] ; YP2 >= _MinY ?
+        CMP         EAX,[MinY] ; YP2 >= MinY ?
         JGE         %%PasAjYP1Fin
-        MOV         EBX,[_MinY] ; EBX = _MinY
+        MOV         EBX,[MinY] ; EBX = MinY
         MOVD        EDI,xmm6        ; EDI = Pnt Blue
-        SUB         EBX,EAX     ; EBX = _MinY - YP1
+        SUB         EBX,EAX     ; EBX = MinY - YP1
         MOVD        EDX,xmm7        ; EDX = Pnt Red
         IMUL        EBP,EBX ; PntGreen*DeltaY
         IMUL        EDI,EBX ; PntBlue*DeltaY
@@ -569,21 +569,21 @@
         MOVD        xmm0,EDI
         IMUL        EDX,EBX ; PntREd*DeltaY
         PUNPCKLDQ   xmm0,xmm1 ; mm0 : +CptDbrdBlue | +CptDbrdGreen
-        MOV         EAX,[_MinY]
+        MOV         EAX,[MinY]
         MOVD        xmm1,EDX ; mm1 : +CptDbrdRed | -
         PSUBD       xmm2,xmm0 ; mm2-= CptDbrd B | G
         PSUBD       xmm3,xmm1 ; mm3-= CptDbrd R | -
 %%PasAjYP1Fin:
-        CMP         ESI,[_MaxY]  ; YP1 <= _MaxY
+        CMP         ESI,[MaxY]  ; YP1 <= MaxY
         JLE         %%PasAjYP2Fin
-        MOV         ESI,[_MaxY]
+        MOV         ESI,[MaxY]
 %%PasAjYP2Fin:
 ;**** Fin Aj Fin **********************
 
         MOV         ECX,ESI ; clipped YP1
         MOV         EBX,EAX ; clipped YP2
         SUB         ECX,EAX ; - clipped YP2
-        ADD         EBX,[_OrgY]
+        ADD         EBX,[OrgY]
         INC         ECX ; ++
 
         MOV         ESI,[Col2]
@@ -618,7 +618,7 @@
 
         PSUBD       xmm3,xmm7 ; = cptDbrd R - Pnt R
 
-        MOV         [_PColFin+EBX*4],EAX
+        MOV         [PColFin+EBX*4],EAX
         DEC         ECX
         LEA         EBX,[EBX+1]
         JNZ         %%BcCntRGBFin

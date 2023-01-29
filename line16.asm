@@ -14,11 +14,11 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ;
-;    contact: libdugl@hotmail.com
+;    contact: libdugl(at)hotmail.com
 ;=============================================================================
 
 ALIGN 32
-_line16:
+line16:
     ARG     LX16P1, 4, LY16P1, 4, LX16P2, 4, LY16P2, 4, lnCol16, 4
 
             PUSH        EBX
@@ -36,10 +36,10 @@ _line16:
             MOV         [XP2],EBX
             MOV         [YP2],EDI
             MOV         [YP1],ESI
-            JMP         SHORT _Line16.DoLine16
+            JMP         SHORT Line16.DoLine16
 
 ALIGN 32
-_Line16:
+Line16:
     ARG     Ptr16P1, 4, Ptr16P2, 4, Col16, 4
 
             PUSH        EBX
@@ -65,9 +65,9 @@ _Line16:
             CMP         EAX,EBX
             JL          .VMaxX
             XCHG        EAX,EBX
-.VMaxX:    CMP          EAX,[_MaxX]
+.VMaxX:    CMP          EAX,[MaxX]
             JG          .FinLine
-            CMP         EBX,[_MinX]
+            CMP         EBX,[MinX]
             JL          .FinLine
             SUB         EBX,EAX
             MOV         ESI,EBX    ;calcul de abs(x2-x1)
@@ -78,9 +78,9 @@ _Line16:
             CMP         EAX,EBX
             JL          .VMaxY
             XCHG        EAX,EBX
-.VMaxY:    CMP          EAX,[_MaxY]
+.VMaxY:    CMP          EAX,[MaxY]
             JG          .FinLine
-            CMP         EBX,[_MinY]
+            CMP         EBX,[MinY]
             JL          .FinLine       ; fin du test
             SUB         EBX,EAX
             MOV         EDI,EBX        ;  abs(y2-y1)
@@ -98,18 +98,18 @@ _Line16:
             CMP         EAX,EBX
             JL          .ClipMaxX
             XCHG        EAX,EBX
-.ClipMaxX:  CMP         EAX,[_MinX]
+.ClipMaxX:  CMP         EAX,[MinX]
             JL          .Aj_1_2
-            CMP         EBX,[_MaxX]
+            CMP         EBX,[MaxX]
             JG          .Aj_1_2
             MOV         EAX,ECX         ; ECX = [YP1]
             MOV         EBX,[YP2]
             CMP         EAX,EBX
             JL          .ClipMaxY
             XCHG        EAX,EBX
-.ClipMaxY:  CMP         EAX,[_MinY]
+.ClipMaxY:  CMP         EAX,[MinY]
             JL          .Aj_1_2
-            CMP         EBX,[_MaxY]
+            CMP         EBX,[MaxY]
             JG          .Aj_1_2
             JMP         .PasAj_1_2
 .Aj_1_2:
@@ -122,7 +122,7 @@ _Line16:
             XCHG        ECX,EDI
 .MaxAj1_2X:
 ;*********Ajustement des X
-            CMP         EBX,[_MinX]
+            CMP         EBX,[MinX]
             JNL         .PasAjX12
             MOV         EAX,EDI
             SUB         EAX,ECX
@@ -132,13 +132,13 @@ _Line16:
             IDIV        ESI
             ADD         ESI,EBX
             MOV         EDX,EAX
-            MOV         EAX,[_MinX]
+            MOV         EAX,[MinX]
             SUB         EAX,EBX
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         EBX,[_MinX]
+            MOV         EBX,[MinX]
             ADD         ECX,EAX
-.PasAjX12:  CMP         ESI,[_MaxX]
+.PasAjX12:  CMP         ESI,[MaxX]
             JNG         .PasAjM12
             MOV         EAX,EDI
             SUB         EAX,ECX
@@ -151,21 +151,21 @@ _Line16:
             ADD         ESI,EBX
             MOV         EDX,EAX
             MOV         EAX,ESI
-            SUB         EAX,[_MaxX]
+            SUB         EAX,[MaxX]
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         ESI,[_MaxX]
+            MOV         ESI,[MaxX]
             SUB         EDI,EAX
 .PasAjM12:  CMP         ECX,EDI
             JL          .MaxAj1_2Y
             XCHG        EBX,ESI
             XCHG        ECX,EDI
-.MaxAj1_2Y: CMP         ECX,[_MaxY]
+.MaxAj1_2Y: CMP         ECX,[MaxY]
             JG          .FinLine
-            CMP         EDI,[_MinY]
+            CMP         EDI,[MinY]
             JL          .FinLine
 ;*********Ajustement des Y
-            CMP         ECX,[_MinY]
+            CMP         ECX,[MinY]
             JNL         .PasAjY12
             MOV         EAX,ESI
             SUB         EAX,EBX
@@ -177,17 +177,17 @@ _Line16:
             IDIV        ESI
             MOV         ESI,EBP
             MOV         EDX,EAX
-            MOV         EAX,[_MinY]
+            MOV         EAX,[MinY]
             SUB         EAX,ECX
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         ECX,[_MinY]
+            MOV         ECX,[MinY]
             ADD         EBX,EAX
-            CMP         EBX,[_MaxX]
+            CMP         EBX,[MaxX]
             JG          .FinLine
-            CMP         EBX,[_MinX]
+            CMP         EBX,[MinX]
             JL          .FinLine
-.PasAjY12:  CMP         EDI,[_MaxY]
+.PasAjY12:  CMP         EDI,[MaxY]
             JNG         .PasAjY12X
             MOV         EAX,ESI
             SUB         EAX,EBX
@@ -200,10 +200,10 @@ _Line16:
             MOV         ESI,EBP
             MOV         EDX,EAX
             MOV         EAX,EDI
-            SUB         EAX,[_MaxY]
+            SUB         EAX,[MaxY]
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         EDI,[_MaxY]
+            MOV         EDI,[MaxY]
             SUB         ESI,EAX
 .PasAjY12X:
             MOV         [XP1],EBX
@@ -230,7 +230,7 @@ _Line16:
 ;*********CAS 1:  (DX > DY)***************************************************
 .cas1:
             MOV         EAX,[XP1]
-            MOV         EBP,[_ScanLine] ; plus
+            MOV         EBP,[ScanLine] ; plus
             CMP         EAX,[XP2]
             JL          SHORT .PasSwap1
             PSHUFD      xmm0,[XP1],(1<<6) | (0<<4) | (3<<2) | (2) ; swap (XP1, YP1) and (XP2, YP2)
@@ -238,14 +238,14 @@ _Line16:
 .PasSwap1:
             MOV         ESI,[XP2]
             MOV         EAX,[YP2]
-            MOV         EDI,[_NegScanLine] ; // Y Axis  ascendent
+            MOV         EDI,[NegScanLine] ; // Y Axis  ascendent
             SUB         ESI,[XP1]
             SUB         EAX,[YP1]
             JNS         SHORT .pstvDyCas1
             NEG         EAX ; abs(deltay)
             JMP         SHORT .ngtvDyCas1
 .pstvDyCas1:
-            NEG         EBP ; = -[_ScanLine] as ascendent y Axis
+            NEG         EBP ; = -[ScanLine] as ascendent y Axis
 .ngtvDyCas1:
             INC         EAX
             MOV         EBX,1 << Prec ; EBX = cpt Dbrd
@@ -259,7 +259,7 @@ _Line16:
             MOV         EDX,EAX ; EDX = pnt
             LEA         EDI,[EDI+ESI*2] ; 2 time cause 16bpp
             MOV         EAX,[clr]
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOV         ESI,1 << Prec
 ALIGN 4
 .lp_line1:
@@ -289,13 +289,13 @@ ALIGN 4
             MOV         EBX,[YP2]
             JNZ         SHORT .noClipVert
             ; clip (YP1, YP2) with (MinY, MaxY)
-            CMP         EAX,[_MinY]
+            CMP         EAX,[MinY]
             JGE         SHORT .NoClipMinX
-            MOV         EAX,[_MinY]
+            MOV         EAX,[MinY]
 .NoClipMinX:
-            CMP         EBX,[_MaxY]
+            CMP         EBX,[MaxY]
             JLE         SHORT .NoClipMaxX
-            MOV         EBX,[_MaxY]
+            MOV         EBX,[MaxY]
 .NoClipMaxX:
             MOV         [YP1],EAX
             MOV         [YP2],EBX
@@ -311,7 +311,7 @@ ALIGN 4
 .ngtvDxCas2:
             SUB         ESI,[YP1]
             SHL         EAX,Prec
-            MOV         EBP,[_NegScanLine]
+            MOV         EBP,[NegScanLine]
             INC         ESI
             MOV         EDI,[YP1]
             CDQ
@@ -322,7 +322,7 @@ ALIGN 4
             MOV         ESI,[XP1]
 
             ; start adress
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             XOR         EBX,EBX ; accum in EBX
             OR          EDX,EDX
             LEA         EDI,[EDI+ESI*2] ; add xp1 2 times as 16 bpp
@@ -353,12 +353,12 @@ ALIGN 4
             MOV         [XP2],EAX
             MOV         [XP1],EBX
 .PasSwap4:
-            MOV         EAX,[_MinX]
+            MOV         EAX,[MinX]
             CMP         EAX,[XP1]
             JLE         SHORT .sava41
             MOV         [XP1],EAX
 .sava41:
-            MOV         EAX,[_MaxX]
+            MOV         EAX,[MaxX]
             CMP         EAX,[XP2]
             JGE         SHORT .sava42
             MOV         [XP2],EAX
@@ -370,9 +370,9 @@ ALIGN 4
             JZ          .cas5
             MOV         EDI,[YP1]
             INC         EDX
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             PSHUFLW     xmm0,[clr],0
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             PUNPCKLQDQ  xmm0,xmm0
             LEA         EDI,[EDI+EBP*2]
             XOR         ECX,ECX
@@ -381,11 +381,11 @@ ALIGN 4
             JMP         SHORT .FinLine
 ;********CAS 5 : (DX=0, DY=0)***********************************************
 .cas5:
-            MOV         EDI,[_NegScanLine]
+            MOV         EDI,[NegScanLine]
             MOV         EDX,[XP1]
             IMUL        EDI,[YP1]
             MOV         EAX,[clr]
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOV         [EDI+EDX*2],AX
 .FinLine:
             POP         ESI
@@ -395,7 +395,7 @@ ALIGN 4
     RETURN
 
 ALIGN 32
-_linemap16:
+linemap16:
     ARG     LMX16P1, 4, LMY16P1, 4, LMX16P2, 4, LMY16P2, 4, lnMCol16, 4, LM16Map, 4
 
             PUSH        EBX
@@ -415,10 +415,10 @@ _linemap16:
             MOV         [YP2],EDX
             MOV         [clr],ESI
             MOV         [Plus2],EDI
-            JMP         SHORT _LineMap16.DoLine16
+            JMP         SHORT LineMap16.DoLine16
 
 ALIGN 32
-_LineMap16:
+LineMap16:
     ARG     Map16PtrP1, 4, Map16PtrP2, 4, Map16Col, 4, Line16Map, 4
 
             PUSH        EBX
@@ -445,9 +445,9 @@ _LineMap16:
             CMP         EAX,EBX
             JL          .VMaxX
             XCHG        EAX,EBX
-.VMaxX:     CMP         EAX,[_MaxX]
+.VMaxX:     CMP         EAX,[MaxX]
             JG          .FinLine
-            CMP         EBX,[_MinX]
+            CMP         EBX,[MinX]
             JL          .FinLine
             SUB         EBX,EAX
             MOV         ESI,EBX    ; abs(x2-x1)
@@ -458,9 +458,9 @@ _LineMap16:
             CMP         EAX,EBX
             JL          .VMaxY
             XCHG        EAX,EBX
-.VMaxY:     CMP         EAX,[_MaxY]
+.VMaxY:     CMP         EAX,[MaxY]
             JG          .FinLine
-            CMP         EBX,[_MinY]
+            CMP         EBX,[MinY]
             JL          .FinLine       ; fin du test
             SUB         EBX,EAX
             MOV         EDI,EBX        ;  abs(y2-y1)
@@ -477,18 +477,18 @@ _LineMap16:
             CMP         EAX,EBX
             JL          .ClipMaxX
             XCHG        EAX,EBX
-.ClipMaxX:  CMP         EAX,[_MinX]
+.ClipMaxX:  CMP         EAX,[MinX]
             JL          .Aj_1_2
-            CMP         EBX,[_MaxX]
+            CMP         EBX,[MaxX]
             JG          .Aj_1_2
             MOV         EAX,ECX         ; ECX = [YP1]
             MOV         EBX,[YP2]
             CMP         EAX,EBX
             JL          .ClipMaxY
             XCHG        EAX,EBX
-.ClipMaxY:  CMP         EAX,[_MinY]
+.ClipMaxY:  CMP         EAX,[MinY]
             JL          .Aj_1_2
-            CMP         EBX,[_MaxY]
+            CMP         EBX,[MaxY]
             JG          .Aj_1_2
             JMP         .PasAj_1_2
 .Aj_1_2:    MOV         EBX,EDX         ; EDX = [XP1]
@@ -500,7 +500,7 @@ _LineMap16:
             XCHG        ECX,EDI
 .MaxAj1_2X:
 ;*********Ajustement des X
-            CMP         EBX,[_MinX]
+            CMP         EBX,[MinX]
             JNL         .PasAjX12
             MOV         EAX,EDI
             SUB         EAX,ECX
@@ -510,13 +510,13 @@ _LineMap16:
             IDIV        ESI
             ADD         ESI,EBX
             MOV         EDX,EAX
-            MOV         EAX,[_MinX]
+            MOV         EAX,[MinX]
             SUB         EAX,EBX
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         EBX,[_MinX]
+            MOV         EBX,[MinX]
             ADD         ECX,EAX
-.PasAjX12:  CMP         ESI,[_MaxX]
+.PasAjX12:  CMP         ESI,[MaxX]
             JNG         .PasAjM12
             MOV         EAX,EDI
             SUB         EAX,ECX
@@ -529,21 +529,21 @@ _LineMap16:
             ADD         ESI,EBX
             MOV         EDX,EAX
             MOV         EAX,ESI
-            SUB         EAX,[_MaxX]
+            SUB         EAX,[MaxX]
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         ESI,[_MaxX]
+            MOV         ESI,[MaxX]
             SUB         EDI,EAX
 .PasAjM12:  CMP         ECX,EDI
             JL          .MaxAj1_2Y
             XCHG        EBX,ESI
             XCHG        ECX,EDI
-.MaxAj1_2Y: CMP         ECX,[_MaxY]
+.MaxAj1_2Y: CMP         ECX,[MaxY]
             JG          .FinLine
-            CMP         EDI,[_MinY]
+            CMP         EDI,[MinY]
             JL          .FinLine
     ;*********Ajustement des Y
-            CMP         ECX,[_MinY]
+            CMP         ECX,[MinY]
             JNL         .PasAjY12
             MOV         EAX,ESI
             SUB         EAX,EBX
@@ -555,17 +555,17 @@ _LineMap16:
             IDIV        ESI
             MOV         ESI,EBP ; rest ESI
             MOV         EDX,EAX
-            MOV         EAX,[_MinY]
+            MOV         EAX,[MinY]
             SUB         EAX,ECX
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         ECX,[_MinY]
+            MOV         ECX,[MinY]
             ADD         EBX,EAX
-            CMP         EBX,[_MaxX]
+            CMP         EBX,[MaxX]
             JG          .FinLine
-            CMP         EBX,[_MinX]
+            CMP         EBX,[MinX]
             JL          .FinLine
-.PasAjY12:  CMP         EDI,[_MaxY]
+.PasAjY12:  CMP         EDI,[MaxY]
             JNG         .PasAjY12X
             MOV         EAX,ESI
             SUB         EAX,EBX
@@ -578,10 +578,10 @@ _LineMap16:
             MOV         ESI,EBP ; rest ESI
             MOV         EDX,EAX
             MOV         EAX,EDI
-            SUB         EAX,[_MaxY]
+            SUB         EAX,[MaxY]
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         EDI,[_MaxY]
+            MOV         EDI,[MaxY]
             SUB         ESI,EAX
 .PasAjY12X:
             MOV         [XP1],EBX
@@ -607,7 +607,7 @@ _LineMap16:
 ;*********CAS 1:  (DX > DY)***************************************************
 .cas1:
             MOV         EAX,[XP1]
-            MOV         EBP,[_ScanLine] ; plus
+            MOV         EBP,[ScanLine] ; plus
             CMP         EAX,[XP2]
             JL          .PasSwap1
             PSHUFD      xmm0,[XP1],(1<<6) | (0<<4) | (3<<2) | (2) ; swap (XP1, YP1) and (XP2, YP2)
@@ -617,12 +617,12 @@ _LineMap16:
             MOV         EAX,[YP2]
             SUB         ESI,[XP1]
             SUB         EAX,[YP1]
-            MOV         EDI,[_NegScanLine]
+            MOV         EDI,[NegScanLine]
             JNS         .pstvDyCas1
             NEG         EAX ; abs(deltay)
             JMP         SHORT .ngtvDyCas1
 .pstvDyCas1:
-            NEG         EBP ; = -[_ScanLine] as ascendent y Axis
+            NEG         EBP ; = -[ScanLine] as ascendent y Axis
 .ngtvDyCas1:
             INC         EAX
             MOV         EBX,[Plus2]  ; Line MAP
@@ -636,7 +636,7 @@ _LineMap16:
             LEA         EDI,[EDI+ECX*2] ; += XP1 * 2  (as 16bpp)
             MOV         EAX,[clr]
             MOV         ECX,ESI ; ECX = deltaX = number pixels
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOV         ESI,1 << Prec ; EBX = cpt Dbrd
 ALIGN 4
 .lp_line1:
@@ -667,8 +667,8 @@ ALIGN 4
 .PasSwap2:
             OR          ESI,ESI
             JNZ         .noClipVert
-            MOV         EAX,[_MinY]
-            MOV         EBX,[_MaxY]
+            MOV         EAX,[MinY]
+            MOV         EBX,[MaxY]
             CMP         EAX,[YP1]
             JLE         SHORT .sava21
             MOV         [YP1],EAX
@@ -695,13 +695,13 @@ ALIGN 4
             IDIV        ESI
             MOV         EDI,[YP1]
             MOV         ECX,ESI ; ECX = deltaY = number pixels
-            IMUL        EDI,[_NegScanLine]; *= -(ScanLine)
+            IMUL        EDI,[NegScanLine]; *= -(ScanLine)
             MOV         EDX,EAX ; pente in EDX
 
             ; start adress
             LEA         EDI,[EDI+EBP*2]
             XOR         EBX,EBX ; accum in EBX
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             OR          EDX,EDX
             JNS         .line2_pstvPnt
             MOV         EBX,((1<<Prec)-1)
@@ -719,7 +719,7 @@ ALIGN 4
             MOV         [EDI+ESI*2],BP
 .PasDrPx2:
             ROR         EAX,1
-            SUB         EDI,[_ScanLine]   ;  Axe Y Montant -ResH
+            SUB         EDI,[ScanLine]   ;  Axe Y Montant -ResH
             DEC         ECX
             JNZ         SHORT .lp_line2
 
@@ -736,12 +736,12 @@ ALIGN 4
             MOV         [XP2],EAX
             MOV         [XP1],EBX
 .PasSwap4:
-            MOV         EAX,[_MinX]
+            MOV         EAX,[MinX]
             CMP         EAX,[XP1]
             JLE         .sava41
             MOV         [XP1],EAX
 .sava41:
-            MOV         EAX,[_MaxX]
+            MOV         EAX,[MaxX]
             CMP         EAX,[XP2]
             JGE         .sava42
             MOV         [XP2],EAX
@@ -753,9 +753,9 @@ ALIGN 4
             MOV         EDI,[YP1]
             MOV         EBP,[XP1]
             MOV         ECX,[Plus2] ; Line Map
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             MOV         EAX,[clr]
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             LEA         EDI,[EDI+EBP*2]
 .lp4:
             BT          ECX,0
@@ -773,11 +773,11 @@ ALIGN 4
             TEST        BYTE [Plus2],1
             JZ          .FinLine
 
-            MOV         EAX,[_NegScanLine]
+            MOV         EAX,[NegScanLine]
             MOV         ECX,[XP1]
             IMUL        EAX,[YP1]
             MOV         EDX,[clr]
-            ADD         EAX,[_vlfb]
+            ADD         EAX,[vlfb]
             MOV         [EAX+ECX*2],DX
 .FinLine:
             POP         ESI
@@ -788,7 +788,7 @@ ALIGN 4
 
 
 ALIGN 32
-_lineblnd16:
+lineblnd16:
     ARG     LBX16P1, 4, LBY16P1, 4, LBX16P2, 4, LBY16P2, 4, lnBCol16, 4
 
             PUSH        EBX
@@ -806,10 +806,10 @@ _lineblnd16:
             MOV         EAX,[EBP+lnBCol16]
             MOV         [YP2],EDI
             ;OV         [clr],ESI
-            JMP         SHORT _LineBlnd16.DoLine16
+            JMP         SHORT LineBlnd16.DoLine16
 
 ALIGN 32
-_LineBlnd16:
+LineBlnd16:
     ARG     PBlnd16P1, 4, PBlnd16P2, 4, BlndCol16, 4
 
             PUSH        EBX
@@ -834,12 +834,12 @@ _LineBlnd16:
             MOV         EBX,EAX ;
             MOV         ECX,EAX ;
             MOV         EDX,EAX ;
-            AND         EBX,[_QBlue16Mask] ; EBX = Bclr16 | Bclr16
+            AND         EBX,[QBlue16Mask] ; EBX = Bclr16 | Bclr16
             SHR         EAX,24
-            AND         ECX,[_QGreen16Mask] ; ECX = Gclr16 | Gclr16
+            AND         ECX,[QGreen16Mask] ; ECX = Gclr16 | Gclr16
             AND         AL,BlendMask ; remove any ineeded bits
             JZ          .FinLine ; nothing 0 is the source
-            AND         EDX,[_QRed16Mask] ; EDX = Rclr16 | Rclr16
+            AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
             XOR         AL,BlendMask ; 31-blendsrc
             MOV         BP,AX
             XOR         AL,BlendMask ; 31-blendsrc
@@ -869,9 +869,9 @@ _LineBlnd16:
             CMP         EAX,EBX
             JL          .VMaxX
             XCHG        EAX,EBX
-.VMaxX:     CMP         EAX,[_MaxX]
+.VMaxX:     CMP         EAX,[MaxX]
             JG          .FinLine
-            CMP         EBX,[_MinX]
+            CMP         EBX,[MinX]
             JL          .FinLine
             SUB         EBX,EAX
             MOV         ESI,EBX    ;calcul de abs(x2-x1)
@@ -882,9 +882,9 @@ _LineBlnd16:
             CMP         EAX,EBX
             JL          .VMaxY
             XCHG        EAX,EBX
-.VMaxY:     CMP         EAX,[_MaxY]
+.VMaxY:     CMP         EAX,[MaxY]
             JG          .FinLine
-            CMP         EBX,[_MinY]
+            CMP         EBX,[MinY]
             JL          .FinLine       ; fin du test
             SUB         EBX,EAX
             MOV         EDI,EBX        ;  abs(y2-y1)
@@ -901,18 +901,18 @@ _LineBlnd16:
             CMP         EAX,EBX
             JL          .ClipMaxX
             XCHG        EAX,EBX
-.ClipMaxX:  CMP         EAX,[_MinX]
+.ClipMaxX:  CMP         EAX,[MinX]
             JL          .Aj_1_2
-            CMP         EBX,[_MaxX]
+            CMP         EBX,[MaxX]
             JG          .Aj_1_2
             MOV         EAX,ECX         ; ECX = [YP1]
             MOV         EBX,[YP2]
             CMP         EAX,EBX
             JL          .ClipMaxY
             XCHG        EAX,EBX
-.ClipMaxY:  CMP         EAX,[_MinY]
+.ClipMaxY:  CMP         EAX,[MinY]
             JL          .Aj_1_2
-            CMP         EBX,[_MaxY]
+            CMP         EBX,[MaxY]
             JG          .Aj_1_2
             JMP         .PasAj_1_2
 .Aj_1_2:    MOV         EBX,EDX         ; EDX = [XP1]
@@ -924,7 +924,7 @@ _LineBlnd16:
             XCHG        ECX,EDI
 .MaxAj1_2X:
 ;*********Ajustement des X
-            CMP         EBX,[_MinX]
+            CMP         EBX,[MinX]
             JNL         .PasAjX12
             MOV         EAX,EDI
             SUB         EAX,ECX
@@ -934,13 +934,13 @@ _LineBlnd16:
             IDIV        ESI
             ADD         ESI,EBX
             MOV         EDX,EAX
-            MOV         EAX,[_MinX]
+            MOV         EAX,[MinX]
             SUB         EAX,EBX
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         EBX,[_MinX]
+            MOV         EBX,[MinX]
             ADD         ECX,EAX
-.PasAjX12:  CMP         ESI,[_MaxX]
+.PasAjX12:  CMP         ESI,[MaxX]
             JNG         .PasAjM12
             MOV         EAX,EDI
             SUB         EAX,ECX
@@ -953,21 +953,21 @@ _LineBlnd16:
             ADD         ESI,EBX
             MOV         EDX,EAX
             MOV         EAX,ESI
-            SUB         EAX,[_MaxX]
+            SUB         EAX,[MaxX]
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         ESI,[_MaxX]
+            MOV         ESI,[MaxX]
             SUB         EDI,EAX
 .PasAjM12:  CMP         ECX,EDI
             JL          .MaxAj1_2Y
             XCHG        EBX,ESI
             XCHG        ECX,EDI
-.MaxAj1_2Y: CMP         ECX,[_MaxY]
+.MaxAj1_2Y: CMP         ECX,[MaxY]
             JG          .FinLine
-            CMP         EDI,[_MinY]
+            CMP         EDI,[MinY]
             JL          .FinLine
     ;*********Ajustement des Y
-            CMP         ECX,[_MinY]
+            CMP         ECX,[MinY]
             JNL         .PasAjY12
             MOV         EAX,ESI
             SUB         EAX,EBX
@@ -979,17 +979,17 @@ _LineBlnd16:
             IDIV        ESI
             MOV         ESI,EBP
             MOV         EDX,EAX
-            MOV         EAX,[_MinY]
+            MOV         EAX,[MinY]
             SUB         EAX,ECX
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         ECX,[_MinY]
+            MOV         ECX,[MinY]
             ADD         EBX,EAX
-            CMP         EBX,[_MaxX]
+            CMP         EBX,[MaxX]
             JG          .FinLine
-            CMP         EBX,[_MinX]
+            CMP         EBX,[MinX]
             JL          .FinLine
-.PasAjY12:  CMP         EDI,[_MaxY]
+.PasAjY12:  CMP         EDI,[MaxY]
             JNG         .PasAjY12X
             MOV         EAX,ESI
             SUB         EAX,EBX
@@ -1002,10 +1002,10 @@ _LineBlnd16:
             MOV         ESI,EBP
             MOV         EDX,EAX
             MOV         EAX,EDI
-            SUB         EAX,[_MaxY]
+            SUB         EAX,[MaxY]
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         EDI,[_MaxY]
+            MOV         EDI,[MaxY]
             SUB         ESI,EAX
 .PasAjY12X:
             MOV         [XP1],EBX
@@ -1030,7 +1030,7 @@ _LineBlnd16:
 ;*********CAS 1:  (DX > DY)***************************************************
 .cas1:
             MOV         EAX,[XP1]
-            MOV         EBP,[_ScanLine] ; plus
+            MOV         EBP,[ScanLine] ; plus
             CMP         EAX,[XP2]
             JL          .PasSwap1
             PSHUFD      xmm0,[XP1],(1<<6) | (0<<4) | (3<<2) | (2) ; swap (XP1, YP1) and (XP2, YP2)
@@ -1040,12 +1040,12 @@ _LineBlnd16:
             MOV         EAX,[YP2]
             SUB         ESI,[XP1]
             SUB         EAX,[YP1]
-            MOV         EDI,EBP  ;[_ScanLine]
+            MOV         EDI,EBP  ;[ScanLine]
             JNS         .pstvDyCas1
             NEG         EAX ; abs(deltay)
             JMP         SHORT .ngtvDyCas1
 .pstvDyCas1:
-            NEG         EBP ; = -[_ScanLine] as ascendent y Axis
+            NEG         EBP ; = -[ScanLine] as ascendent y Axis
 .ngtvDyCas1:
             INC         EAX
             MOV         EBX,1 << Prec ; EBX = cpt Dbrd
@@ -1060,7 +1060,7 @@ _LineBlnd16:
             MOV         EDX,EAX ; EDX = pnt
             LEA         EDI,[EDI+ESI*2] ; 2 time cause 16bpp
             ;MOV        EAX,[clr]
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOV         ESI,1 << Prec
 ALIGN 4
 .lp_line1:
@@ -1092,8 +1092,8 @@ ALIGN 4
 .PasSwap2:
             OR          ESI,ESI
             JNZ         .noClipVert
-            MOV         EAX,[_MinY]
-            MOV         EBX,[_MaxY]
+            MOV         EAX,[MinY]
+            MOV         EBX,[MaxY]
             CMP         EAX,[YP1]
             JLE         .sava21
             MOV         [YP1],EAX
@@ -1117,7 +1117,7 @@ ALIGN 4
             INC         ESI
             MOV         EDI,[YP1]
             CDQ
-            IMUL        EDI,[_NegScanLine] ; * -ScanLine
+            IMUL        EDI,[NegScanLine] ; * -ScanLine
             IDIV        ESI
             MOV         EBP,[XP1]
             MOV         ECX,ESI ; ECX = deltaY = number pixels
@@ -1126,9 +1126,9 @@ ALIGN 4
         ; start adress
             LEA         EDI,[EDI+EBP*2] ; ; add xp1 2 times as 16 bpp
             XOR         EBX,EBX ; accum in EBX
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             OR          EDX,EDX
-            MOV         EBP,[_NegScanLine]
+            MOV         EBP,[NegScanLine]
             ;MOV        EAX,[clr] ; draw color
             JNS         SHORT .line2_pstvPnt
             MOV         EBX,((1<<Prec)-1)
@@ -1160,12 +1160,12 @@ ALIGN 4
             MOV         [XP1],EBX
             MOV         [XP2],EAX
 .PasSwap4:
-            MOV         EAX,[_MinX]
+            MOV         EAX,[MinX]
             CMP         EAX,[XP1]
             JLE         .sava41
             MOV         [XP1],EAX
 .sava41:
-            MOV         EAX,[_MaxX]
+            MOV         EAX,[MaxX]
             CMP         EAX,[XP2]
             JGE         .sava42
             MOV         [XP2],EAX
@@ -1176,19 +1176,19 @@ ALIGN 4
             JZ          .cas5
             MOV         EDI,[YP1]
             INC         ESI
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             MOV         EBP,[XP1]
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             XOR         ECX,ECX
             LEA         EDI,[EDI+EBP*2]
             @SolidBlndHLine16
             JMP         .FinLine
 ;********CAS 5 : (DX=0, DY=0)***********************************************
 .cas5:
-            MOV         EDI,[_NegScanLine]
+            MOV         EDI,[NegScanLine]
             IMUL        EDI,[YP1]
             MOV         EDX,[XP1]
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             PINSRW      xmm0,[EDI+EDX*2],0 ; B
             MOVDQA      xmm1,xmm0 ; G
             MOVDQA      xmm2,xmm0  ; R
@@ -1204,7 +1204,7 @@ ALIGN 4
 
 
 ALIGN 32
-_linemapblnd16:
+linemapblnd16:
     ARG     LMBX16P1, 4, LMBY16P1, 4, LMBX16P2, 4, LMBY16P2, 4, lnMBCol16, 4, LMB16Map, 4
 
             PUSH        EBX
@@ -1224,10 +1224,10 @@ _linemapblnd16:
             MOV         [YP2],EDI
             ;MOV        [clr],ESI
             MOV         [Plus2],ECX
-            JMP         SHORT _LineMapBlnd16.DoLine16
+            JMP         SHORT LineMapBlnd16.DoLine16
 
 ALIGN 32
-_LineMapBlnd16:
+LineMapBlnd16:
     ARG     MapB16PtrP1, 4, MapB16PtrP2, 4, MapB16Col, 4, LineB16Map, 4
 
             PUSH        EBX
@@ -1254,12 +1254,12 @@ _LineMapBlnd16:
 .DoLine16:  MOV         EBX,EAX ;
             MOV         ECX,EAX ;
             MOV         EDX,EAX ;
-            AND         EBX,[_QBlue16Mask] ; EBX = Bclr16 | Bclr16
+            AND         EBX,[QBlue16Mask] ; EBX = Bclr16 | Bclr16
             SHR         EAX,24
-            AND         ECX,[_QGreen16Mask] ; ECX = Gclr16 | Gclr16
+            AND         ECX,[QGreen16Mask] ; ECX = Gclr16 | Gclr16
             AND         AL,BlendMask ; remove any ineeded bits
             JZ          .FinLine ; nothing 0 is the source
-            AND         EDX,[_QRed16Mask] ; EDX = Rclr16 | Rclr16
+            AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
             XOR         AL,BlendMask ; 31-blendsrc
             MOV         BP,AX
             XOR         AL,BlendMask ; 31-blendsrc
@@ -1288,9 +1288,9 @@ _LineMapBlnd16:
             CMP         EAX,EBX
             JL          .VMaxX
             XCHG        EAX,EBX
-.VMaxX:     CMP         EAX,[_MaxX]
+.VMaxX:     CMP         EAX,[MaxX]
             JG          .FinLine
-            CMP         EBX,[_MinX]
+            CMP         EBX,[MinX]
             JL          .FinLine
             SUB         EBX,EAX
             MOV         ESI,EBX    ;calcul de abs(x2-x1)
@@ -1301,9 +1301,9 @@ _LineMapBlnd16:
             CMP         EAX,EBX
             JL          SHORT .VMaxY
             XCHG        EAX,EBX
-.VMaxY:     CMP         EAX,[_MaxY]
+.VMaxY:     CMP         EAX,[MaxY]
             JG          .FinLine
-            CMP         EBX,[_MinY]
+            CMP         EBX,[MinY]
             JL          .FinLine       ; fin du test
             SUB         EBX,EAX
             MOV         EDI,EBX        ;  abs(y2-y1)
@@ -1320,18 +1320,18 @@ _LineMapBlnd16:
             CMP         EAX,EBX
             JL          SHORT .ClipMaxX
             XCHG        EAX,EBX
-.ClipMaxX:  CMP         EAX,[_MinX]
+.ClipMaxX:  CMP         EAX,[MinX]
             JL          SHORT .Aj_1_2
-            CMP         EBX,[_MaxX]
+            CMP         EBX,[MaxX]
             JG          SHORT .Aj_1_2
             MOV         EAX,ECX         ; ECX = [YP1]
             MOV         EBX,[YP2]
             CMP         EAX,EBX
             JL          SHORT .ClipMaxY
             XCHG        EAX,EBX
-.ClipMaxY:  CMP         EAX,[_MinY]
+.ClipMaxY:  CMP         EAX,[MinY]
             JL          SHORT .Aj_1_2
-            CMP         EBX,[_MaxY]
+            CMP         EBX,[MaxY]
             JG          SHORT .Aj_1_2
             JMP         .PasAj_1_2
 .Aj_1_2:    MOV         EBX,EDX         ; EDX = [XP1]
@@ -1343,7 +1343,7 @@ _LineMapBlnd16:
             XCHG        ECX,EDI
 .MaxAj1_2X:
 ;*********Ajustement des X
-            CMP         EBX,[_MinX]
+            CMP         EBX,[MinX]
             JNL         SHORT .PasAjX12
             MOV         EAX,EDI
             SUB         EAX,ECX
@@ -1353,13 +1353,13 @@ _LineMapBlnd16:
             IDIV        ESI
             ADD         ESI,EBX
             MOV         EDX,EAX
-            MOV         EAX,[_MinX]
+            MOV         EAX,[MinX]
             SUB         EAX,EBX
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         EBX,[_MinX]
+            MOV         EBX,[MinX]
             ADD         ECX,EAX
-.PasAjX12:  CMP         ESI,[_MaxX]
+.PasAjX12:  CMP         ESI,[MaxX]
             JNG         SHORT .PasAjM12
             MOV         EAX,EDI
             SUB         EAX,ECX
@@ -1372,21 +1372,21 @@ _LineMapBlnd16:
             ADD         ESI,EBX
             MOV         EDX,EAX
             MOV         EAX,ESI
-            SUB         EAX,[_MaxX]
+            SUB         EAX,[MaxX]
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         ESI,[_MaxX]
+            MOV         ESI,[MaxX]
             SUB         EDI,EAX
 .PasAjM12:  CMP         ECX,EDI
             JL          SHORT .MaxAj1_2Y
             XCHG        EBX,ESI
             XCHG        ECX,EDI
-.MaxAj1_2Y: CMP         ECX,[_MaxY]
+.MaxAj1_2Y: CMP         ECX,[MaxY]
             JG          .FinLine
-            CMP         EDI,[_MinY]
+            CMP         EDI,[MinY]
             JL          .FinLine
 ;*********Ajustement des Y
-            CMP         ECX,[_MinY]
+            CMP         ECX,[MinY]
             JNL         SHORT .PasAjY12
             MOV         EAX,ESI
             SUB         EAX,EBX
@@ -1398,17 +1398,17 @@ _LineMapBlnd16:
             IDIV        ESI
             MOV         ESI,EBP ; rest ESI
             MOV         EDX,EAX
-            MOV         EAX,[_MinY]
+            MOV         EAX,[MinY]
             SUB         EAX,ECX
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         ECX,[_MinY]
+            MOV         ECX,[MinY]
             ADD         EBX,EAX
-            CMP         EBX,[_MaxX]
+            CMP         EBX,[MaxX]
             JG          .FinLine
-            CMP         EBX,[_MinX]
+            CMP         EBX,[MinX]
             JL          .FinLine
-.PasAjY12:  CMP         EDI,[_MaxY]
+.PasAjY12:  CMP         EDI,[MaxY]
             JNG         SHORT .PasAjY12X
             MOV         EAX,ESI
             SUB         EAX,EBX
@@ -1421,10 +1421,10 @@ _LineMapBlnd16:
             MOV         ESI,EBP ; rest ESI
             MOV         EDX,EAX
             MOV         EAX,EDI
-            SUB         EAX,[_MaxY]
+            SUB         EAX,[MaxY]
             IMUL        EAX,EDX
             SAR         EAX,Prec
-            MOV         EDI,[_MaxY]
+            MOV         EDI,[MaxY]
             SUB         ESI,EAX
 .PasAjY12X:
             MOV         [XP1],EBX
@@ -1450,7 +1450,7 @@ _LineMapBlnd16:
 ;*********CAS 1:  (DX > DY)***************************************************
 .cas1:
             MOV         EAX,[XP1]
-            MOV         EBP,[_ScanLine] ; plus
+            MOV         EBP,[ScanLine] ; plus
             CMP         EAX,[XP2]
             JL          SHORT .PasSwap1
             PSHUFD      xmm0,[XP1],(1<<6) | (0<<4) | (3<<2) | (2) ; swap (XP1, YP1) and (XP2, YP2)
@@ -1460,12 +1460,12 @@ _LineMapBlnd16:
             MOV         EAX,[YP2]
             SUB         ESI,[XP1]
             SUB         EAX,[YP1]
-            MOV         EDI,[_NegScanLine]
+            MOV         EDI,[NegScanLine]
             JNS         SHORT .pstvDyCas1
             NEG         EAX ; abs(deltay)
             JMP         SHORT .ngtvDyCas1
 .pstvDyCas1:
-            NEG         EBP ; = -[_ScanLine] as ascendent y Axis
+            NEG         EBP ; = -[ScanLine] as ascendent y Axis
 .ngtvDyCas1:
             INC         EAX
             MOV         EBX,[Plus2]  ; Line MAP
@@ -1479,7 +1479,7 @@ _LineMapBlnd16:
             LEA         EDI,[EDI+ECX*2] ; += 2*XP1 as 16bpp
             ;MOV        EAX,[clr]
             MOV         ECX,ESI ; ECX = deltaX = number pixels
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOV         ESI,1 << Prec ; EBX = cpt Dbrd
 ALIGN 4
 .lp_line1:
@@ -1516,8 +1516,8 @@ ALIGN 4
 .PasSwap2:
             OR          ESI,ESI
             JNZ         SHORT .noClipVert
-            MOV         EAX,[_MinY]
-            MOV         EBX,[_MaxY]
+            MOV         EAX,[MinY]
+            MOV         EBX,[MaxY]
             CMP         EAX,[YP1]
             JLE         SHORT .sava21
             MOV         [YP1],EAX
@@ -1547,10 +1547,10 @@ ALIGN 4
             ; start adress
             MOV         EDI,[YP1]
             MOV         EDX,EAX ; pente in EDX
-            IMUL        EDI,[_NegScanLine] ; * -ScanLine
+            IMUL        EDI,[NegScanLine] ; * -ScanLine
             LEA         EDI,[EDI+EBP * 2] ; += XP1 * 2 as 16bpp
             XOR         EBP,EBP ; accum in EBX
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             OR          EDX,EDX
             JNS         SHORT .line2_pstvPnt
             MOV         EBP,((1<<Prec)-1)
@@ -1573,7 +1573,7 @@ ALIGN 4
             MOV         [EDI+ESI*2],AX
 .PasDrPx2:
             ROR         EBX,1
-            ADD         EDI,[_NegScanLine]    ;  Axe Y Montant -ResH
+            ADD         EDI,[NegScanLine]    ;  Axe Y Montant -ResH
             DEC         ECX
             JNZ         .lp_line2
 
@@ -1588,11 +1588,11 @@ ALIGN 4
             MOV         EBX,[XP2]
             MOV         [XP1],EBX
             MOV         [XP2],EAX
-.PasSwap4:  MOV         EAX,[_MinX]
+.PasSwap4:  MOV         EAX,[MinX]
             CMP         EAX,[XP1]
             JLE         SHORT .sava41
             MOV         [XP1],EAX
-.sava41:    MOV         EAX,[_MaxX]
+.sava41:    MOV         EAX,[MaxX]
             CMP         EAX,[XP2]
             JGE         SHORT .sava42
             MOV         [XP2],EAX
@@ -1604,9 +1604,9 @@ ALIGN 4
             INC         ESI
             MOV         EDI,[YP1]
             MOV         ECX,[Plus2] ; Line Map
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             MOV         EBP,[XP1]
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOV         EAX,[clr]
             LEA         EDI,[EDI+EBP*2]
 .lp4:       TEST        CL,1
@@ -1630,11 +1630,11 @@ ALIGN 4
             TEST        BYTE [Plus2],1
             JZ          .FinLine
 
-            MOV         EDI,[_NegScanLine]
+            MOV         EDI,[NegScanLine]
             MOV         ECX,[XP1]
             IMUL        EDI,[YP1]
             MOV         EDX,[clr]
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
             MOV         AX,[EDI+ECX*2]
             MOVD        xmm0,EAX ; B
             MOVD        xmm1,EAX ; G

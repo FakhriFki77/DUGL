@@ -14,12 +14,12 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ;
-;    contact: libdugl@hotmail.com
+;    contact: libdugl(at)hotmail.com
 ;=============================================================================
 
 
 ;**CLIP*****************************************************
-;GLOB DebYPoly : MinY_temporaire, _MaxY : MaxY_temporaire
+;GLOB DebYPoly : MinY_temporaire, MaxY : MaxY_temporaire
 ;     DebYPoly = -1 : Poly hors de l'ecran
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; calcule X debut et X fin du contour
@@ -27,9 +27,9 @@
 ; IN : XP1, YP1, XP2, YP2, EAX : XP1, ECX : YP1
 ; condition XP1<XP2 && YP1<YP2
 %macro  @ClipContourGchX2Sup    0
-        CMP     ECX,[_MaxY]  ; [YP1]
+        CMP     ECX,[MaxY]  ; [YP1]
         JG      NEAR %%Fin
-        CMP     EBP,[_MinY]
+        CMP     EBP,[MinY]
         JL      NEAR %%Fin
         ; Calcule la pente
         NEG     EAX     ; -[XP1]
@@ -40,37 +40,37 @@
         SHL     EAX,Prec
         DIV     ECX         ; Pente dans EAX
         ; Ajustement de <YP1>  =>& XP1
-        MOV     EBP,[_MinY]
+        MOV     EBP,[MinY]
         MOV     ECX,[YP1]
         XOR     EDX,EDX     ; reste 0
         MOV     EBX,EBP
-        SUB     EBP,ECX      ; [_MinY]-[YP1]
+        SUB     EBP,ECX      ; [MinY]-[YP1]
         JLE     SHORT %%PasAjYP1
-        MOV     [YP1],EBX    ; [YP1] = [_MinY]
+        MOV     [YP1],EBX    ; [YP1] = [MinY]
         IMUL    EBP,EAX      ; EBP = DeltaY*Pente
         MOV     EDX,EBP
         AND     EDX,(1 << Prec) - 1
         SHR     EBP,Prec
         ADD     [XP1],EBP
         MOV     ECX,[XP1]
-        CMP     ECX,[_MaxX]
+        CMP     ECX,[MaxX]
         JL      SHORT %%PasPolyOut
         MOV     DWORD [DebYPoly],-1
         JMP     SHORT %%Fin
 %%PasPolyOut:
 %%PasAjYP1: ; Ajustement de <YP2>  =>& XP2
         MOV     ECX,[YP2]
-        MOV     EBP,[_MaxY]
+        MOV     EBP,[MaxY]
         MOV     EBX,[YP1]
-        CMP     ECX,EBP           ;ECX= [YP2]>[_MaxY] ?
+        CMP     ECX,EBP           ;ECX= [YP2]>[MaxY] ?
         CMOVG   ECX,EBP
         MOV     EDI,[XP1]
         SUB     ECX,EBX   ; ECX= DeltaY
         ADD     EDX,(1<<Prec)   ; Compteur debordement dans EDX
-        ADD     EBX,[_OrgY]
+        ADD     EBX,[OrgY]
 %%BcClcCtDr2:
         DEC     ECX
-        MOV     [_TPolyAdDeb+EBX*4],EDI
+        MOV     [TPolyAdDeb+EBX*4],EDI
         JS      SHORT %%Fin
         SUB     EDX,EAX      ; EDX-Pente
         JG      SHORT %%NoDebord
@@ -90,9 +90,9 @@
 ; IN : XP1, YP1, XP2, YP2, EAX : XP1, ECX : YP1
 ; condition XP1>XP2 && YP1<YP2
 %macro  @ClipContourGchX1Sup    0
-        CMP     ECX,[_MaxY]  ; [YP1]
+        CMP     ECX,[MaxY]  ; [YP1]
         JG      NEAR %%Fin
-        CMP     EBP,[_MinY]  ; [YP2]
+        CMP     EBP,[MinY]  ; [YP2]
         MOV     EBX,[XP2]
         JL      NEAR %%Fin
         ; Calcule la pente
@@ -103,11 +103,11 @@
         SHL     EAX,Prec
         DIV     ECX     ; Pente dans EAX
         ; Ajustement de <YP1>  =>& XP1
-        MOV     EBP,[_MinY]
+        MOV     EBP,[MinY]
         MOV     ECX,[YP1]
         XOR     EDX,EDX
         MOV     EBX,EBP
-        SUB     EBP,ECX   ; [_MinY]-[YP1]
+        SUB     EBP,ECX   ; [MinY]-[YP1]
         JLE     SHORT %%PasAjYP1
         IMUL    EBP,EAX
         MOV     [YP1],EBX
@@ -118,15 +118,15 @@
         SUB     [XP1],EBP
 %%PasAjYP1:     ; Ajustement de <YP2>  =>& XP2
         MOV     EBX,[YP2]
-        MOV     EBP,[_MaxY]
+        MOV     EBP,[MaxY]
         MOV     ECX,EBX
-        SUB     EBX,EBP         ; [YP2]-[_MaxY]
+        SUB     EBX,EBP         ; [YP2]-[MaxY]
         JLE     SHORT %%PasAjYP2
         IMUL    EBX,EAX
         MOV     ECX,EBP
         SHR     EBX,Prec
         ADD     EBX,[XP2]
-        CMP     EBX,[_MaxX]
+        CMP     EBX,[MaxX]
         JL      SHORT %%PasPolyOut
         MOV     DWORD [DebYPoly],-1
         JMP     SHORT %%Fin
@@ -137,10 +137,10 @@
         MOV     EDI,[XP1]
         SUB     ECX,EBX
         ADD     EDX,1 << Prec   ; Compteur debordement dans EDX
-        ADD     EBX,[_OrgY]
+        ADD     EBX,[OrgY]
 %%BcClcCtDr2:
         DEC     ECX
-        MOV     [_TPolyAdDeb+EBX*4],EDI
+        MOV     [TPolyAdDeb+EBX*4],EDI
         JS      SHORT %%Fin
         SUB     EDX,EAX
         JG      SHORT %%NoDebord
@@ -161,9 +161,9 @@
 ; IN : XP1, YP1, XP2, YP2, EAX : XP1, ECX : YP1
 ; condition XP1<XP2 && YP1>YP2
 %macro  @ClipContourDrtX2Sup    0
-        CMP     ECX,[_MinY]
+        CMP     ECX,[MinY]
         JL      NEAR %%Fin
-        CMP     EBP,[_MaxY]
+        CMP     EBP,[MaxY]
         MOV     EBX,[XP2]
         JG      NEAR %%Fin
         ; Calcule la pente
@@ -175,9 +175,9 @@
         DIV     ECX         ; Pente dans EAX
         ; Ajustement de <YP1>  =>& XP1
         MOV     ECX,[YP1]
-        MOV     EBP,[_MaxY]
+        MOV     EBP,[MaxY]
         XOR     EDX,EDX
-        SUB     ECX,EBP  ; [YP1]-[_MaxY]
+        SUB     ECX,EBP  ; [YP1]-[MaxY]
         JLE     SHORT %%PasAjYP1
         IMUL    ECX,EAX
         MOV     [YP1],EBP
@@ -187,7 +187,7 @@
         NEG     EDX
         ADD     [XP1],ECX
 %%PasAjYP1:     ; Ajustement de <YP2>  =>& XP2
-        MOV     EBP,[_MinY]
+        MOV     EBP,[MinY]
         MOV     ECX,[YP2]
         MOV     EBX,EBP
         MOV     EDI,[XP2]
@@ -197,7 +197,7 @@
         MOV     ECX,EBX
         SHR     EBP,Prec
         SUB     EDI,EBP
-        CMP     EDI,[_MinX]
+        CMP     EDI,[MinX]
         JG      SHORT %%PasPolyOut
         MOV     DWORD [DebYPoly],-1
         JMP     SHORT %%Fin
@@ -207,11 +207,11 @@
         MOV     EBX,ECX
         ADD     EDX,1 << Prec   ; Compteur debordement dans EDX
         NEG     ECX
-        ADD     EBX,[_OrgY]
+        ADD     EBX,[OrgY]
         ADD     ECX,[YP1]
 %%BcClcCtDr2:
         DEC     ECX
-        MOV     [_TPolyAdFin+EBX*4],EDI
+        MOV     [TPolyAdFin+EBX*4],EDI
         JS      SHORT %%Fin
         SUB     EDX,EAX
         JG      SHORT %%NoDebord
@@ -231,9 +231,9 @@
 ; IN : XP1, YP1, XP2, YP2, EAX : XP1, ECX : YP1
 ; condition XP1>XP2 && YP1>YP2
 %macro  @ClipContourDrtX1Sup    0
-        CMP     ECX,[_MinY]  ; [YP1]
+        CMP     ECX,[MinY]  ; [YP1]
         JL      NEAR %%Fin
-        CMP     EBP,[_MaxY]
+        CMP     EBP,[MaxY]
         JG      NEAR %%Fin
 
         ; Calcule la pente
@@ -243,10 +243,10 @@
         SHL     EAX,Prec
         DIV     ECX         ; Pente dans EAX
         ; Ajustement de <YP1>  =>& XP1
-        MOV     EBP,[_MaxY]
+        MOV     EBP,[MaxY]
         MOV     ECX,[YP1]
         XOR     EDX,EDX
-        SUB     ECX,EBP         ;[YP1]-[_MaxY]
+        SUB     ECX,EBP         ;[YP1]-[MaxY]
         JLE     SHORT %%PasAjYP1
         IMUL    ECX,EAX
         MOV     [YP1],EBP
@@ -255,13 +255,13 @@
         SHR     ECX,Prec
         SUB     [XP1],ECX
         MOV     ECX,[XP1]
-        CMP     ECX,[_MinX]
+        CMP     ECX,[MinX]
         JG      SHORT %%PasPolyOut
         MOV     DWORD [DebYPoly],-1
         JMP     SHORT %%Fin
 %%PasPolyOut:
 %%PasAjYP1:     ; Ajustement de <YP2>  =>& XP2
-        MOV     EBP,[_MinY]
+        MOV     EBP,[MinY]
         MOV     ECX,[YP2]
         MOV     EBX,EBP
         MOV     EDI,[XP2]
@@ -277,11 +277,11 @@
         MOV     EBX,ECX
         ADD     EDX,1 << Prec   ; Compteur debordement dans EDX
         NEG     ECX
-        ADD     EBX,[_OrgY]
+        ADD     EBX,[OrgY]
         ADD     ECX,[YP1]
 %%BcClcCtDr2:
         DEC     ECX
-        MOV     [_TPolyAdFin+EBX*4],EDI
+        MOV     [TPolyAdFin+EBX*4],EDI
         JS      SHORT %%Fin
         SUB     EDX,EAX
         JG      SHORT %%NoDebord
@@ -388,10 +388,10 @@
         PINSRD      xmm3,[PntInitCPTDbrd+EBX*4],1 ; Cpt Dbr Y
         OR          EDI,EDI
         SETL        BL
-        ADD         EBP,[_OrgY]
+        ADD         EBP,[OrgY]
         PINSRD      xmm3,[PntInitCPTDbrd+EBX*4],0 ; Cpt Dbr X
-        LEA         EAX,[_TexXDeb+EBP*4]
-        LEA         EDI,[_TexYDeb+EBP*4]
+        LEA         EAX,[TexXDeb+EBP*4]
+        LEA         EDI,[TexYDeb+EBP*4]
 ;ALIGN 4
 %%BcCntTxtDeb:
         MOVQ        xmm6,xmm3 ; cpt Dbrd X | Cpt Dbr Y
@@ -415,11 +415,11 @@
         PINSRD      xmm3,[PntInitCPTDbrd+EBX*4],1 ; Cpt Dbr Y
         OR          EDI,EDI
         SETG        BL
-        ADD         EBP,[_OrgY]
+        ADD         EBP,[OrgY]
         PINSRD      xmm3,[PntInitCPTDbrd+EBX*4],0 ; Cpt Dbr X
         MOVQ        xmm2,xmm7 ; mm2 = XT2, YT2
-        LEA         EDI,[_TexYFin+EBP*4]
-        LEA         EAX,[_TexXFin+EBP*4]
+        LEA         EDI,[TexYFin+EBP*4]
+        LEA         EAX,[TexXFin+EBP*4]
 ;ALIGN 4
 %%BcCntTxtFin:
         MOVQ        xmm6,xmm3
@@ -499,23 +499,23 @@
         JG          NEAR %%CntTxtFin
 ;**** Deb Aj Deb **********************
         MOV         ESI,[YP2]
-        CMP         EAX,[_MaxY]
+        CMP         EAX,[MaxY]
         JG          NEAR %%PasClCrLn
-        CMP         ESI,[_MinY]
+        CMP         ESI,[MinY]
         JL          NEAR %%PasClCrLn
-        CMP         EAX,[_MinY]
-        JGE         %%PasAjYP1   ; YP1 >= _MinY
-        MOV         EDI,[_MinY]  ; EDI = _MinY
+        CMP         EAX,[MinY]
+        JGE         %%PasAjYP1   ; YP1 >= MinY
+        MOV         EDI,[MinY]  ; EDI = MinY
         MOVD        EDX,xmm4; [PntPlusX]
-        SUB         EDI,EAX      ; EDI = _MinY - YP1
+        SUB         EDI,EAX      ; EDI = MinY - YP1
         IMUL        EDX,EDI
         PEXTRD      EBP,xmm4,1 ; [PntPlusY]
         IMUL        EBP,EDI
-        MOV         EAX,[_MinY]
+        MOV         EAX,[MinY]
 %%PasAjYP1:
-        CMP         ESI,[_MaxY]  ; YP2 <= _MaxY
+        CMP         ESI,[MaxY]  ; YP2 <= MaxY
         JLE         %%PasAjYP2
-        MOV         ESI,[_MaxY]
+        MOV         ESI,[MaxY]
 %%PasAjYP2:
 ;**** Fin Aj Deb **********************
         ;--- ajuste Cpt Dbrd X et Y pour SAR
@@ -531,13 +531,13 @@
         MOV         ECX,ESI     ; ECX = YP2
         ADD         EDX,[PntInitCPTDbrd+EBX*4]
     ;-----------------------------------
-        MOV         EDI,_TexYDeb
+        MOV         EDI,TexYDeb
         MOV         EBX,EAX     ; = YP1
         MOVD        xmm3,EDX
-        MOV         ESI,_TexXDeb
+        MOV         ESI,TexXDeb
         SUB         ECX,EAX     ; ECX = YP2-YP1
         PINSRD      xmm3,EBP,1
-        ADD         EBX,[_OrgY]
+        ADD         EBX,[OrgY]
 ;ALIGN 4
 %%BcCntTxtDeb:
         MOVQ        xmm5,xmm3
@@ -556,23 +556,23 @@
         XOR         EDI,EDI
         MOV         EAX,[YP2]
         MOV         ESI,[YP1]
-        CMP         EAX,[_MaxY]
+        CMP         EAX,[MaxY]
         JG          NEAR %%PasClCrLn
-        CMP         ESI,[_MinY]
+        CMP         ESI,[MinY]
         JL          NEAR %%PasClCrLn
-        CMP         EAX,[_MinY]
-        JGE         %%FPasAjYP2   ; YP2 >= _MinY
+        CMP         EAX,[MinY]
+        JGE         %%FPasAjYP2   ; YP2 >= MinY
         MOV         EDI,EAX  ; EDI = YP2
         MOVD        EDX,xmm4 ; [PntPlusX]
-        SUB         EDI,[_MinY]      ; EDI = YP2 - _MinY
+        SUB         EDI,[MinY]      ; EDI = YP2 - MinY
         PEXTRD      EBP,xmm4,1 ; [PntPlusY]
         IMUL        EDX,EDI
-        MOV         EAX,[_MinY]
+        MOV         EAX,[MinY]
         IMUL        EBP,EDI
 %%FPasAjYP2:
-        CMP         ESI,[_MaxY]   ; YP1 <= _MaxY
+        CMP         ESI,[MaxY]   ; YP1 <= MaxY
         JLE         %%FPasAjYP1
-        MOV         ESI,[_MaxY]
+        MOV         ESI,[MaxY]
 %%FPasAjYP1:
 ;**** Fin Aj Fin **********************
         ;--- ajuste Cpt Dbrd X et Y pour SAR
@@ -590,12 +590,12 @@
         MOV         ECX,ESI  ; ECX = YP1
 ;-----------------------------------
         MOV         EBX,EAX  ; = YP2
-        MOV         EDI,_TexYFin
+        MOV         EDI,TexYFin
         MOVD        xmm3,EDX
-        MOV         ESI,_TexXFin
+        MOV         ESI,TexXFin
         SUB         ECX,EAX  ; ECX = YP1 - YP2
         PINSRD      xmm3,EBP,1
-        ADD         EBX,[_OrgY]
+        ADD         EBX,[OrgY]
 ;ALIGN 4
 %%BcCntTxtFin:
         MOVQ        xmm5,xmm3

@@ -14,18 +14,18 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ;
-;    contact: libdugl@hotmail.com
+;    contact: libdugl(at)hotmail.com
 ;=============================================================================
 
 ALIGN 32
-_PutSurf16:
+PutSurf16:
     ARG SSN16, 4, XPSN16, 4, YPSN16, 4, PSType16, 4
             PUSH        ESI
             PUSH        EDI
             PUSH        EBX
 
             MOV         ESI,[EBP+SSN16]
-            MOV         EDI,_SrcSurf
+            MOV         EDI,SrcSurf
 
             CopySurfDA  ; copy surf
 
@@ -55,27 +55,27 @@ _PutSurf16:
             ADD         EBX,[SMaxY] ; EBX = PutMaxY
             ADD         EDX,[SMinY] ; EDX = PutMinY
 .InvVtPut:
-; InView inside (_MinX, MinY, MaxX, MaxY)
-            CMP         EAX,[_MinX]
+; InView inside (MinX, MinY, MaxX, MaxY)
+            CMP         EAX,[MinX]
             JL          .PasPutSurf
-            CMP         EBX,[_MinY]
+            CMP         EBX,[MinY]
             JL          .PasPutSurf
-            CMP         ECX,[_MaxX]
+            CMP         ECX,[MaxX]
             JG          .PasPutSurf
-            CMP         EDX,[_MaxY]
+            CMP         EDX,[MaxY]
             JG          .PasPutSurf
 
-            CMP         EAX,[_MaxX]
-            CMOVG       EAX,[_MaxX]
-            CMP         EBX,[_MaxY]
+            CMP         EAX,[MaxX]
+            CMOVG       EAX,[MaxX]
+            CMP         EBX,[MaxY]
             MOV         [PutSurfMaxX],EAX ;-
-            CMOVG       EBX,[_MaxY]
-            CMP         ECX,[_MinX]
+            CMOVG       EBX,[MaxY]
+            CMP         ECX,[MinX]
             MOV         [PutSurfMaxY],EBX ;-
-            CMOVL       ECX,[_MinX]
-            CMP         EDX,[_MinY]
+            CMOVL       ECX,[MinX]
+            CMP         EDX,[MinY]
             MOV         [PutSurfMinX],ECX ;-
-            CMOVL       EDX,[_MinY]
+            CMOVL       EDX,[MinY]
             MOV         [PutSurfMinY],EDX ;-
 ; --- compute Put coordinates of the entire Surf
 ; EAX: MaxX, EBX; MaxY, ECX: MinX, EDX: MnY
@@ -136,10 +136,10 @@ _PutSurf16:
             MOV         ESI,[Srlfb] ; ESI : start copy adress
 .InvAdSPut:
             MOV         EDI,EBX ; PutMaxY or the top left corner
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             LEA         EDI,[EDI+ECX*2] ; += PutMinX*2 top left croner
-            MOV         EDX,[_ScanLine]
-            ADD         EDI,[_vlfb]
+            MOV         EDX,[ScanLine]
+            ADD         EDI,[vlfb]
             SUB         EDX,[SScanLine] ; EDX : dest adress plus
             MOV         [Plus2],EDX
 
@@ -306,19 +306,19 @@ _PutSurf16:
             XOR         ESI,ESI   ; X deb Source
 
             MOV         EBP,[PutSurfMinX]
-            CMP         ECX,EBP ; CMP minx, _MinX
-            JGE         .PsInfMinX   ; XP1<_MinX
+            CMP         ECX,EBP ; CMP minx, MinX
+            JGE         .PsInfMinX   ; XP1<MinX
             TEST         BYTE [PType],1 ; INV HZ
             JNZ         .InvHzCalcDX
             MOV         ESI,EBP
-            ;MOV        [XP1],EBP    ; XP1 = _MinX
-            SUB         ESI,ECX ; ESI = _MinX - XP2
+            ;MOV        [XP1],EBP    ; XP1 = MinX
+            SUB         ESI,ECX ; ESI = MinX - XP2
 .InvHzCalcDX:
             MOV         ECX,EBP
 .PsInfMinX:
             MOV         EBP,[PutSurfMaxY]
-            CMP         EBX,EBP ; cmp maxy, _MaxY
-            JLE         .PsSupMaxY   ; YP2>_MaxY
+            CMP         EBX,EBP ; cmp maxy, MaxY
+            JLE         .PsSupMaxY   ; YP2>MaxY
             MOV         EDI,EBP
             NEG         EDI
             ;MOV        [YP2],EBP
@@ -326,17 +326,17 @@ _PutSurf16:
             MOV         EBX,EBP
 .PsSupMaxY:
             MOV         EBP,[PutSurfMinY]
-            CMP         EDX,EBP      ; YP1<_MinY
+            CMP         EDX,EBP      ; YP1<MinY
             JGE         .PsInfMinY
             MOV         EDX,EBP
 .PsInfMinY:
             MOV         EBP,[PutSurfMaxX]
-            CMP         EAX,EBP      ; XP2>_MaxX
+            CMP         EAX,EBP      ; XP2>MaxX
             JLE         .PsSupMaxX
             TEST         BYTE [PType],1
             JZ          .PsInvHzCalcDX
             MOV         ESI,EAX
-            SUB         ESI,EBP ; ESI = XP2 - _MaxX
+            SUB         ESI,EBP ; ESI = XP2 - MaxX
 .PsInvHzCalcDX:
             MOV         EAX,EBP
 .PsSupMaxX:
@@ -348,9 +348,9 @@ _PutSurf16:
             MOV         EBP,EBX
             SUB         EBP,EDX      ; YP2 - YP1
             INC         EBP   ; EBP = DeltaY
-            MOV         EDX,[_ScanLine]
+            MOV         EDX,[ScanLine]
             MOVD        xmm0,EAX ; = DeltaX
-            SUB         EDX,EAX ; EDX = _ResH-DeltaX, PlusDSurfS
+            SUB         EDX,EAX ; EDX = ResH-DeltaX, PlusDSurfS
             TEST        BYTE [PType],2 ; inv VT ?
             MOV         [Plus2],EDX
             JZ          .CNormAdSPut
@@ -374,10 +374,10 @@ _PutSurf16:
             MOV         ESI,EDI
 .CInvAdSPut:
             MOV         EDI,EBX ; putSurf MaxY
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             LEA         EDI,[EDI+ECX*2] ; + XP1*2 as 16bpp
             PSRLD       xmm0,1 ; (deltaX*2) / 2
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
 
             MOVD        EDX,xmm0  ; DeltaX
             TEST        BYTE [PType],1
@@ -404,7 +404,7 @@ _PutSurf16:
 ;*****************
 
 ALIGN 32
-_PutMaskSurf16:
+PutMaskSurf16:
     ARG MSSN16, 4, MXPSN16, 4, MYPSN16, 4, MPSType16, 4
 
             PUSH        ESI
@@ -412,7 +412,7 @@ _PutMaskSurf16:
             PUSH        EBX
 
             MOV         ESI,[EBP+MSSN16]
-            MOV         EDI,_SrcSurf
+            MOV         EDI,SrcSurf
 
             CopySurfDA  ; copy surf
 
@@ -445,27 +445,27 @@ _PutMaskSurf16:
             ADD         EBX,[SMaxY] ; EBX = PutMaxY
             ADD         EDX,[SMinY] ; EDX = PutMinY
 .InvVtPut:
-; InView inside (_MinX, MinY, MaxX, MaxY)
-            CMP         EAX,[_MinX]
+; InView inside (MinX, MinY, MaxX, MaxY)
+            CMP         EAX,[MinX]
             JL          .PasPutSurf
-            CMP         EBX,[_MinY]
+            CMP         EBX,[MinY]
             JL          .PasPutSurf
-            CMP         ECX,[_MaxX]
+            CMP         ECX,[MaxX]
             JG          .PasPutSurf
-            CMP         EDX,[_MaxY]
+            CMP         EDX,[MaxY]
             JG          .PasPutSurf
 
-            CMP         EAX,[_MaxX]
-            CMOVG       EAX,[_MaxX]
-            CMP         EBX,[_MaxY]
+            CMP         EAX,[MaxX]
+            CMOVG       EAX,[MaxX]
+            CMP         EBX,[MaxY]
             MOV         [PutSurfMaxX],EAX
-            CMOVG       EBX,[_MaxY]
-            CMP         ECX,[_MinX]
+            CMOVG       EBX,[MaxY]
+            CMP         ECX,[MinX]
             MOV         [PutSurfMaxY],EBX
-            CMOVL       ECX,[_MinX]
-            CMP         EDX,[_MinY]
+            CMOVL       ECX,[MinX]
+            CMP         EDX,[MinY]
             MOV         [PutSurfMinX],ECX
-            CMOVL       EDX,[_MinY]
+            CMOVL       EDX,[MinY]
             MOV         [PutSurfMinY],EDX
 ; --- compute Put coordinates of the entire Surf
 ; EAX: MaxX, EBX; MaxY, ECX: MinX, EDX: MnY
@@ -524,10 +524,10 @@ _PutMaskSurf16:
             MOV         ESI,[Srlfb] ; ESI : start copy adress
 .InvAdSPut:
             MOV         EDI,EBX ; PutMaxY or the top left corner
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             LEA         EDI,[EDI+ECX*2] ; += PutMinX*2 top left croner
-            MOV         EDX,[_ScanLine]
-            ADD         EDI,[_vlfb]
+            MOV         EDX,[ScanLine]
+            ADD         EDI,[vlfb]
             SUB         EDX,[SScanLine] ; EDX : dest adress plus
             MOV         [Plus2],EDX
 
@@ -770,19 +770,19 @@ _PutMaskSurf16:
             XOR         ESI,ESI   ; X deb Source
 
             MOV         EBP,[PutSurfMinX]
-            CMP         ECX,EBP ; CMP minx, _MinX
-            JGE         .PsInfMinX   ; XP1<_MinX
+            CMP         ECX,EBP ; CMP minx, MinX
+            JGE         .PsInfMinX   ; XP1<MinX
             TEST        BYTE [PType],1 ; INV HZ
             JNZ         .InvHzCalcDX
             MOV         ESI,EBP
-            ;MOV            [XP1],EBP    ; XP1 = _MinX
-            SUB         ESI,ECX ; ESI = _MinX - XP2
+            ;MOV            [XP1],EBP    ; XP1 = MinX
+            SUB         ESI,ECX ; ESI = MinX - XP2
 .InvHzCalcDX:
             MOV         ECX,EBP
 .PsInfMinX:
             MOV         EBP,[PutSurfMaxY]
-            CMP         EBX,EBP ; cmp maxy, _MaxY
-            JLE         .PsSupMaxY   ; YP2>_MaxY
+            CMP         EBX,EBP ; cmp maxy, MaxY
+            JLE         .PsSupMaxY   ; YP2>MaxY
             MOV         EDI,EBP
             NEG         EDI
             ;MOV        [YP2],EBP
@@ -790,17 +790,17 @@ _PutMaskSurf16:
             MOV         EBX,EBP
 .PsSupMaxY:
             MOV         EBP,[PutSurfMinY]
-            CMP         EDX,EBP      ; YP1<_MinY
+            CMP         EDX,EBP      ; YP1<MinY
             JGE         .PsInfMinY
             MOV         EDX,EBP
 .PsInfMinY:
             MOV         EBP,[PutSurfMaxX]
-            CMP         EAX,EBP      ; XP2>_MaxX
+            CMP         EAX,EBP      ; XP2>MaxX
             JLE         .PsSupMaxX
             TEST        BYTE [PType],1
             JZ          .PsInvHzCalcDX
             MOV         ESI,EAX
-            SUB         ESI,EBP ; ESI = XP2 - _MaxX
+            SUB         ESI,EBP ; ESI = XP2 - MaxX
 .PsInvHzCalcDX:
             MOV         EAX,EBP
 .PsSupMaxX:
@@ -812,9 +812,9 @@ _PutMaskSurf16:
             MOV         EBP,EBX
             SUB         EBP,EDX      ; YP2 - YP1
             INC         EBP   ; EBP = DeltaY
-            MOV         EDX,[_ScanLine]
+            MOV         EDX,[ScanLine]
             MOVD        xmm0,EAX ; = DeltaX
-            SUB         EDX,EAX ; EDX = _ResH-DeltaX, PlusDSurfS
+            SUB         EDX,EAX ; EDX = ResH-DeltaX, PlusDSurfS
             TEST        BYTE [PType],2 ; inv VT ?
             MOV         [Plus2],EDX
             JZ          .CNormAdSPut
@@ -838,10 +838,10 @@ _PutMaskSurf16:
             MOV         ESI,EDI
 .CInvAdSPut:
             MOV         EDI,EBX ; putSurf MaxY
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             LEA         EDI,[EDI+ECX*2] ; + XP1*2 as 16bpp
             PSRLD       xmm0,1 ; (deltaX*2) / 2
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
 
             MOVD        EDX,xmm0  ; DeltaX
             TEST        BYTE [PType],1
@@ -874,14 +874,14 @@ _SurfMaskCopy16:
 
             MOV         ESI,[EBP+PSrcSrfMaskB]
             MOV         EDI,[EBP+PDstSrfMaskB]
-            MOVD        xmm3,[ESI+_Mask-_CurSurf]
+            MOVD        xmm3,[ESI+Mask-CurSurf]
 
-            MOV         EBX,[ESI+_SizeSurf-_CurSurf]
+            MOV         EBX,[ESI+SizeSurf-CurSurf]
             PSHUFLW     xmm3,xmm3,0
-            MOV         EDI,[EDI+_rlfb-_CurSurf]
+            MOV         EDI,[EDI+rlfb-CurSurf]
             PUNPCKLQDQ  xmm3,xmm3
             SHR         EBX,1
-            MOV         ESI,[ESI+_rlfb-_CurSurf]
+            MOV         ESI,[ESI+rlfb-CurSurf]
             MOVD        EBP,xmm3
             XOR         ECX,ECX
 
@@ -992,14 +992,14 @@ _SurfMaskCopy16:
 ; Put a Surf blended with a color
 ; -------------------------------
 ALIGN 32
-_PutSurfBlnd16:
+PutSurfBlnd16:
   ARG SSBN16, 4, XPSBN16, 4, YPSBN16, 4, PSBType16, 4, PSBCol16, 4
             PUSH        ESI
             PUSH        EDI
             PUSH        EBX
 
             MOV         ESI,[EBP+SSBN16]
-            MOV         EDI,_SrcSurf
+            MOV         EDI,SrcSurf
 
             CopySurfDA  ; copy surf
 
@@ -1008,11 +1008,11 @@ _PutSurfBlnd16:
             MOV         EBX,EAX ;
             MOV         ECX,EAX ;
             MOV         EDX,EAX ;
-            AND         EBX,[_QBlue16Mask] ; EBX = Bclr16 | Bclr16
+            AND         EBX,[QBlue16Mask] ; EBX = Bclr16 | Bclr16
             SHR         EAX,24
-            AND         ECX,[_QGreen16Mask] ; ECX = Gclr16 | Gclr16
+            AND         ECX,[QGreen16Mask] ; ECX = Gclr16 | Gclr16
             AND         AL,BlendMask ; remove any ineeded bits
-            AND         EDX,[_QRed16Mask] ; EDX = Rclr16 | Rclr16
+            AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
             XOR         AL,BlendMask ; 31-blendsrc
             MOV         EDI,EAX
             XOR         AL,BlendMask ; 31-blendsrc
@@ -1060,27 +1060,27 @@ _PutSurfBlnd16:
             ADD         EBX,[SMaxY] ; EBX = PutMaxY
             ADD         EDX,[SMinY] ; EDX = PutMinY
 .InvVtPut:
-; InView inside (_MinX, MinY, MaxX, MaxY)
-            CMP         EAX,[_MinX]
+; InView inside (MinX, MinY, MaxX, MaxY)
+            CMP         EAX,[MinX]
             JL          .PasPutSurf
-            CMP         EBX,[_MinY]
+            CMP         EBX,[MinY]
             JL          .PasPutSurf
-            CMP         ECX,[_MaxX]
+            CMP         ECX,[MaxX]
             JG          .PasPutSurf
-            CMP         EDX,[_MaxY]
+            CMP         EDX,[MaxY]
             JG          .PasPutSurf
 
-            CMP         EAX,[_MaxX]
-            CMOVG       EAX,[_MaxX]
-            CMP         EBX,[_MaxY]
+            CMP         EAX,[MaxX]
+            CMOVG       EAX,[MaxX]
+            CMP         EBX,[MaxY]
             MOV         [PutSurfMaxX],EAX ;-
-            CMOVG       EBX,[_MaxY]
-            CMP         ECX,[_MinX]
+            CMOVG       EBX,[MaxY]
+            CMP         ECX,[MinX]
             MOV         [PutSurfMaxY],EBX ;-
-            CMOVL       ECX,[_MinX]
-            CMP         EDX,[_MinY]
+            CMOVL       ECX,[MinX]
+            CMP         EDX,[MinY]
             MOV         [PutSurfMinX],ECX ;-
-            CMOVL       EDX,[_MinY]
+            CMOVL       EDX,[MinY]
             MOV         [PutSurfMinY],EDX ;-
 ; --- compute Put coordinates of the entire Surf
 ; EAX: MaxX, EBX; MaxY, ECX: MinX, EDX: MnY
@@ -1141,10 +1141,10 @@ _PutSurfBlnd16:
             MOV         ESI,[Srlfb] ; ESI : start copy adress
 .InvAdSPut:
             MOV         EDI,EBX ; PutMaxY or the top left corner
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             LEA         EDI,[EDI+ECX*2] ; += PutMinX*2 top left croner
-            MOV         EDX,[_ScanLine]
-            ADD         EDI,[_vlfb]
+            MOV         EDX,[ScanLine]
+            ADD         EDI,[vlfb]
             SUB         EDX,[SScanLine] ; EDX : dest adress plus
             MOV         [Plus2],EDX
 
@@ -1330,19 +1330,19 @@ _PutSurfBlnd16:
             XOR         ESI,ESI   ; X deb Source
 
             MOV         EBP,[PutSurfMinX]
-            CMP         ECX,EBP ; CMP minx, _MinX
-            JGE         .PsInfMinX   ; XP1<_MinX
+            CMP         ECX,EBP ; CMP minx, MinX
+            JGE         .PsInfMinX   ; XP1<MinX
             TEST        BYTE [PType],1 ; INV HZ
             JNZ         .InvHzCalcDX
             MOV         ESI,EBP
-            ;MOV        [XP1],EBP    ; XP1 = _MinX
-            SUB         ESI,ECX ; ESI = _MinX - XP2
+            ;MOV        [XP1],EBP    ; XP1 = MinX
+            SUB         ESI,ECX ; ESI = MinX - XP2
 .InvHzCalcDX:
             MOV         ECX,EBP
 .PsInfMinX:
             MOV         EBP,[PutSurfMaxY]
-            CMP         EBX,EBP ; cmp maxy, _MaxY
-            JLE         .PsSupMaxY   ; YP2>_MaxY
+            CMP         EBX,EBP ; cmp maxy, MaxY
+            JLE         .PsSupMaxY   ; YP2>MaxY
             MOV         EDI,EBP
             NEG         EDI
             ;MOV        [YP2],EBP
@@ -1350,17 +1350,17 @@ _PutSurfBlnd16:
             MOV         EBX,EBP
 .PsSupMaxY:
             MOV         EBP,[PutSurfMinY]
-            CMP         EDX,EBP      ; YP1<_MinY
+            CMP         EDX,EBP      ; YP1<MinY
             JGE         .PsInfMinY
             MOV         EDX,EBP
 .PsInfMinY:
             MOV         EBP,[PutSurfMaxX]
-            CMP         EAX,EBP      ; XP2>_MaxX
+            CMP         EAX,EBP      ; XP2>MaxX
             JLE         .PsSupMaxX
             TEST        BYTE [PType],1
             JZ          .PsInvHzCalcDX
             MOV         ESI,EAX
-            SUB         ESI,EBP ; ESI = XP2 - _MaxX
+            SUB         ESI,EBP ; ESI = XP2 - MaxX
 .PsInvHzCalcDX:
             MOV         EAX,EBP
 .PsSupMaxX:
@@ -1372,9 +1372,9 @@ _PutSurfBlnd16:
             MOV         EBP,EBX
             SUB         EBP,EDX      ; YP2 - YP1
             INC         EBP   ; EBP = DeltaY
-            MOV         EDX,[_ScanLine]
+            MOV         EDX,[ScanLine]
             MOVD        xmm0,EAX ; = DeltaX
-            SUB         EDX,EAX ; EDX = _ResH-DeltaX, PlusDSurfS
+            SUB         EDX,EAX ; EDX = ResH-DeltaX, PlusDSurfS
             TEST        BYTE [PType],2 ; inv VT ?
             MOV         [Plus2],EDX
             JZ          .CNormAdSPut
@@ -1398,10 +1398,10 @@ _PutSurfBlnd16:
             MOV         ESI,EDI
 .CInvAdSPut:
             MOV         EDI,EBX ; putSurf MaxY
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             LEA         EDI,[EDI+ECX*2] ; + XP1*2 as 16bpp
             PSRLD       xmm0,1 ; (deltaX*2) / 2
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
 
             MOVD        EDX,xmm0  ; DeltaX
             TEST        BYTE [PType],1
@@ -1437,11 +1437,11 @@ _SurfCopyBlnd16:
             MOV         EBX,EAX ;
             MOV         ECX,EAX ;
             MOV         EDX,EAX ;
-            AND         EBX,[_QBlue16Mask] ; EBX = Bclr16 | Bclr16
+            AND         EBX,[QBlue16Mask] ; EBX = Bclr16 | Bclr16
             SHR         EAX,24
-            AND         ECX,[_QGreen16Mask] ; ECX = Gclr16 | Gclr16
+            AND         ECX,[QGreen16Mask] ; ECX = Gclr16 | Gclr16
             AND         AL,BlendMask ; remove any ineeded bits
-            AND         EDX,[_QRed16Mask] ; EDX = Rclr16 | Rclr16
+            AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
             XOR         AL,BlendMask ; 31-blendsrc
             MOV         EDI,EAX
             XOR         AL,BlendMask ; 31-blendsrc
@@ -1465,11 +1465,11 @@ _SurfCopyBlnd16:
 
             MOV         ESI,[EBP+PSrcSrfB]
             MOV         EDI,[EBP+PDstSrfB]
-            MOV         EBX,[ESI+_SizeSurf-_CurSurf]
+            MOV         EBX,[ESI+SizeSurf-CurSurf]
 
-            MOV         EDI,[EDI+_rlfb-_CurSurf]
+            MOV         EDI,[EDI+rlfb-CurSurf]
             SHR         EBX,1
-            MOV         ESI,[ESI+_rlfb-_CurSurf]
+            MOV         ESI,[ESI+rlfb-CurSurf]
             XOR         ECX,ECX
 
 .BcStBAv:
@@ -1551,14 +1551,14 @@ _SurfCopyBlnd16:
 ; Put a MASKED Surf blended with a color
 ; =======================================
 ALIGN 32
-_PutMaskSurfBlnd16:
+PutMaskSurfBlnd16:
   ARG MSSBN16, 4, MXPSBN16, 4, MYPSBN16, 4, MPSBType16, 4, MPSBCol16, 4
             PUSH        EBX
             PUSH        EDI
             PUSH        ESI
 
             MOV         ESI,[EBP+MSSBN16]
-            MOV         EDI,_SrcSurf
+            MOV         EDI,SrcSurf
 
             CopySurfDA  ; copy surf
 
@@ -1567,11 +1567,11 @@ _PutMaskSurfBlnd16:
             MOV         EBX,EAX ;
             MOV         ECX,EAX ;
             MOV         EDX,EAX ;
-            AND         EBX,[_QBlue16Mask] ; EBX = Bclr16 | Bclr16
+            AND         EBX,[QBlue16Mask] ; EBX = Bclr16 | Bclr16
             SHR         EAX,24
-            AND         ECX,[_QGreen16Mask] ; ECX = Gclr16 | Gclr16
+            AND         ECX,[QGreen16Mask] ; ECX = Gclr16 | Gclr16
             AND         AL,BlendMask ; remove any ineeded bits
-            AND         EDX,[_QRed16Mask] ; EDX = Rclr16 | Rclr16
+            AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
             XOR         AL,BlendMask ; 31-blendsrc
             MOV         EDI,EAX
             XOR         AL,BlendMask ; 31-blendsrc
@@ -1625,27 +1625,27 @@ _PutMaskSurfBlnd16:
             ADD         EBX,[SMaxY] ; EBX = PutMaxY
             ADD         EDX,[SMinY] ; EDX = PutMinY
 .InvVtPut:
-; InView inside (_MinX, MinY, MaxX, MaxY)
-            CMP         EAX,[_MinX]
+; InView inside (MinX, MinY, MaxX, MaxY)
+            CMP         EAX,[MinX]
             JL          .PasPutSurf
-            CMP         EBX,[_MinY]
+            CMP         EBX,[MinY]
             JL          .PasPutSurf
-            CMP         ECX,[_MaxX]
+            CMP         ECX,[MaxX]
             JG          .PasPutSurf
-            CMP         EDX,[_MaxY]
+            CMP         EDX,[MaxY]
             JG          .PasPutSurf
 
-            CMP         EAX,[_MaxX]
-            CMOVG       EAX,[_MaxX]
-            CMP         EBX,[_MaxY]
+            CMP         EAX,[MaxX]
+            CMOVG       EAX,[MaxX]
+            CMP         EBX,[MaxY]
             MOV         [PutSurfMaxX],EAX
-            CMOVG       EBX,[_MaxY]
-            CMP         ECX,[_MinX]
+            CMOVG       EBX,[MaxY]
+            CMP         ECX,[MinX]
             MOV         [PutSurfMaxY],EBX
-            CMOVL       ECX,[_MinX]
-            CMP         EDX,[_MinY]
+            CMOVL       ECX,[MinX]
+            CMP         EDX,[MinY]
             MOV         [PutSurfMinX],ECX
-            CMOVL       EDX,[_MinY]
+            CMOVL       EDX,[MinY]
             MOV         [PutSurfMinY],EDX
 ; --- compute Put coordinates of the entire Surf
 ; EAX: MaxX, EBX; MaxY, ECX: MinX, EDX: MnY
@@ -1706,10 +1706,10 @@ _PutMaskSurfBlnd16:
             MOV         ESI,[Srlfb] ; ESI : start copy adress
 .InvAdSPut:
             MOV         EDI,EBX ; PutMaxY or the top left corner
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             LEA         EDI,[EDI+ECX*2] ; += PutMinX*2 top left croner
-            MOV         EDX,[_ScanLine]
-            ADD         EDI,[_vlfb]
+            MOV         EDX,[ScanLine]
+            ADD         EDI,[vlfb]
             SUB         EDX,[SScanLine] ; EDX : dest adress plus
             MOV         [Plus2],EDX
 
@@ -1980,19 +1980,19 @@ _PutMaskSurfBlnd16:
             XOR         ESI,ESI   ; X deb Source
 
             MOV         EBP,[PutSurfMinX]
-            CMP         ECX,EBP ; CMP minx, _MinX
-            JGE         .PsInfMinX   ; XP1<_MinX
+            CMP         ECX,EBP ; CMP minx, MinX
+            JGE         .PsInfMinX   ; XP1<MinX
             TEST        BYTE [PType],1 ; INV HZ
             JNZ         .InvHzCalcDX
             MOV         ESI,EBP
-            ;MOV        [XP1],EBP    ; XP1 = _MinX
-            SUB         ESI,ECX ; ESI = _MinX - XP2
+            ;MOV        [XP1],EBP    ; XP1 = MinX
+            SUB         ESI,ECX ; ESI = MinX - XP2
 .InvHzCalcDX:
             MOV         ECX,EBP
 .PsInfMinX:
             MOV         EBP,[PutSurfMaxY]
-            CMP         EBX,EBP ; cmp maxy, _MaxY
-            JLE         .PsSupMaxY   ; YP2>_MaxY
+            CMP         EBX,EBP ; cmp maxy, MaxY
+            JLE         .PsSupMaxY   ; YP2>MaxY
             MOV         EDI,EBP
             NEG         EDI
             ;MOV    [YP2],EBP
@@ -2000,17 +2000,17 @@ _PutMaskSurfBlnd16:
             MOV         EBX,EBP
 .PsSupMaxY:
             MOV         EBP,[PutSurfMinY]
-            CMP         EDX,EBP      ; YP1<_MinY
+            CMP         EDX,EBP      ; YP1<MinY
             JGE         .PsInfMinY
             MOV         EDX,EBP
 .PsInfMinY:
             MOV         EBP,[PutSurfMaxX]
-            CMP         EAX,EBP      ; XP2>_MaxX
+            CMP         EAX,EBP      ; XP2>MaxX
             JLE         .PsSupMaxX
             TEST        BYTE [PType],1
             JZ          .PsInvHzCalcDX
             MOV         ESI,EAX
-            SUB         ESI,EBP ; ESI = XP2 - _MaxX
+            SUB         ESI,EBP ; ESI = XP2 - MaxX
 .PsInvHzCalcDX:
             MOV         EAX,EBP
 .PsSupMaxX:
@@ -2022,9 +2022,9 @@ _PutMaskSurfBlnd16:
             MOV         EBP,EBX
             SUB         EBP,EDX      ; YP2 - YP1
             INC         EBP   ; EBP = DeltaY
-            MOV         EDX,[_ScanLine]
+            MOV         EDX,[ScanLine]
             MOVD        xmm0,EAX ; = DeltaX
-            SUB         EDX,EAX ; EDX = _ResH-DeltaX, PlusDSurfS
+            SUB         EDX,EAX ; EDX = ResH-DeltaX, PlusDSurfS
             TEST        BYTE [PType],2 ; inv VT ?
             MOV         [Plus2],EDX
             JZ          .CNormAdSPut
@@ -2048,10 +2048,10 @@ _PutMaskSurfBlnd16:
             MOV         ESI,EDI
 .CInvAdSPut:
             MOV         EDI,EBX ; putSurf MaxY
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             LEA         EDI,[EDI+ECX*2] ; + XP1*2 as 16bpp
             PSRLD       xmm0,1 ; (deltaX*2) / 2
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
 
             MOVD        EDX,xmm0  ; DeltaX
             TEST        BYTE [PType],1
@@ -2085,11 +2085,11 @@ _SurfMaskCopyBlnd16:
             MOV         EBX,EAX ;
             MOV         ECX,EAX ;
             MOV         EDX,EAX ;
-            AND         EBX,[_QBlue16Mask] ; EBX = Bclr16 | Bclr16
+            AND         EBX,[QBlue16Mask] ; EBX = Bclr16 | Bclr16
             SHR         EAX,24
-            AND         ECX,[_QGreen16Mask] ; ECX = Gclr16 | Gclr16
+            AND         ECX,[QGreen16Mask] ; ECX = Gclr16 | Gclr16
             AND         AL,BlendMask ; remove any ineeded bits
-            AND         EDX,[_QRed16Mask] ; EDX = Rclr16 | Rclr16
+            AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
             XOR         AL,BlendMask ; 31-blendsrc
             MOV         EDI,EAX
             XOR         AL,BlendMask ; 31-blendsrc
@@ -2101,7 +2101,7 @@ _SurfMaskCopyBlnd16:
             IMUL        BX,AX
             IMUL        CX,AX
             IMUL        DX,AX
-            MOVD        xmm0,[ESI+_Mask-_CurSurf]
+            MOVD        xmm0,[ESI+Mask-CurSurf]
             MOVD        xmm3,EBX
             MOVD        xmm4,ECX
             MOVD        xmm5,EDX
@@ -2118,12 +2118,12 @@ _SurfMaskCopyBlnd16:
             PUNPCKLQDQ  xmm7,xmm7
             MOVDQA      [DQ16Mask],xmm0
 
-            MOV         EBX,[ESI+_SizeSurf-_CurSurf]
+            MOV         EBX,[ESI+SizeSurf-CurSurf]
             MOVD        EBP,xmm0
 
-            MOV         EDI,[EDI+_rlfb-_CurSurf]
+            MOV         EDI,[EDI+rlfb-CurSurf]
             SHR         EBX,1
-            MOV         ESI,[ESI+_rlfb-_CurSurf]
+            MOV         ESI,[ESI+rlfb-CurSurf]
             XOR         ECX,ECX
 
 .BcStBAv:
@@ -2243,12 +2243,12 @@ _SurfMaskCopyBlnd16:
 ; Put a Transparent Surf
 ; -------------------------------
 %macro  @TransBlndQ 0
-            PAND        xmm0,[_QBlue16Mask]
-            PAND        xmm3,[_QBlue16Mask]
-            PAND        xmm1,[_QGreen16Mask]
-            PAND        xmm4,[_QGreen16Mask]
-            PAND        xmm2,[_QRed16Mask]
-            PAND        xmm5,[_QRed16Mask]
+            PAND        xmm0,[QBlue16Mask]
+            PAND        xmm3,[QBlue16Mask]
+            PAND        xmm1,[QGreen16Mask]
+            PAND        xmm4,[QGreen16Mask]
+            PAND        xmm2,[QRed16Mask]
+            PAND        xmm5,[QRed16Mask]
             PMULLW      xmm0,xmm7 ; [blend_src]
             PMULLW      xmm3,xmm6 ; [blend_dst]
             PSRLW       xmm2,5
@@ -2263,22 +2263,22 @@ _SurfMaskCopyBlnd16:
             PADDW       xmm2,xmm5
             PSRLW       xmm0,5
             PSRLW       xmm1,5
-            PAND        xmm2,[_QRed16Mask]
+            PAND        xmm2,[QRed16Mask]
             ;PAND       mm0,[QBlue16Mask]
-            PAND        xmm1,[_QGreen16Mask]
+            PAND        xmm1,[QGreen16Mask]
             POR         xmm0,xmm2
             POR         xmm0,xmm1
 %endmacro
 
 ALIGN 32
-_PutSurfTrans16:
+PutSurfTrans16:
     ARG SSTN16, 4, XPSTN16, 4, YPSTN16, 4, PSTType16, 4, PSTrans16, 4
             PUSH        EBX
             PUSH        EDI
             PUSH        ESI
 
             MOV         ESI,[EBP+SSTN16]
-            MOV         EDI,_SrcSurf
+            MOV         EDI,SrcSurf
 
             CopySurfDA  ; copy surf
 
@@ -2323,27 +2323,27 @@ _PutSurfTrans16:
             ADD         EBX,[SMaxY] ; EBX = PutMaxY
             ADD         EDX,[SMinY] ; EDX = PutMinY
 .InvVtPut:
-; InView inside (_MinX, MinY, MaxX, MaxY)
-            CMP         EAX,[_MinX]
+; InView inside (MinX, MinY, MaxX, MaxY)
+            CMP         EAX,[MinX]
             JL          .PasPutSurf
-            CMP         EBX,[_MinY]
+            CMP         EBX,[MinY]
             JL          .PasPutSurf
-            CMP         ECX,[_MaxX]
+            CMP         ECX,[MaxX]
             JG          .PasPutSurf
-            CMP         EDX,[_MaxY]
+            CMP         EDX,[MaxY]
             JG          .PasPutSurf
 
-            CMP         EAX,[_MaxX]
-            CMOVG       EAX,[_MaxX]
-            CMP         EBX,[_MaxY]
+            CMP         EAX,[MaxX]
+            CMOVG       EAX,[MaxX]
+            CMP         EBX,[MaxY]
             MOV         [PutSurfMaxX],EAX ;-
-            CMOVG       EBX,[_MaxY]
-            CMP         ECX,[_MinX]
+            CMOVG       EBX,[MaxY]
+            CMP         ECX,[MinX]
             MOV         [PutSurfMaxY],EBX ;-
-            CMOVL       ECX,[_MinX]
-            CMP         EDX,[_MinY]
+            CMOVL       ECX,[MinX]
+            CMP         EDX,[MinY]
             MOV         [PutSurfMinX],ECX ;-
-            CMOVL       EDX,[_MinY]
+            CMOVL       EDX,[MinY]
             MOV         [PutSurfMinY],EDX ;-
 ; --- compute Put coordinates of the entire Surf
 ; EAX: MaxX, EBX; MaxY, ECX: MinX, EDX: MnY
@@ -2403,10 +2403,10 @@ _PutSurfTrans16:
             MOV         ESI,[Srlfb] ; ESI : start copy adress
 .InvAdSPut:
             MOV         EDI,EBX ; PutMaxY or the top left corner
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             LEA         EDI,[EDI+ECX*2] ; += PutMinX*2 top left croner
-            MOV         EDX,[_ScanLine]
-            ADD         EDI,[_vlfb]
+            MOV         EDX,[ScanLine]
+            ADD         EDI,[vlfb]
             SUB         EDX,[SScanLine] ; EDX : dest adress plus
             MOV         [Plus2],EDX
 
@@ -2625,19 +2625,19 @@ _PutSurfTrans16:
             XOR         ESI,ESI   ; X deb Source
 
             MOV         EBP,[PutSurfMinX]
-            CMP         ECX,EBP ; CMP minx, _MinX
-            JGE         .PsInfMinX   ; XP1<_MinX
+            CMP         ECX,EBP ; CMP minx, MinX
+            JGE         .PsInfMinX   ; XP1<MinX
             TEST        BYTE [PType],1 ; INV HZ
             JNZ         .InvHzCalcDX
             MOV         ESI,EBP
-            ;MOV        [XP1],EBP    ; XP1 = _MinX
-            SUB         ESI,ECX ; ESI = _MinX - XP2
+            ;MOV        [XP1],EBP    ; XP1 = MinX
+            SUB         ESI,ECX ; ESI = MinX - XP2
 .InvHzCalcDX:
             MOV         ECX,EBP
 .PsInfMinX:
             MOV         EBP,[PutSurfMaxY]
-            CMP         EBX,EBP ; cmp maxy, _MaxY
-            JLE         .PsSupMaxY   ; YP2>_MaxY
+            CMP         EBX,EBP ; cmp maxy, MaxY
+            JLE         .PsSupMaxY   ; YP2>MaxY
             MOV         EDI,EBP
             NEG         EDI
             ;MOV    [YP2],EBP
@@ -2645,17 +2645,17 @@ _PutSurfTrans16:
             MOV         EBX,EBP
 .PsSupMaxY:
             MOV         EBP,[PutSurfMinY]
-            CMP         EDX,EBP      ; YP1<_MinY
+            CMP         EDX,EBP      ; YP1<MinY
             JGE         .PsInfMinY
             MOV         EDX,EBP
 .PsInfMinY:
             MOV         EBP,[PutSurfMaxX]
-            CMP         EAX,EBP      ; XP2>_MaxX
+            CMP         EAX,EBP      ; XP2>MaxX
             JLE         .PsSupMaxX
             TEST        BYTE [PType],1
             JZ          .PsInvHzCalcDX
             MOV         ESI,EAX
-            SUB         ESI,EBP ; ESI = XP2 - _MaxX
+            SUB         ESI,EBP ; ESI = XP2 - MaxX
 .PsInvHzCalcDX:
             MOV         EAX,EBP
 .PsSupMaxX:
@@ -2667,9 +2667,9 @@ _PutSurfTrans16:
             MOV         EBP,EBX
             SUB         EBP,EDX      ; YP2 - YP1
             INC         EBP   ; EBP = DeltaY
-            MOV         EDX,[_ScanLine]
+            MOV         EDX,[ScanLine]
             MOVD        xmm0,EAX ; = DeltaX
-            SUB         EDX,EAX ; EDX = _ResH-DeltaX, PlusDSurfS
+            SUB         EDX,EAX ; EDX = ResH-DeltaX, PlusDSurfS
             TEST        BYTE [PType],2 ; inv VT ?
             MOV         [Plus2],EDX
             JZ          .CNormAdSPut
@@ -2693,10 +2693,10 @@ _PutSurfTrans16:
             MOV         ESI,EDI
 .CInvAdSPut:
             MOV         EDI,EBX ; putSurf MaxY
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             LEA         EDI,[EDI+ECX*2] ; + XP1*2 as 16bpp
             PSRLD       xmm0,1 ; (deltaX*2) / 2
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
 
             MOVD        EDX,xmm0  ; DeltaX
             TEST        BYTE [PType],1
@@ -2743,11 +2743,11 @@ _SurfCopyTrans16:
 
             MOV         ESI,[EBP+PSrcSrfT]
             MOV         EDI,[EBP+PDstSrfT]
-            MOV         EBX,[ESI+_SizeSurf-_CurSurf]
+            MOV         EBX,[ESI+SizeSurf-CurSurf]
 
-            MOV         EDI,[EDI+_rlfb-_CurSurf]
+            MOV         EDI,[EDI+rlfb-CurSurf]
             SHR         EBX,1
-            MOV         ESI,[ESI+_rlfb-_CurSurf]
+            MOV         ESI,[ESI+rlfb-CurSurf]
             XOR         ECX,ECX
 
 .BcStBAv:
@@ -2851,14 +2851,14 @@ _SurfCopyTrans16:
 
 ALIGN 32
 
-_PutMaskSurfTrans16:
+PutMaskSurfTrans16:
     ARG SMSTN16, 4, XPMSTN16, 4, YPMSTN16, 4, PMSTType16, 4, PMSTrans16, 4
             PUSH        ESI
             PUSH        EDI
             PUSH        EBX
 
             MOV         ESI,[EBP+SMSTN16]
-            MOV         EDI,_SrcSurf
+            MOV         EDI,SrcSurf
 
             CopySurfDA  ; copy surf
 
@@ -2906,27 +2906,27 @@ _PutMaskSurfTrans16:
             ADD         EBX,[SMaxY] ; EBX = PutMaxY
             ADD         EDX,[SMinY] ; EDX = PutMinY
 .InvVtPut:
-; InView inside (_MinX, MinY, MaxX, MaxY)
-            CMP         EAX,[_MinX]
+; InView inside (MinX, MinY, MaxX, MaxY)
+            CMP         EAX,[MinX]
             JL          .PasPutSurf
-            CMP         EBX,[_MinY]
+            CMP         EBX,[MinY]
             JL          .PasPutSurf
-            CMP         ECX,[_MaxX]
+            CMP         ECX,[MaxX]
             JG          .PasPutSurf
-            CMP         EDX,[_MaxY]
+            CMP         EDX,[MaxY]
             JG          .PasPutSurf
 
-            CMP         EAX,[_MaxX]
-            CMOVG       EAX,[_MaxX]
-            CMP         EBX,[_MaxY]
+            CMP         EAX,[MaxX]
+            CMOVG       EAX,[MaxX]
+            CMP         EBX,[MaxY]
             MOV         [PutSurfMaxX],EAX
-            CMOVG       EBX,[_MaxY]
-            CMP         ECX,[_MinX]
+            CMOVG       EBX,[MaxY]
+            CMP         ECX,[MinX]
             MOV         [PutSurfMaxY],EBX
-            CMOVL       ECX,[_MinX]
-            CMP         EDX,[_MinY]
+            CMOVL       ECX,[MinX]
+            CMP         EDX,[MinY]
             MOV         [PutSurfMinX],ECX
-            CMOVL       EDX,[_MinY]
+            CMOVL       EDX,[MinY]
             MOV         [PutSurfMinY],EDX
 ; --- compute Put coordinates of the entire Surf
 ; EAX: MaxX, EBX; MaxY, ECX: MinX, EDX: MnY
@@ -2986,10 +2986,10 @@ _PutMaskSurfTrans16:
             MOV         ESI,[Srlfb] ; ESI : start copy adress
 .InvAdSPut:
             MOV         EDI,EBX ; PutMaxY or the top left corner
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             LEA         EDI,[EDI+ECX*2] ; += PutMinX*2 top left croner
-            MOV         EDX,[_ScanLine]
-            ADD         EDI,[_vlfb]
+            MOV         EDX,[ScanLine]
+            ADD         EDI,[vlfb]
             SUB         EDX,[SScanLine] ; EDX : dest adress plus
             MOV         [Plus2],EDX
 
@@ -3300,19 +3300,19 @@ _PutMaskSurfTrans16:
             XOR         ESI,ESI   ; X deb Source
 
             MOV         EBP,[PutSurfMinX]
-            CMP         ECX,EBP ; CMP minx, _MinX
-            JGE         .PsInfMinX   ; XP1<_MinX
+            CMP         ECX,EBP ; CMP minx, MinX
+            JGE         .PsInfMinX   ; XP1<MinX
             TEST        BYTE [PType],1 ; INV HZ
             JNZ         .InvHzCalcDX
             MOV         ESI,EBP
-            ;MOV        [XP1],EBP    ; XP1 = _MinX
-            SUB         ESI,ECX ; ESI = _MinX - XP2
+            ;MOV        [XP1],EBP    ; XP1 = MinX
+            SUB         ESI,ECX ; ESI = MinX - XP2
 .InvHzCalcDX:
             MOV         ECX,EBP
 .PsInfMinX:
             MOV         EBP,[PutSurfMaxY]
-            CMP         EBX,EBP ; cmp maxy, _MaxY
-            JLE         .PsSupMaxY   ; YP2>_MaxY
+            CMP         EBX,EBP ; cmp maxy, MaxY
+            JLE         .PsSupMaxY   ; YP2>MaxY
             MOV         EDI,EBP
             NEG         EDI
             ;MOV        [YP2],EBP
@@ -3320,17 +3320,17 @@ _PutMaskSurfTrans16:
             MOV         EBX,EBP
 .PsSupMaxY:
             MOV         EBP,[PutSurfMinY]
-            CMP         EDX,EBP      ; YP1<_MinY
+            CMP         EDX,EBP      ; YP1<MinY
             JGE         .PsInfMinY
             MOV         EDX,EBP
 .PsInfMinY:
             MOV         EBP,[PutSurfMaxX]
-            CMP         EAX,EBP      ; XP2>_MaxX
+            CMP         EAX,EBP      ; XP2>MaxX
             JLE         .PsSupMaxX
             TEST        BYTE [PType],1
             JZ          .PsInvHzCalcDX
             MOV         ESI,EAX
-            SUB         ESI,EBP ; ESI = XP2 - _MaxX
+            SUB         ESI,EBP ; ESI = XP2 - MaxX
 .PsInvHzCalcDX:
             MOV         EAX,EBP
 .PsSupMaxX:
@@ -3342,9 +3342,9 @@ _PutMaskSurfTrans16:
             MOV         EBP,EBX
             SUB         EBP,EDX      ; YP2 - YP1
             INC         EBP   ; EBP = DeltaY
-            MOV         EDX,[_ScanLine]
+            MOV         EDX,[ScanLine]
             MOVD        xmm0,EAX ; = DeltaX
-            SUB         EDX,EAX ; EDX = _ResH-DeltaX, PlusDSurfS
+            SUB         EDX,EAX ; EDX = ResH-DeltaX, PlusDSurfS
             TEST        BYTE [PType],2 ; inv VT ?
             MOV         [Plus2],EDX
             JZ          .CNormAdSPut
@@ -3368,10 +3368,10 @@ _PutMaskSurfTrans16:
             MOV         ESI,EDI
 .CInvAdSPut:
             MOV         EDI,EBX ; putSurf MaxY
-            IMUL        EDI,[_NegScanLine]
+            IMUL        EDI,[NegScanLine]
             LEA         EDI,[EDI+ECX*2] ; + XP1*2 as 16bpp
             PSRLD       xmm0,1 ; (deltaX*2) / 2
-            ADD         EDI,[_vlfb]
+            ADD         EDI,[vlfb]
 
             MOVD        EDX,xmm0  ; DeltaX
             TEST        BYTE [PType],1
@@ -3414,7 +3414,7 @@ _SurfMaskCopyTrans16:
             MOVD        xmm6,EDX
             MOV         ESI,[EBP+PSrcSrfMT]
             MOV         EDI,[EBP+PDstSrfMT]
-            MOVD        xmm0,[ESI+_Mask-_CurSurf]
+            MOVD        xmm0,[ESI+Mask-CurSurf]
             PSHUFLW     xmm7,xmm7,0
             PSHUFLW     xmm6,xmm6,0
             PSHUFLW     xmm0,xmm0,0
@@ -3422,13 +3422,13 @@ _SurfMaskCopyTrans16:
             PUNPCKLQDQ  xmm6,xmm6
             PUNPCKLQDQ  xmm0,xmm0
 
-            MOV         EBX,[ESI+_SizeSurf-_CurSurf]
+            MOV         EBX,[ESI+SizeSurf-CurSurf]
             MOVD        EBP,xmm0
             MOVDQA      [DQ16Mask],xmm0
 
-            MOV         EDI,[EDI+_rlfb-_CurSurf]
+            MOV         EDI,[EDI+rlfb-CurSurf]
             SHR         EBX,1
-            MOV         ESI,[ESI+_rlfb-_CurSurf]
+            MOV         ESI,[ESI+rlfb-CurSurf]
             XOR         ECX,ECX
 .BcStBAv:
             TEST        EDI,6   ; dword aligned ?
