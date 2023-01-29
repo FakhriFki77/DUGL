@@ -37,7 +37,7 @@ int  LoadBMP(DgSurf **S,const char *filename,void *PalBGR1024) {
     InfoBMP ibmp;
     char *Linedata;
 
-    if (fopen_s(&InBMP, filename,"rb") != 0) return 0;
+    if ((InBMP = fopen(filename,"rb")) == NULL) return 0;
 
     SDL_memset(&hbmp, 0, sizeof(HeadBMP));
     SDL_memset(&ibmp, 0, sizeof(InfoBMP));
@@ -151,7 +151,7 @@ int  LoadBMP16(DgSurf **S, char *filename) {
     unsigned char *tempLine;
 
 
-    if (fopen_s(&InBMP, filename,"rb") != 0) return 0;
+    if ((InBMP = fopen(filename,"rb")) == NULL) return 0;
 
     SDL_memset(&hbmp, 0, sizeof(HeadBMP));
     SDL_memset(&ibmp, 0, sizeof(InfoBMP));
@@ -269,7 +269,7 @@ int  SaveBMP16(DgSurf *S, char *filename) {
     unsigned char *tempLine;
     if ((sizeBMPFile=SizeSaveBMP16(S))==0) return 0;
 
-    if (fopen_s(&OutBMP, filename,"wb") != 0) return 0;
+    if ((OutBMP = fopen( filename,"wb")) == NULL) return 0;
 
     SDL_memset(&hbmp, 0, sizeof(HeadBMP));
     SDL_memset(&ibmp, 0, sizeof(InfoBMP));
@@ -375,7 +375,7 @@ int  LoadPCX(DgSurf **S, char *Fname,void *PalBGR1024) {
     char PalRGB[768];
     int FinIn,ResHz,ResVt,i;
 
-    if (fopen_s(&InPCX, Fname,"rb") != 0) return 0;
+    if ((InPCX = fopen(Fname,"rb")) == NULL) return 0;
     fread(&hpcx,sizeof(HeadPCX),1,InPCX);
     if (hpcx.Sign!=0xa || hpcx.Ver<5 || hpcx.BitPixel!=8) {
         fclose(InPCX);
@@ -529,7 +529,7 @@ int  LoadGIF(DgSurf **S, char *Fname,void *PalBGR1024) {
     char PalRGB[768];
     unsigned char SizeExt,BuffExt[255],SizeBl;
     int FinInGIF = 0, DebInGIF = 0, CurInGIF = 0, ResHz = 0, ResVt = 0,i = 0, bytesOutLZW = 0, bytesInLZW = 0;
-    if (fopen_s(&InGIF, Fname,"rb") != 0) return 0;
+    if ((InGIF = fopen(Fname,"rb")) == NULL) return 0;
     fread(&hgif,sizeof(HeadGIF),1,InGIF);
     if (hgif.Sign!='8FIG' || (hgif.IndicRes&7)!=7) {
         fclose(InGIF);

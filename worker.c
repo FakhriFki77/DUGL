@@ -165,7 +165,7 @@ unsigned int CreateDWorker(dworkerFunctionPointer workerFunction, void *workerDa
     if (countDWorker >= MaxDWorkersCount)
         return 0;
     newWorkerIdx = FirstFreeDWorkerID;
-    sprintf_s(nameWorker, 11, "DWorker%d", newWorkerIdx);
+    sprintf(nameWorker, "DWorker%d", newWorkerIdx);
     funcsDWorker[newWorkerIdx] = workerFunction;
     paramsDWorker[newWorkerIdx] = workerData;
     conditionsDWorker[newWorkerIdx] = false;

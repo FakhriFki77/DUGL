@@ -131,7 +131,7 @@ int LoadJPG16(DgSurf **S,char *filename) {
     struct my_error_mgr jerr;
 
     // open jpeg file
-    if (fopen_s(&jpgFile,filename,"rb")!=0)
+    if ((jpgFile = fopen(filename,"rb")) == NULL)
         return 0;
 
     /* We set up the normal JPEG error routines, then override error_exit. */
@@ -211,7 +211,7 @@ int SaveJPG16(DgSurf *S,char *filename,int quality) {
         return 0;
 
     // open jpeg file
-    if (fopen_s(&jpgFile,filename,"wb")!=0)
+    if ((jpgFile = fopen(filename,"wb")) == NULL)
         return 0;
 
     /* We set up the normal JPEG error routines, then override error_exit. */

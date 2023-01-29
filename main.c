@@ -702,7 +702,7 @@ int LoadFONT(FONT *F,const char *FName) {
     int i,Size;
     void *Buff;
     FILE *InCHR;
-    if (fopen_s(&InCHR,FName,"rb")!=0) return 0;
+    if ((InCHR = fopen(FName,"rb"))==NULL) return 0;
     if (fread(&hchr,sizeof(HeadCHR),1,InCHR)<1) {
         fclose(InCHR);
         return 0;
@@ -796,7 +796,7 @@ void OutText16XY(int TX,int TY,const char *str) {
 void OutText16ModeFormat(int Mode, char *midStr, unsigned int sizeMidStr, char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
-    vsprintf_s(midStr, sizeMidStr, fmt, args);
+    vsprintf(midStr, fmt, args);
     va_end(args);
     OutText16Mode(midStr, Mode);
 }
@@ -804,7 +804,7 @@ void OutText16ModeFormat(int Mode, char *midStr, unsigned int sizeMidStr, char *
 void OutText16Format(char *midStr, unsigned int sizeMidStr, char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
-    vsprintf_s(midStr, sizeMidStr, fmt, args);
+    vsprintf(midStr, fmt, args);
     va_end(args);
     OutText16(midStr);
 }

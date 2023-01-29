@@ -216,7 +216,7 @@ int LoadPNGFile(char *filename) {
     png_row_pointers = NULL;
 
     // open png file
-    if (fopen_s(&pngFile,filename,"rb")!=0)
+    if ((pngFile = fopen(filename,"rb")) == NULL)
         return 0;
 
     fread(header, 1, 8, pngFile);
