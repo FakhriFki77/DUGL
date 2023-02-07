@@ -94,7 +94,7 @@ You need to (1) Go to **Global compilers Settings** => **Other settings** => **A
 
 ### Contact ###
 
-Please feel free to email the author(s) - libdugl@hotmail.com
+Please feel free to email the author(s) - libdugl(at)hotmail.com
 
 
 
