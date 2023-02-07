@@ -7,6 +7,7 @@ Using heavily a highly optimized x86-32bits assembly to render to 16bits screen,
 ### Target platform ###
 
 Theoretically, any platform that **SDL** is able to target and which support running x86-32bits with **SSE4.2+**  (either emulated or real hardware)
+Currently both win32 (windows 7/10) and debian (tested on x64 11.6) build/run successfully.
 
 ### History ###
 
@@ -49,8 +50,28 @@ Requirement:
 Compiling asm sources:
 
 **CodeBlocks** do not support compiling asm source files using nasm by default. 
-You need to (1) Go to **Global compilers Settings** => **Other settings** => **Advanced options..** (2) Add two new **Source ext** "asm" and "ASM" (3) Select the **Command** "Compile single file to object file" and (4) set the **Command line macro:** to "nasm $file -f win32 -Ox -o $object"
+You need to (1) Go to **Global compilers Settings** => **Other settings** => **Advanced options..** (2) Add two new **Source ext** "asm" and "ASM" (3) Select 
+the **Command** "Compile single file to object file" and (4) set the **Command line macro:** to "nasm $file -f win32 -Ox -o $object"
 
+#####  Under Linux: #####
+Requirement:
+
+- If you are using a 32bits linux distribution you are fine, else you have to enable i386 architecture (https://wiki.debian.org/Multiarch/HOWTO)
+- Under debian and variant distributions you have to run "sudo apt-get install [package]:i386" for:
+- **CodeBlocks IDE** (https://www.codeblocks.org) (you could use x64 version)
+- nasm (https://nasm.us/) (you could use x64 version)
+- sdl2 and libsdl2-dev (https://www.libsdl.org/)
+- libjpeg-dev
+- libpng-dev
+- libz-dev
+- wayland and libwayland-dev
+
+To build successfully, you have to use linux CodeBlocks project files (*.cbp) with suffix [_linux] (ex: DUGL_Linux.cbp).
+
+Compiling asm sources:
+
+**CodeBlocks** do not support compiling asm source files using nasm by default. 
+You need to (1) Go to **Global compilers Settings** => **Other settings** => **Advanced options..** (2) Add two new **Source ext** "asm" and "ASM" (3) Select the **Command** "Compile single file to object file" and (4) set the **Command line macro:** to "nasm $file -f elf32 -Ox -o $object"
 
 ### Screenshots ###
 
