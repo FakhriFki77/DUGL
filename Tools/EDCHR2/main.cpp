@@ -1,14 +1,14 @@
-/*  Dust Ultimate Game Library (DUGL) - (C) 2022 Fakhri Feki */
+/*  Dust Ultimate Game Library (DUGL) - (C) 2023 Fakhri Feki */
 /*  Simple editor of the proprietary chr font format using DUGLGUI addon*/
 /*  History : */
 /*  24 march 2022 : first release */
+/*  6 February 2023 : Few upgrades, first Debian version */
 
-#include <dir.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "DUGL.h"
-#include "DGUI.h"
+#include <DUGL.h>
+#include <DGUI.H>
 
 #include "HelpDlg.h"
 #include "AboutDlg.h"
@@ -98,9 +98,9 @@ void SetSnsLR(),SetSnsRL();
 const char *TSChrName[]={ "CHR Font file", "All Files(*.*)" };
 const char *TSChrMask[]={ "*.chr", "*.*" };
 ListString LSChrName(2,TSChrName),LSChrMask(2,TSChrMask);
-const char *TSImgName[]={ "GIF", "PCX", "BMP" };
-const char *TSImgMask[]={ "*.gif", "*.pcx", "*.bmp" };
-ListString LSImgName(3,TSImgName),LSImgMask(3,TSImgMask);
+const char *TSImgName[]={ "GIF", "PCX", "BMP", "All Files(*.*)"};
+const char *TSImgMask[]={ "*.gif", "*.pcx", "*.bmp", "*.*" };
+ListString LSImgName(4,TSImgName),LSImgMask(4,TSImgMask);
 int car[2][256*64];
 Caract InfCar[256];
 
@@ -126,7 +126,7 @@ int newDefaultHeight = 16;
 int defaultWinX = -1;
 int defaultWinY = -1;
 int WinBorderless = 1;
-unsigned int DrawCol = RGB16(0,255,255);
+unsigned int DrawCol = RGB16(255,255,0); // yellow
 
 void LoadConfig();
 // GUI **********************************************
@@ -192,19 +192,17 @@ NodeMenu TNM[]= {
 int main()
 {
     // load font
-    if (!LoadFONT(&F1,"helloc.chr")) {
+    if (!LoadFONT(&F1,"HELLOC.chr")) {
       printf("Error loading helloc.chr\n"); exit(-1); }
     // load azerty kbmap
-   if (!LoadKbMAP(&KM,"kbmap.map")) {
-     printf("Error Loading kbmap.map\n"); exit(-1); }
+   if (!LoadKbMAP(&KM,"KBMAP.MAP")) {
+     printf("Error Loading KBMAP.MAP\n"); exit(-1); }
 
     // load asset
     if (!LoadGIF16(&MsSurf, "Mouseimg.gif")) {
       printf("Error loading Mouseimg.gif\n"); exit(-1); }
 
     DgInit();
-
-
 
     if (!DgInitMainWindowX(SLbFPrinc.StrPtr, ScreenWidth, ScreenHeight, 16, defaultWinX, defaultWinY, false, true, false))
         DgQuit();
@@ -224,6 +222,7 @@ int main()
     // GUI
     WH = new WinHandler(RendSurf->ResH,RendSurf->ResV,16,0x1f,0);
     FPrinc = new MainWin(RendSurf->MinX,RendSurf->MinY,RendSurf->ResH,RendSurf->ResV,SLbFPrinc.StrPtr,WH);
+    FPrinc->AllowMove = false;
 	HELPDlg = CreateMainWinHelpDLG(WH);
 	ABOUTDlg = CreateMainWinAboutDLG(WH);
 
@@ -284,8 +283,8 @@ int main()
 
     for (int countFrame = 0; ; countFrame++)
     {
-        // scan GUI events
         DgCheckEvents();
+        // scan GUI events
         WH->Scan();
 		// render and update screen
 		RenderFunc();
@@ -423,7 +422,7 @@ int ReadCHR(char *FName) {
    void *Buff;
    FILE *InCHR;
 
-   if (fopen_s(&InCHR,FName,"rb")!=0) {
+   if ((InCHR=fopen(FName,"rb")) == NULL) {
        MessageBox(WH,"can't open file", FName,
          "Ok", NULL, NULL, NULL, NULL, NULL);
        return 0;
@@ -463,7 +462,7 @@ int SaveCHR(char *FName) {
    void *Buff;
    FILE *OutCHR;
 
-   if (fopen_s(&OutCHR, FName,"wb")!=0) return 0;
+   if ((OutCHR = fopen(FName,"wb")) == NULL) return 0;
    if ((Buff=malloc(Size=CalcSizeDataCar()))==NULL) {
 	  fclose(OutCHR); return 0;
    }
@@ -568,7 +567,7 @@ void MenuSaveAs() {
             &LSChrMask, 0);
 }
 void FSaveCHR(String *S,int TypeSel) {
-   String S2=*S;
+/*   String S2=*S;
    char d[_MAX_DRIVE+1], p[_MAX_DIR+1], f[_MAX_FNAME+1], e[_MAX_EXT+1];
    _splitpath(S2.StrPtr, d, p, f, e);
    if (strlen(e)==0)
@@ -581,10 +580,10 @@ void FSaveCHR(String *S,int TypeSel) {
                 "Ok", NULL, NULL, NULL, NULL, NULL);
    else {
      SCurFile=S2;
-     strlwr(SCurFile.StrPtr);
+     //strlwr(SCurFile.StrPtr);
      FPrinc->Label=SLbFPrinc+"  "+SCurFile;
      FPrinc->Redraw();
-   }
+   }*/
 }
 //-------
 void LoadBackImage(String *filename, int selection) {
@@ -777,7 +776,7 @@ void OpenCHR(String *S,int TypeSel) {
    }
    if (i<256) SetSnsLR();
    SCurFile=*S;
-   strlwr(SCurFile.StrPtr);
+   //strlwr(SCurFile.StrPtr);
    FPrinc->Label=SLbFPrinc+"  "+SCurFile;
    FPrinc->Redraw();
 }

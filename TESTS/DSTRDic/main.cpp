@@ -1,9 +1,10 @@
-/*  Dust Ultimate Game Library (DUGL) - (C) 2022 Fakhri Feki */
+/*  Dust Ultimate Game Library (DUGL) - (C) 2023 Fakhri Feki */
 /*  Sample of DSTRDic C Dictionnary <char*,void*> : */
 /* 	console app to compare performance of DSTRDic<char*,void*> against std::map<std::string,void*> */
 
 /*  History : */
 /*  25 march 2022 : first release */
+/*  6 February 2023 : Few upgrades, first Debian version */
 
 // on my system DSTRDic is about 10 times, 4 times and 5 times faster !
 //0 - Timing std::map
@@ -19,9 +20,7 @@
 
 #include <map>
 #include <string>
-
 #include <stdio.h>
-#include <conio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "DUGL.h"
@@ -47,21 +46,21 @@ int main (int argc, char ** argv)
 	// std::map
 
     std::map<std::string,void*> mapData;
-	char intstr[10];
+	char intstr[12];
     unsigned int countKeyVal = 1500000;
     unsigned int lastDgTime = 0;
     printf("%i - Timing std::map\n", DgTime);
     printf("%i - Creating std::map Dictionnary\n", DgTime);
     lastDgTime = DgTime;
     for (unsigned int idic=0;idic<countKeyVal;idic++) {
-		itoa(idic+123456, intstr, 10);
+        snprintf(intstr, 11, "%u", idic+123456);
 		mapData.insert(std::make_pair(intstr, (void*)(idic+1+123456))); // inserting an integer instead of void *
     }
     printf("%i - Inserting %0.2f milions (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
     lastDgTime = DgTime;
     int valptr = 0;
     for (int idic=0;idic<1000000;idic++) {
-		itoa((rand()%countKeyVal)+123456, intstr, 10);
+        snprintf(intstr, 11, "%u", (rand()%countKeyVal)+123456);
 		auto fit = mapData.find(intstr);
 		if (fit != mapData.end()) {
 			valptr = (int)fit->second;
@@ -81,14 +80,14 @@ int main (int argc, char ** argv)
 	printf("%i - Creating DSTRDic Dictionnary \n", DgTime);
     lastDgTime = DgTime;
 	for (unsigned int idic=0;idic<countKeyVal;idic++) {
-		itoa(idic+123456, intstr, 10);
+        snprintf(intstr, 11, "%u", idic+123456);
 		InsertDSTRDic(strDIC, intstr, (void*)(idic+1+123456), false);
 	}
     printf("%i - Inserting %0.2f milions (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
     lastDgTime = DgTime;
     valptr = 0;
 	for (unsigned int idic=0;idic<1000000;idic++) {
-		itoa((rand()%countKeyVal)+123456, intstr, 10);
+        snprintf(intstr, 11, "%u", (rand()%countKeyVal)+123456);
 		valptr = (int)keyValueDSTRDic(strDIC, intstr);
 	}
     printf("%i - searching for random 1 milions (key, value) in %0.2f sec\n", DgTime, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));

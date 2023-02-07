@@ -1,12 +1,13 @@
-/*  Dust Ultimate Game Library (DUGL) - (C) 2022 Fakhri Feki */
+/*  Dust Ultimate Game Library (DUGL) - (C) 2023 Fakhri Feki */
 /*  Editor of the proprietary DUGL keyboard map format */
 /*  History : */
 /*  first DJGPP DOS version 2000-2001 */
 /*  24 April 2022 : first release */
+/*  6 February 2023 : Few upgrades, first Debian version */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "dugl.h"
+#include <DUGL.h>
 
 typedef struct
 {	unsigned char AscHG,AscHD,AscBG,AscBD;
@@ -241,11 +242,11 @@ KeybButton KbTb[]={
 	    { 0x53,  2+550,477-280,  2+575,477-240,"Num Del" ,0 ,1 ,&KbInf[67] },  // Num Suppr
 };
 
-DgSurf *MsPtr;
+DgSurf *MsPtr,*AppIco;
 DgView MsV,SaveView;
 FONT F1;
-char *LoadKbConfig="kbconfig.cfg",*CreateKbMap="kbmap.map",
-     *SaveKbConfig="kbconfig.cfg";
+char *LoadKbConfig="KBCONFIG.CFG",*CreateKbMap="KBMAP.MAP",
+     *SaveKbConfig="KBCONFIG.CFG";
 int rouge,jaune,bleu,noir,blanc,gris,grisf,grisc;
 int i,j,k,l,m,n;
 int CurProc,SelKbButt,SelMsDown;
@@ -328,7 +329,7 @@ int main(int argc,char *argv[])
 	ProcedLoadConfig(); // charge Config par defaut
 
 	rouge=RGB16(255,0,0);
-	jaune=RGB16(0,255,255);
+	jaune=RGB16(255,255,0);
 	bleu=RGB16(0,0,255);
 	noir=RGB16(0,0,0);
 	blanc=RGB16(255,255,255);
@@ -336,11 +337,13 @@ int main(int argc,char *argv[])
 	grisf=RGB16(64,64,64);
 	grisc=RGB16(192,192,192);
 
-	if (!LoadGIF16(&MsPtr,"mouseimg.gif"))
-	  { printf("mouseimg.gif error\n"); exit(-1); }
+	if (!LoadGIF16(&MsPtr,"Mouseimg.gif"))
+	  { printf("Mouseimg.gif error\n"); exit(-1); }
 	SetOrgSurf(MsPtr,0,MsPtr->ResV-1);
+	if (!LoadGIF16(&AppIco,"DKEYBMAP.GIF"))
+	  { printf("DKEYBMAP.GIF error\n"); exit(-1); }
 
-	if (!LoadFONT(&F1,"helloc.chr"))
+	if (!LoadFONT(&F1,"HELLOC.chr"))
 	  { printf("hello.chr error\n"); exit(-1); }
 	SetFONT(&F1);
 
@@ -358,6 +361,8 @@ int main(int argc,char *argv[])
     if (!DgInitMainWindowX("DUGL keybmap", 640, 480, 16, -1, -1, false, false, false))
         DgQuit();
 
+    DgSetWindowIcone(AppIco);
+
 	DgSetCurSurf(RendSurf);
 
 	SelAscEnter=MsDownInChxAscii=choixBMMsDown=SelMsDown=CurProc=0;
@@ -365,6 +370,8 @@ int main(int argc,char *argv[])
     InitSynch(RenderSynchBuff, NULL, 60.0f);
 
 	for (j=0;;j++) {
+		DgCheckEvents();
+
 		OldTime=DgTime;
 		// always wait synch - no need for more than 60 fps !
 		WaitSynch(RenderSynchBuff, NULL);
@@ -392,7 +399,6 @@ int main(int argc,char *argv[])
 
 		PutMaskSurf16(MsPtr,MsX,MsY,0);
 
-		DgCheckEvents();
 		DgUpdateWindow();
 	}
 

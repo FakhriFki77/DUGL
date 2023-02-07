@@ -4,6 +4,7 @@
 /*  Infinite progressing forest with fog effect, smoothing - ported/improved from the fog16 sample of the DOS version */
 /*  History : */
 /*  19 april 2022 : first release */
+/*  6 February 2023 : Few upgrades, first Debian version */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,8 +12,8 @@
 
 // screen resolution
 //int ScrResH=640,ScrResV=480;
-//int ScrResH=800,ScrResV=600;
-int ScrResH=1024,ScrResV=768;
+int ScrResH=800,ScrResV=600;
+//int ScrResH=1024,ScrResV=768;
 //int ScrResH=1280,ScrResV=1024;
 
 // Poly16 point structure
@@ -170,7 +171,7 @@ int main (int argc, char ** argv) {
         printf("error loading asphalt2.png\n");
         exit(-1);
     }
-    if (LoadGIF16(&Tree2Surf16,"../Asset/PICS/tree2.gif")==0) {
+    if (LoadGIF16(&Tree2Surf16,"../Asset/PICS/TREE2.gif")==0) {
         printf("error loading tree.gif\n");
         exit(-1);
     }
@@ -179,13 +180,13 @@ int main (int argc, char ** argv) {
         printf("error loading Background.png\n");
         exit(-1);
     }
-    if (LoadGIF16(&TreeSurf16,"../Asset/PICS/tree.gif")==0) {
+    if (LoadGIF16(&TreeSurf16,"../Asset/PICS/TREE.GIF")==0) {
         printf("error loading tree.gif\n");
         exit(-1);
     }
 
     // load font
-    if (!LoadFONT(&F1,"../Asset/FONT/helloc.chr")) {
+    if (!LoadFONT(&F1,"../Asset/FONT/HELLOC.chr")) {
         printf("Error loading hello.chr\n");
         exit(-1);
     }
@@ -309,7 +310,6 @@ int main (int argc, char ** argv) {
         DgCheckEvents();
     }
 
-    WaitDWorker(renderWorkerID); // wait render DWorker finish
     DestroyDWorker(renderWorkerID);
     renderWorkerID = 0;
     DestroyDWorker(smoothWorkerID);

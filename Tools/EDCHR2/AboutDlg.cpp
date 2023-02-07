@@ -1,10 +1,8 @@
-#include <dir.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "DUGL.h"
-#include "DGUI.h"
-
+#include <DUGL.h>
+#include <DGUI.H>
 #include "AboutDlg.h"
 
 
@@ -31,6 +29,8 @@ void DrawAboutGBox(GraphBox *Me) {
 	ClearSurf16(aboutDLG->MWWinHand->m_GraphCtxt->WinGrisF);
 	char midstr[128];
 	char versionType[20];
+	char duglVersionType[20];
+
 	switch (EDCHR2_VERSION_TYPE) {
 		case 'a':
 		case 'A':
@@ -47,16 +47,33 @@ void DrawAboutGBox(GraphBox *Me) {
 		default:
 			strcpy(versionType, "???");
 	}
+	switch (DUGL_VERSION_TYPE) {
+		case 'a':
+		case 'A':
+			strcpy(duglVersionType, "Alpha");
+			break;
+		case 'b':
+		case 'B':
+			strcpy(duglVersionType, "Beta");
+			break;
+		case 'r':
+		case 'R':
+			strcpy(duglVersionType, "Release");
+			break;
+		default:
+			strcpy(duglVersionType, "???");
+	}
 	ClearText();
 	SetTextCol(aboutDLG->MWWinHand->m_GraphCtxt->WinBlanc);
 	OutText16Mode("\n", AJ_MID);
 	OutText16Mode("Edchr2: DUGL CHR FONT Editor", AJ_MID);
 	OutText16Mode("\n", AJ_MID);
-	OutText16ModeFormat(AJ_MID, midstr, 127,"Version %i.%i.%i %s\n", EDCHR2_VERSION_MAJOR, EDCHR2_VERSION_MINOR, EDCHR2_VERSION_PATCH, versionType);
-	OutText16Mode("\n\n", AJ_MID);
-	OutText16Mode("Made using DUGL (https://github.com/FakhriFki77/DUGL)\n", AJ_MID);
-	OutText16Mode("Copyright (C) 2022 Fakhri Feki\n", AJ_MID);
-	OutText16Mode("contact: libdugl@hotmail.com", AJ_MID);
+	OutText16ModeFormat(AJ_MID, midstr, 127,"V%i.%i.%i %s\n", EDCHR2_VERSION_MAJOR, EDCHR2_VERSION_MINOR, EDCHR2_VERSION_PATCH, versionType);
+	OutText16Mode("\n", AJ_MID);
+	OutText16ModeFormat(AJ_MID, midstr, 127, "Made using DUGL V%i.%i.%i %s\n", DUGL_VERSION_MAJOR, DUGL_VERSION_MINOR, DUGL_VERSION_PATCH, duglVersionType);
+	OutText16Mode("https://github.com/FakhriFki77/DUGL\n", AJ_MID);
+	OutText16Mode("Copyright (C) 2023 Fakhri Feki\n", AJ_MID);
+	OutText16Mode("contact: libdugl(at)hotmail.com", AJ_MID);
 }
 
 void CloseOKAbout() {

@@ -1,15 +1,14 @@
 /*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki     */
+    Copyright (C) 2023	Fakhri Feki     */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <conio.h>
 #include <unistd.h>
 #include <string.h>
-#include <dugl.h>
+#include <DUGL.h>
 
 #include "INTRNGUI.H"
-#include "dgui.h"
+#include "DGUI.H"
 
 
 //*********** class WinHandler *********************************

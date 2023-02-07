@@ -505,7 +505,6 @@ void readWorkerFunctionDFBuff(void *job/*(FileBufferReadJob*)*/, int idx) {
     // end of file ?
     if (myjob->m_bytesInBuff < myjob->m_sizeBuff)
         myjob->m_EOF = true;
-
 }
 
 DFileBuffer* CreateDFileBuffer(unsigned int sizeBuff) {

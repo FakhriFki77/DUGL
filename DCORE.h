@@ -26,7 +26,7 @@ extern "C" {
 #define DUGL_VERSION_MAJOR      1
 #define DUGL_VERSION_MINOR      0
 #define DUGL_VERSION_TYPE       'b' // a alpha, b beta, r release
-#define DUGL_VERSION_PATCH      3
+#define DUGL_VERSION_PATCH      5
 
 typedef struct
 {   int ScanLine;

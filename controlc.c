@@ -473,8 +473,8 @@ Uint32 DgTimeHandler(Uint32 interval, void *param);
 
 void DgInstallTimer(int Freq) {
     int nIdx = 0;
-    SDL_Log("Installing Timer: requested frequency %i\n\n", Freq);
-    printf("Installing Timer: requested frequency %i\n\n", Freq);
+    //SDL_Log("Installing Timer: requested frequency %i\n\n", Freq);
+    //printf("Installing Timer: requested frequency %i\n\n", Freq);
     if (sdl_timer_id != 0) {
         SDL_RemoveTimer(sdl_timer_id);
         sdl_timer_id = 0;
@@ -693,9 +693,9 @@ int  WaitSynch(void *SynchBuff,int *Pos) {
 
 void DelayMs(unsigned int delayInMs) {
 #define bigDelay 10
-    const Uint64 timeout = SDL_GetTicks64() + delayInMs;
+    const Uint64 timeout = SDL_GetTicks() + delayInMs;
     Uint64 curTick64 = 0;
-    while ((curTick64 = SDL_GetTicks64()) < timeout) {
+    while ((curTick64 = SDL_GetTicks()) < timeout) {
         if (curTick64 + bigDelay <= timeout) {
             SDL_Delay(bigDelay);
         } else {

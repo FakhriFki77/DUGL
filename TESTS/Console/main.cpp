@@ -1,16 +1,16 @@
-/*  Dust Ultimate Game Library (DUGL) - (C) 2022 Fakhri Feki */
+/*  Dust Ultimate Game Library (DUGL) - (C) 2023 Fakhri Feki */
 /*  Console - graphic console like profiling of DSTRDic against std::map*/
 /*  History : */
 /*  27 march 2022 : first release */
+/*  6 February 2023 : Few upgrades, first Debian version */
 
 #include <map>
 #include <string>
 
 #include <stdio.h>
-#include <conio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "DUGL.h"
+#include <DUGL.h>
 
 
 // screen resolution
@@ -43,8 +43,8 @@ int main (int argc, char ** argv)
     renderWorkerID = CreateDWorker(RenderWorkerFunc, nullptr);
 
     // load font
-    if (!LoadFONT(&F1,"../Asset/FONT/Helloc.chr")) {
-		printf("Error loading helloc.chr\n"); exit(-1);
+    if (!LoadFONT(&F1,"../Asset/FONT/HELLOC.chr")) {
+		printf("Error loading HELLOC.chr\n"); exit(-1);
 	}
 
     SetFONT(&F1);
@@ -155,7 +155,7 @@ void RenderWorkerFunc(void *, int ) {
 	// std::map
 
     std::map<std::string,void*> mapData;
-	char intstr[10];
+	char intstr[12];
     unsigned int countKeyVal = 1500000;
     unsigned int lastDgTime = 0;
     OutText16Format(text, SIZE_TEXT, "%i - Timing std::map\n", DgTime);
@@ -164,7 +164,7 @@ void RenderWorkerFunc(void *, int ) {
 	DgUpdateWindow();
     lastDgTime = DgTime;
     for (unsigned int idic=0;idic<countKeyVal;idic++) {
-		itoa(idic+123456, intstr, 10);
+        snprintf(intstr, 11, "%u", (rand()%countKeyVal)+123456);
 		mapData.insert(std::make_pair(intstr, (void*)(idic+1+123456))); // inserting an integer instead of void *
     }
     OutText16Format(text, SIZE_TEXT, "%i - Inserting %0.2f milions (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
@@ -172,7 +172,7 @@ void RenderWorkerFunc(void *, int ) {
     lastDgTime = DgTime;
     int valptr = 0;
     for (int idic=0;idic<1000000;idic++) {
-		itoa((rand()%countKeyVal)+123456, intstr, 10);
+        snprintf(intstr, 11, "%u", (rand()%countKeyVal)+123456);
 		auto fit = mapData.find(intstr);
 		if (fit != mapData.end()) {
 			valptr = (int)fit->second;
@@ -196,7 +196,7 @@ void RenderWorkerFunc(void *, int ) {
 	DgUpdateWindow();
     lastDgTime = DgTime;
 	for (unsigned int idic=0;idic<countKeyVal;idic++) {
-		itoa(idic+123456, intstr, 10);
+        snprintf(intstr, 11, "%u", (rand()%countKeyVal)+123456);
 		InsertDSTRDic(strDIC, intstr, (void*)(idic+1+123456), false);
 	}
     OutText16Format(text, SIZE_TEXT, "%i - Inserting %0.2f milions (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
@@ -204,7 +204,7 @@ void RenderWorkerFunc(void *, int ) {
     lastDgTime = DgTime;
     valptr = 0;
 	for (unsigned int idic=0;idic<1000000;idic++) {
-		itoa((rand()%countKeyVal)+123456, intstr, 10);
+        snprintf(intstr, 11, "%u", (rand()%countKeyVal)+123456);
 		valptr = (int)keyValueDSTRDic(strDIC, intstr);
 	}
     OutText16Format(text, SIZE_TEXT, "%i - searching for random 1 milions (key, value) in %0.2f sec\n", DgTime, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));

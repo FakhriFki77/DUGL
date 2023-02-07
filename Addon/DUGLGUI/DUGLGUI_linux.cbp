@@ -16,6 +16,7 @@
 				<Compiler>
 					<Add option="-march=pentium4" />
 					<Add option="-Wall" />
+					<Add option="-std=gnu++11" />
 					<Add option="-m32" />
 					<Add option="-g" />
 					<Add directory="../../" />
@@ -23,7 +24,6 @@
 				<Linker>
 					<Add option="-static-libstdc++" />
 					<Add option="-static-libgcc" />
-					<Add option="-static" />
 					<Add option="-m32" />
 					<Add directory="../DUGL" />
 				</Linker>
@@ -37,8 +37,6 @@
 				<Option createDefFile="1" />
 				<Compiler>
 					<Add option="-march=corei7" />
-					<Add option="-fomit-frame-pointer" />
-					<Add option="-fexpensive-optimizations" />
 					<Add option="-O3" />
 					<Add option="-Wall" />
 					<Add option="-m32" />
@@ -48,7 +46,6 @@
 					<Add option="-s" />
 					<Add option="-static-libstdc++" />
 					<Add option="-static-libgcc" />
-					<Add option="-static" />
 					<Add option="-m32" />
 				</Linker>
 			</Target>

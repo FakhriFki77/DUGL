@@ -379,7 +379,7 @@ iPushKbReleaseEvent:
 .DefActiv       resd    1
 .NbAscii        resd    1
 .Ptr            resd    1
-.Size
+.Size:
         endstruc
 
         struc PrefixKeyb
@@ -392,7 +392,7 @@ iPushKbReleaseEvent:
 .DefaultAscii   resb    1
 .code           resb    1
 .resv           resb    2
-.Size
+.Size:
         endstruc
 
 TraitAscii:

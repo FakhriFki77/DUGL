@@ -1,15 +1,13 @@
 /*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2022	Fakhri Feki    */
+    Copyright (C) 2023	Fakhri Feki    */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <conio.h>
 #include <unistd.h>
-#include <dugl.h>
+#include <DUGL.h>
 
-#include "dgui.h"
+#include "DGUI.H"
 
-#define RGB16(r,g,b) ((r>>3)|((g>>2)<<5)|((b>>3)<<11))
 
 
 CGraphContext::CGraphContext(int BitsPixel,void *PalBGR1024) {
@@ -31,11 +29,11 @@ CGraphContext::CGraphContext(int BitsPixel,void *PalBGR1024) {
     if (BitsPixel==16) {
       WinNoir=0x0;
       WinBlanc=0xFFFF;
-      WinBleuF=RGB16(127, 0, 0);
+      WinBleuF=RGB16(0, 0, 127);
       WinGris=RGB16(165, 165, 165);
       WinGrisF=RGB16(96,  96,  96);
       WinGrisC=RGB16(224, 224, 224);
-      WinRougeF=RGB16( 0,   0, 138);
+      WinRougeF=RGB16( 138,   0, 0);
     }
   // assign functions graphic pointer
   switch (BitsPixel) {

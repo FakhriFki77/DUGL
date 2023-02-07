@@ -1,9 +1,9 @@
-#include <dir.h>
+//#include <dir.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "DUGL.h"
-#include "DGUI.h"
+#include "DGUI.H"
 
 #include "HelpDlg.h"
 

@@ -1,13 +1,13 @@
-/*  Dust Ultimate Game Library (DUGL) - (C) 2022 Fakhri Feki */
+/*  Dust Ultimate Game Library (DUGL) - (C) 2023 Fakhri Feki */
 /*  Hello World Sample*/
 /*  History : */
 /*  23 march 2022 : first release */
+/*  6 February 2023 : Few upgrades, first Debian version */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "DUGL.h"
-
+#include <DUGL.h>
 
 // screen resolution
 //int ScrResH=640,ScrResV=480;
@@ -48,14 +48,14 @@ int main (int argc, char ** argv)
 		printf("DUGL init error\n"); exit(-1);
 	}
 
-
     // create rendering DWorker
     renderWorkerID = CreateDWorker(RenderWorkerFunc, nullptr);
     renderMutex = CreateDMutex();
 
     // load font
-    if (!LoadFONT(&F1,"../Asset/FONT/helloc.chr")) {
-		printf("Error loading helloc.chr\n"); exit(-1);
+    //if (!LoadFONT(&F1,"/home/darna/Downloads/DUGL-main/Asset/FONT/HELLOC.chr")) {
+    if (!LoadFONT(&F1,"../Asset/FONT/HELLOC.chr")) {
+		printf("Error loading HELLOC.chr\n"); exit(-1);
 	}
 
     SetFONT(&F1);
@@ -78,7 +78,6 @@ int main (int argc, char ** argv)
         DgQuit();
         exit(-1);
     }
-
 
     // install timer and keyborad handler
     DgInstallTimer(500);
@@ -125,7 +124,6 @@ int main (int argc, char ** argv)
 		// time synching ignored for simplicity
 		//accTime += SynchAverageTime(EventsLoopSynchBuff);
 
-
 		// get key
 		unsigned char keyCode;
 		unsigned int keyFLAG;
@@ -170,16 +168,15 @@ int main (int argc, char ** argv)
 		DgCheckEvents();
 	}
 
-	WaitDWorker(renderWorkerID); // wait render DWorker finish before exiting
-
+	//WaitDWorker(renderWorkerID); // wait render DWorker finish before exiting
 	DestroyDWorker(renderWorkerID);
 	renderWorkerID = 0;
     DestroyDMutex(renderMutex);
     renderMutex = NULL;
 
+
 	DestroySurf(HelloWorldSurf16);
     DgQuit();
-    printf("See you!\n");
     return 0;
 }
 
