@@ -25,6 +25,7 @@ extern "C" {
 
 // EFFECTS & CONVERSION ====================================
 
+// thread safe functions
 void ConvSurf8ToSurf16Pal(DgSurf *S16Dst, DgSurf *S8Src,void *PalBGR1024);
 void Blur16(void *BuffImgDst, void *BuffImgSrc, int ImgWidth, int ImgHeight, int StartLine, int EndLine);
 void BlurSurf16(DgSurf *S16Dst, DgSurf *S16Src);

@@ -112,6 +112,8 @@ void DgSetCurSurf(DgSurf *S);
 void DgGetCurSurf(DgSurf *S);
 // Set Source DgSurf
 void DgSetSrcSurf(DgSurf *S);
+
+// thread safe functions //////////////////
 // Gets Max Height in pixels for a DgSurf used with SetCurSurf
 int  GetMaxResVSetSurf();
 // Set Origin of DgSurf
@@ -149,8 +151,6 @@ void DgCPutPixel16(int x, int y, int col);
 unsigned int DgGetPixel16(int x, int y);
 // View port clipped GetPixel, return 0xFFFFFFFF if clipped, else the pixel on the low word
 unsigned int DgCGetPixel16(int x, int y);
-unsigned int DgSurfCGetPixel16(DgSurf *S, int x, int y);
-void DgSurfCPutPixel16(DgSurf *S, int x, int y, int col);
 // Clipped lines
 void line16(int X1,int Y1,int X2,int Y2,int LgCol);
 void linemap16(int X1,int Y1,int X2,int Y2,int LgCol,unsigned int Map);
@@ -173,11 +173,7 @@ void rectblnd16(int x1,int y1,int x2,int y2,int rcol);
 void rectmapblnd16(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
 
 // brute copy pixels data from DgSurf src to dst without any verification of BitsPixel or size
-void SurfCopy(DgSurf *Sdst,DgSurf *Ssrc);
-void SurfMaskCopy16(DgSurf *Sdst,DgSurf *Ssrc);
-void SurfCopyBlnd16(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
 void SurfMaskCopyBlnd16(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
-void SurfCopyTrans16(DgSurf *S16Dst, DgSurf *S16Src,int trans);
 void SurfMaskCopyTrans16(DgSurf *S16Dst, DgSurf *S16Src,int trans);
 
 // resize SSrcSurf into CurSurf taking account of source and destination Views
@@ -215,6 +211,18 @@ void PutMaskSurfTrans16(DgSurf *S,int X,int Y,int PType,int trans);
 #define POLY16_MAX_TYPE         15
 #define POLY16_FLAG_DBL_SIDED   0x80000000
 void Poly16(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
+
+// thread safe functions /////////////////////////////////////////////////////////////////////
+
+unsigned int DgSurfCGetPixel16(DgSurf *S, int x, int y);
+void DgSurfCPutPixel16(DgSurf *S, int x, int y, int col);
+
+// brute copy pixels data from DgSurf src to dst without any verification of BitsPixel or size
+void SurfCopy(DgSurf *Sdst,DgSurf *Ssrc);
+void SurfMaskCopy16(DgSurf *Sdst,DgSurf *Ssrc);
+void SurfCopyBlnd16(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
+void SurfCopyTrans16(DgSurf *S16Dst, DgSurf *S16Src,int trans);
+
 
 #ifdef __cplusplus
         }  // extern "C" {

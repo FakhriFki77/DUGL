@@ -17,6 +17,36 @@
 ;    contact: libdugl(at)hotmail.com
 ;=============================================================================
 
+        struc DuglSurf
+.ScanLine           RESD  1
+.rlfb               RESD  1
+.OrgX               RESD  1
+.OrgY               RESD  1
+.MaxX               RESD  1
+.MaxY               RESD  1
+.MinX               RESD  1
+.MinY               RESD  1;-----------------------
+.Mask               RESD  1
+.ResH               RESD  1
+.ResV               RESD  1
+.vlfb               RESD  1
+.NegScanLine        RESD  1
+.OffVMem            RESD  1
+.BitsPixel          RESD  1
+.SizeSurf           RESD  1;-----------------------
+.Size:
+        endstruc
+
+; constants
+
+Prec                EQU 12
+MaxResV             EQU 2048
+BlendMask           EQU 0x1f
+CMaskB_RGB16        EQU 0x1f   ; blue bits 0->4
+CMaskG_RGB16        EQU 0x3f<<5  ; green bits 5->10
+CMaskR_RGB16        EQU 0x1f<<11 ; red bits 11->15
+
+
 ; param ESI: source Surf, EDI: Dest Surf
 ; use mm0, ... , mm3
 ; return no : surf copied

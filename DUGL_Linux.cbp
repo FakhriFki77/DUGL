@@ -87,6 +87,7 @@
 			<Option link="0" />
 		</Unit>
 		<Unit filename="graph.asm" />
+		<Unit filename="graphM.asm" />
 		<Unit filename="hzline16.asm">
 			<Option compile="0" />
 			<Option link="0" />

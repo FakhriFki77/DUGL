@@ -104,7 +104,6 @@ void DestroyDWorkers() {
 
 static int WorkerThreadFunction(void *ptr) {
     unsigned int myIdx = *(unsigned int*)(ptr);
-    int exitThreadFunc = 0;
     if (MaxDWorkersCount == 0 || myIdx == 0 || myIdx > MaxDWorkersCount)
         return 0;
     myIdx --;

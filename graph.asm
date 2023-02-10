@@ -26,13 +26,13 @@
 %pragma win32 gprefix   _
 
 ; GLOBAL Functions
-GLOBAL  DgSetCurSurf, DgSetSrcSurf, DgGetCurSurf, GetMaxResVSetSurf
-GLOBAL  DgClear16, ClearSurf16, InBar16, DgPutPixel16, DgCPutPixel16, DgGetPixel16, DgCGetPixel16, DgSurfCGetPixel16, DgSurfCPutPixel16
+GLOBAL  DgSetCurSurf, DgSetSrcSurf, DgGetCurSurf
+GLOBAL  DgClear16, ClearSurf16, InBar16, DgPutPixel16, DgCPutPixel16, DgGetPixel16, DgCGetPixel16
 
 GLOBAL  line16, Line16, linemap16, LineMap16, lineblnd16, LineBlnd16, linemapblnd16, LineMapBlnd16
 GLOBAL  Poly16, PutSurf16, PutMaskSurf16, PutSurfBlnd16, PutMaskSurfBlnd16, PutSurfTrans16, PutMaskSurfTrans16
-GLOBAL  SurfCopy, SurfMaskCopy16, SurfCopyBlnd16, SurfMaskCopyBlnd16, SurfCopyTrans16, SurfMaskCopyTrans16
 GLOBAL  ResizeViewSurf16, MaskResizeViewSurf16, TransResizeViewSurf16, MaskTransResizeViewSurf16, BlndResizeViewSurf16, MaskBlndResizeViewSurf16
+GLOBAL  SurfMaskCopyBlnd16, SurfMaskCopyTrans16
 GLOBAL  SetFONT, GetFONT, OutText16, WidthText, WidthPosText, PosWidthText
 
 ; GLOBAL Variables
@@ -44,17 +44,11 @@ GLOBAL  FntSens, FntTab, FntX, FntY, FntCol
 GLOBAL  vlfb,rlfb,ResH,ResV, MaxX, MaxY, MinX, MinY, OrgY, OrgX, SizeSurf,OffVMem
 GLOBAL  BitsPixel, ScanLine,Mask,NegScanLine
 
-GLOBAL  QBlue16Mask, QGreen16Mask, QRed16Mask
-
+; EXTERN GLOBAL VARS
+EXTERN QBlue16Mask, QGreen16Mask, QRed16Mask, WBGR16Mask
 
 ; GLOBAL Constants
-Prec                  EQU 12
-MaxResV               EQU 2048
 MaxDblSidePolyPts     EQU 128
-BlendMask             EQU 0x1f
-CMaskB_RGB16          EQU 0x1f   ; blue bits 0->4
-CMaskG_RGB16          EQU 0x3f<<5  ; green bits 5->10
-CMaskR_RGB16          EQU 0x1f<<11 ; red bits 11->15
 MaxDeltaDim           EQU 1<< (31-Prec)
 
 BITS 32
@@ -91,10 +85,6 @@ DgSetCurSurf:
 
     RETURN
 
-GetMaxResVSetSurf:
-            MOV         EAX,MaxResV
-            RET
-
 ALIGN 32
 DgSetSrcSurf:
     ARG SrcS, 4
@@ -122,111 +112,6 @@ DgGetCurSurf:
             MOV         EDI,[EBP+SGet]
             CopySurfSA
 
-            POP         ESI
-            POP         EDI
-
-    RETURN
-
-ALIGN 32
-SurfCopy:
-  ARG PDstSrf, 4, PSrcSrf, 4
-
-            PUSH        EDI
-            PUSH        ESI
-            PUSH        EBX
-
-            MOV         ESI,[EBP+PSrcSrf]
-            MOV         EDI,[EBP+PDstSrf]
-            MOV         EBX,[ESI+SizeSurf-CurSurf]
-
-            MOV         EDI,[EDI+rlfb-CurSurf]
-            MOV         ESI,[ESI+rlfb-CurSurf]
-            XOR         ECX,ECX
-            TEST        EDI,0x7
-            JZ          .CpyMMX
-.CopyBAv:
-            TEST        EDI,0x1
-            JZ          .PasCopyBAv
-            OR          EBX,EBX
-            JZ          .FinSurfCopy
-            DEC         EBX
-            MOVSB
-.PasCopyBAv:
-.CopyWAv:
-            TEST        EDI,0x2
-            JZ          .PasCopyWAv
-            CMP         EBX,BYTE 2
-            JL          .CopyBAp
-            SUB         EBX,BYTE 2
-            MOVSW
-.PasCopyWAv:
-.CopyDAv:
-            TEST        EDI,0x4
-            JZ          .PasCopyDAv
-            CMP         EBX,BYTE 4
-            JL          .CopyWAp
-            SUB         EBX,BYTE 4
-            MOVSD
-.PasCopyDAv:
-            TEST        EDI,0x8
-            JZ          .PasCopyQAv
-            CMP         EBX,BYTE 8
-            JL          .CopyWAp
-            MOVQ        xmm0,[ESI]
-            SUB         EBX,8
-            MOVQ        [EDI],xmm0
-            LEA         ESI,[ESI+8]
-            LEA         EDI,[EDI+8]
-.PasCopyQAv:
-.CpyMMX:
-            SHLD        ECX,EBX,26 ; ECX = EBX >> 6 ; ECX should be zero
-            JZ          SHORT .PasCpyMMXBloc
-            AND         EBX,BYTE 0x3F
-.BcCpyMMXBloc:
-            MOVDQU      xmm0,[ESI]
-            MOVDQU      xmm1,[ESI+32]
-            MOVDQU      xmm2,[ESI+16]
-            MOVDQU      xmm3,[ESI+48]
-            MOVDQA      [EDI],xmm0
-            MOVDQA      [EDI+32],xmm1
-            MOVDQA      [EDI+16],xmm2
-            MOVDQA      [EDI+48],xmm3
-            DEC         ECX
-            LEA         ESI,[ESI+64]
-            LEA         EDI,[EDI+64]
-            JNZ         SHORT .BcCpyMMXBloc
-.PasCpyMMXBloc:
-            SHLD        ECX,EBX,29 ; ECX = EBX >> 3 ; ECX should be zero
-            JZ          SHORT .PasCpyMMX
-            AND         EBX,BYTE 7
-.BcCpyMMX:
-            MOVQ        xmm0,[ESI]
-            DEC         ECX
-            MOVQ        [EDI],xmm0
-            LEA         ESI,[ESI+8]
-            LEA         EDI,[EDI+8]
-            JNZ         SHORT .BcCpyMMX
-
-.PasCpyMMX:
-.CopyDAp:
-            CMP         EBX,BYTE 4
-            JL          .CopyWAp
-            SUB         EBX,BYTE 4
-            MOVSD
-.PasCopyDAp:
-.CopyWAp:
-            CMP         EBX,BYTE 2
-            JL          .CopyBAp
-            SUB         EBX,BYTE 2
-            MOVSW
-.PasCopyWAp:
-.CopyBAp:
-            OR          EBX,EBX
-            JZ          .FinSurfCopy
-            MOVSB
-.PasCopyBAp:
-.FinSurfCopy:
-            POP         EBX
             POP         ESI
             POP         EDI
 
@@ -2018,15 +1903,6 @@ RGBFinMask_IGI  DD  0,((1<<(Prec+5))-1),0,0
 RGBFinMask_GII  DD  ((1<<Prec)-1),0,0,0
 RGBFinMask_III  DD  0,0,0,0
 
-; BLENDING 16BPP ----------
-QBlue16Mask     DW  CMaskB_RGB16,CMaskB_RGB16,CMaskB_RGB16,CMaskB_RGB16
-Q2Blue16Mask    DW  CMaskB_RGB16,CMaskB_RGB16,CMaskB_RGB16,CMaskB_RGB16
-QGreen16Mask    DW  CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16
-Q2Green16Mask   DW  CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16,CMaskG_RGB16
-QRed16Mask      DW  CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16
-Q2Red16Mask     DW  CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16,CMaskR_RGB16
-WBGR16Mask      DW  CMaskB_RGB16,CMaskG_RGB16,CMaskR_RGB16,CMaskR_RGB16
-W2BGR16Mask     DW  CMaskB_RGB16,CMaskG_RGB16,CMaskR_RGB16,CMaskR_RGB16
 
 ;* 16bpp poly proc****
 InFillPolyProc16:

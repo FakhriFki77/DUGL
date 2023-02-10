@@ -865,128 +865,6 @@ PutMaskSurf16:
     RETURN
 
 
-ALIGN 32
-_SurfMaskCopy16:
-    ARG PDstSrfMaskB, 4, PSrcSrfMaskB, 4
-            PUSH        ESI
-            PUSH        EDI
-            PUSH        EBX
-
-            MOV         ESI,[EBP+PSrcSrfMaskB]
-            MOV         EDI,[EBP+PDstSrfMaskB]
-            MOVD        xmm3,[ESI+Mask-CurSurf]
-
-            MOV         EBX,[ESI+SizeSurf-CurSurf]
-            PSHUFLW     xmm3,xmm3,0
-            MOV         EDI,[EDI+rlfb-CurSurf]
-            PUNPCKLQDQ  xmm3,xmm3
-            SHR         EBX,1
-            MOV         ESI,[ESI+rlfb-CurSurf]
-            MOVD        EBP,xmm3
-            XOR         ECX,ECX
-
-.BcStBAv:
-            TEST        EDI,6   ; dword aligned ?
-            JZ          .FPasStBAv
-            MOV         AX,[ESI]
-            CMP         AX,BP
-            LEA         ESI,[ESI+2]
-            JZ          .PasStBAv
-            STOSW
-            DEC         EBX
-            JZ          .FinSHLine
-            JMP         .BcStBAv
-.PasStBAv:
-            DEC         EBX
-            LEA         EDI,[EDI+2]
-            JZ          .FinSHLine
-            JMP         .BcStBAv
-.FPasStBAv:
-;--------
-            TEST        EDI, 8
-            JZ          .PasStQAv
-            CMP         EBX,BYTE 4
-            JL          .StBAp
-            MOVQ        xmm2,[ESI]
-            MOVQ        xmm1,xmm2
-            MOVQ        xmm0,xmm2
-            MOVQ        xmm4,[EDI]
-
-            PCMPEQW     xmm2,xmm3 ; [DQ16Mask]
-            PCMPEQW     xmm1,xmm3 ; [DQ16Mask]
-            PANDN       xmm2,xmm0
-            PAND        xmm4,xmm1
-            POR         xmm2,xmm4
-
-            SUB         EBX, BYTE 4
-            MOVQ        [EDI],xmm2
-            LEA         ESI,[ESI+8]
-            LEA         EDI,[EDI+8]
-.PasStQAv:
-;-------
-            SHLD        ECX,EBX,29
-            JZ          .StBAp
-;ALIGN 4
-.StoSSE:
-            MOVDQU      xmm2,[ESI]
-            MOVDQA      xmm4,[EDI]
-            MOVDQA      xmm1,xmm2
-            MOVDQA      xmm0,xmm2
-
-            PCMPEQW     xmm1,xmm3 ; [DQ16Mask]
-            PCMPEQW     xmm2,xmm3 ; [DQ16Mask]
-            PAND        xmm4,xmm1
-            PANDN       xmm2,xmm0
-            POR         xmm2,xmm4
-            DEC         ECX
-            MOVDQA      [EDI],xmm2
-            LEA         ESI,[ESI+16]
-            LEA         EDI,[EDI+16]
-            JNZ         .StoSSE
-.StBAp:
-            AND         BL,BYTE 7
-            JZ          .FinSHLine
-.StQAp:
-            TEST        BL,4
-            JZ          .PasStQAp
-            MOVQ        xmm2,[ESI]
-            MOVQ        xmm1,xmm2
-            MOVQ        xmm0,xmm2
-            MOVQ        xmm4,[EDI]
-
-            PCMPEQW     xmm2,xmm3 ; [DQ16Mask]
-            PCMPEQW     xmm1,xmm3 ; [DQ16Mask]
-            PANDN       xmm2,xmm0
-            PAND        xmm4,xmm1
-            POR         xmm2,xmm4
-
-            MOVQ        [EDI],xmm2
-            LEA         ESI,[ESI+8]
-            LEA         EDI,[EDI+8]
-.PasStQAp:
-            AND         BL,BYTE 3
-            JZ          SHORT .FinSHLine
-
-.BcStBAp:
-            MOV         AX,[ESI]
-            CMP         AX,BP
-            LEA         ESI,[ESI+2]
-            JZ          .BPasStBAp
-            DEC         BL
-            STOSW
-            JNZ         .BcStBAp
-            JMP         SHORT .FinSHLine
-.BPasStBAp:
-            DEC         BL
-            LEA         EDI,[EDI+2]
-            JNZ         .BcStBAp
-.PasStBAp:
-.FinSHLine:
-            POP         EBX
-            POP         EDI
-            POP         ESI
-
-    RETURN
 
 ; -------------------------------
 ; Put a Surf blended with a color
@@ -1425,127 +1303,6 @@ PutSurfBlnd16:
 
     RETURN
 
-ALIGN 32
-_SurfCopyBlnd16:
-  ARG PDstSrfB, 4, PSrcSrfB, 4, SCBCol, 4
-            PUSH        EDI
-            PUSH        ESI
-            PUSH        EBX
-
-; prepare col blending
-            MOV         EAX,[EBP+SCBCol] ;
-            MOV         EBX,EAX ;
-            MOV         ECX,EAX ;
-            MOV         EDX,EAX ;
-            AND         EBX,[QBlue16Mask] ; EBX = Bclr16 | Bclr16
-            SHR         EAX,24
-            AND         ECX,[QGreen16Mask] ; ECX = Gclr16 | Gclr16
-            AND         AL,BlendMask ; remove any ineeded bits
-            AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
-            XOR         AL,BlendMask ; 31-blendsrc
-            MOV         EDI,EAX
-            XOR         AL,BlendMask ; 31-blendsrc
-            INC         AL
-            SHR         DX,5 ; right shift red 5bits
-            IMUL        BX,AX
-            IMUL        CX,AX
-            IMUL        DX,AX
-            MOVD        xmm3,EBX
-            MOVD        xmm4,ECX
-            MOVD        xmm5,EDX
-            MOVD        xmm7,EDI
-            PSHUFLW     xmm3,xmm3,0
-            PSHUFLW     xmm4,xmm4,0
-            PSHUFLW     xmm5,xmm5,0
-            PSHUFLW     xmm7,xmm7,0
-            PUNPCKLQDQ  xmm3,xmm3
-            PUNPCKLQDQ  xmm4,xmm4
-            PUNPCKLQDQ  xmm5,xmm5
-            PUNPCKLQDQ  xmm7,xmm7
-
-            MOV         ESI,[EBP+PSrcSrfB]
-            MOV         EDI,[EBP+PDstSrfB]
-            MOV         EBX,[ESI+SizeSurf-CurSurf]
-
-            MOV         EDI,[EDI+rlfb-CurSurf]
-            SHR         EBX,1
-            MOV         ESI,[ESI+rlfb-CurSurf]
-            XOR         ECX,ECX
-
-.BcStBAv:
-            TEST        EDI,6     ; dword aligned ?
-            JZ          .FPasStBAv
-            MOV         AX,[ESI]
-            DEC         EBX
-            MOVD        xmm0,EAX
-            MOVD        xmm1,EAX
-            MOVD        xmm2,EAX
-            @SolidBlndQ
-            MOVD        EAX,xmm0
-            LEA         ESI,[ESI+2]
-            STOSW
-            JZ          .FinSHLine
-            JMP         SHORT .BcStBAv
-.FPasStBAv:
-            TEST        EDI, 8
-            JZ          .PasStQAv
-            CMP         EBX,BYTE 4
-            JL          .StBAp
-            MOVQ        xmm0,[ESI]
-            MOVQ        xmm1,xmm0
-            MOVQ        xmm2,xmm0
-            @SolidBlndQ
-            SUB         EBX, BYTE 4
-            MOVQ        [EDI],xmm0
-            LEA         ESI,[ESI+8]
-            LEA         EDI,[EDI+8]
-.PasStQAv:
-            SHLD        ECX,EBX,29 ; ECX = (EBX >> 2) : ECX should be zero
-            JZ          .StBAp
-;ALIGN 4
-.StoSSE:
-            MOVDQU      xmm0,[ESI]
-            MOVDQA      xmm1,xmm0
-            MOVDQA      xmm2,xmm0
-            @SolidBlndQ
-            DEC         ECX
-            MOVDQA      [EDI],xmm0
-            LEA         ESI,[ESI+16]
-            LEA         EDI,[EDI+16]
-            JNZ         .StoSSE
-.StBAp:
-            AND         BL,BYTE 7
-            JZ          .FinSHLine
-.StQAp:
-            TEST        BL,4
-            JZ          .PasStQAp
-            MOVQ        xmm0,[ESI]
-            MOVQ        xmm1,xmm0
-            MOVQ        xmm2,xmm0
-            @SolidBlndQ
-            MOVQ        [EDI],xmm0
-            LEA         ESI,[ESI+8]
-            LEA         EDI,[EDI+8]
-.PasStQAp:
-            AND         BL,BYTE 3
-            JZ          SHORT .FinSHLine
-.BcStBAp:
-            MOV         AX,[ESI]
-            DEC         BL
-            MOVD        xmm0,EAX
-            MOVD        xmm1,EAX
-            MOVD        xmm2,EAX
-            @SolidBlndQ
-            MOVD        EAX,xmm0
-            LEA         ESI,[ESI+2]
-            STOSW
-            JNZ         .BcStBAp
-.PasStBAp:
-.FinSHLine:
-            POP         EBX
-            POP         ESI
-            POP         EDI
-    RETURN
 
 ; =======================================
 ; Put a MASKED Surf blended with a color
@@ -2074,7 +1831,7 @@ PutMaskSurfBlnd16:
     RETURN
 
 ALIGN 32
-_SurfMaskCopyBlnd16:
+SurfMaskCopyBlnd16:
     ARG PDstSrfMB, 4, PSrcSrfMB, 4, SCMBCol, 4
             PUSH        EDI
             PUSH        ESI
@@ -2101,11 +1858,10 @@ _SurfMaskCopyBlnd16:
             IMUL        BX,AX
             IMUL        CX,AX
             IMUL        DX,AX
-            MOVD        xmm0,[ESI+Mask-CurSurf]
             MOVD        xmm3,EBX
             MOVD        xmm4,ECX
             MOVD        xmm5,EDX
-            PSHUFLW     xmm0,xmm0,0
+            PSHUFLW     xmm0,[ESI+DuglSurf.Mask],0
             PSHUFLW     xmm3,xmm3,0
             PSHUFLW     xmm4,xmm4,0
             PSHUFLW     xmm5,xmm5,0
@@ -2118,12 +1874,12 @@ _SurfMaskCopyBlnd16:
             PUNPCKLQDQ  xmm7,xmm7
             MOVDQA      [DQ16Mask],xmm0
 
-            MOV         EBX,[ESI+SizeSurf-CurSurf]
+            MOV         EBX,[ESI+DuglSurf.SizeSurf]
             MOVD        EBP,xmm0
 
-            MOV         EDI,[EDI+rlfb-CurSurf]
+            MOV         EDI,[EDI+DuglSurf.rlfb]
             SHR         EBX,1
-            MOV         ESI,[ESI+rlfb-CurSurf]
+            MOV         ESI,[ESI+DuglSurf.rlfb]
             XOR         ECX,ECX
 
 .BcStBAv:
@@ -2242,33 +1998,6 @@ _SurfMaskCopyBlnd16:
 ; -------------------------------
 ; Put a Transparent Surf
 ; -------------------------------
-%macro  @TransBlndQ 0
-            PAND        xmm0,[QBlue16Mask]
-            PAND        xmm3,[QBlue16Mask]
-            PAND        xmm1,[QGreen16Mask]
-            PAND        xmm4,[QGreen16Mask]
-            PAND        xmm2,[QRed16Mask]
-            PAND        xmm5,[QRed16Mask]
-            PMULLW      xmm0,xmm7 ; [blend_src]
-            PMULLW      xmm3,xmm6 ; [blend_dst]
-            PSRLW       xmm2,5
-            PSRLW       xmm5,5
-            PMULLW      xmm4,xmm6 ; [blend_dst]
-            PMULLW      xmm1,xmm7 ; [blend_src]
-            PMULLW      xmm5,xmm6 ; [blend_dst]
-            PMULLW      xmm2,xmm7 ; [blend_src]
-
-            PADDW       xmm0,xmm3
-            PADDW       xmm1,xmm4
-            PADDW       xmm2,xmm5
-            PSRLW       xmm0,5
-            PSRLW       xmm1,5
-            PAND        xmm2,[QRed16Mask]
-            ;PAND       mm0,[QBlue16Mask]
-            PAND        xmm1,[QGreen16Mask]
-            POR         xmm0,xmm2
-            POR         xmm0,xmm1
-%endmacro
 
 ALIGN 32
 PutSurfTrans16:
@@ -2719,131 +2448,6 @@ PutSurfTrans16:
     RETURN
 
 
-ALIGN 32
-_SurfCopyTrans16:
-    ARG PDstSrfT, 4, PSrcSrfT, 4, SCTrans, 4
-            PUSH        EDI
-            PUSH        ESI
-            PUSH        EBX
-
-; prepare col blending
-            MOV         EAX,[EBP+SCTrans] ;
-            AND         EAX,BYTE BlendMask
-            JZ          .FinSHLine
-            MOV         EDX,EAX ;
-            INC         EAX
-
-            XOR         DL,BlendMask ; 31-blendsrc
-            MOVD        xmm7,EAX
-            MOVD        xmm6,EDX
-            PSHUFLW     xmm7,xmm7,0
-            PSHUFLW     xmm6,xmm6,0
-            PUNPCKLQDQ  xmm7,xmm7
-            PUNPCKLQDQ  xmm6,xmm6
-
-            MOV         ESI,[EBP+PSrcSrfT]
-            MOV         EDI,[EBP+PDstSrfT]
-            MOV         EBX,[ESI+SizeSurf-CurSurf]
-
-            MOV         EDI,[EDI+rlfb-CurSurf]
-            SHR         EBX,1
-            MOV         ESI,[ESI+rlfb-CurSurf]
-            XOR         ECX,ECX
-
-.BcStBAv:
-            TEST        EDI,6   ; dword aligned ?
-            JZ          .FPasStBAv
-            MOV         AX,[ESI]
-            MOVD        xmm0,EAX
-            DEC         EBX
-            MOV         AX,[EDI]
-            MOVQ        xmm1,xmm0
-            MOVD        xmm3,EAX
-            MOVQ        xmm2,xmm0
-            MOVQ        xmm4,xmm3
-            MOVQ        xmm5,xmm3
-            @TransBlndQ
-            LEA         ESI,[ESI+2]
-            PEXTRW      [EDI],xmm0,0
-            LEA         EDI,[EDI+2]
-            JZ          .FinSHLine
-            JMP         .BcStBAv
-.FPasStBAv:
-;--------
-            TEST        EDI, 8
-            JZ          .PasStQAv
-            CMP         EBX,BYTE 4
-            JL          .StBAp
-            MOVQ        xmm0,[ESI]
-            MOVQ        xmm3,[EDI]
-            MOVQ        xmm1,xmm0
-            MOVQ        xmm4,xmm3
-            MOVQ        xmm2,xmm0
-            MOVQ        xmm5,xmm3
-            @TransBlndQ
-            SUB         EBX, BYTE 4
-            MOVQ        [EDI],xmm0
-            LEA         ESI,[ESI+8]
-            LEA         EDI,[EDI+8]
-.PasStQAv:
-;-------
-            SHLD        ECX,EBX,29
-            JZ          .StBAp
-;ALIGN 4
-.StoSSE:
-            MOVDQU      xmm0,[ESI]
-            MOVDQA      xmm3,[EDI]
-            MOVDQA      xmm1,xmm0
-            MOVDQA      xmm4,xmm3
-            MOVDQA      xmm2,xmm0
-            MOVDQA      xmm5,xmm3
-            @TransBlndQ
-            DEC         ECX
-            MOVDQA      [EDI],xmm0
-            LEA         ESI,[ESI+16]
-            LEA         EDI,[EDI+16]
-            JNZ         .StoSSE
-.StBAp:
-            AND         BL,BYTE 7
-            JZ          .FinSHLine
-.StQAp:
-            TEST        BL,4
-            JZ          .PasStQAp
-            MOVQ        xmm0,[ESI]
-            MOVQ        xmm3,[EDI]
-            MOVQ        xmm1,xmm0
-            MOVQ        xmm4,xmm3
-            MOVQ        xmm2,xmm0
-            MOVQ        xmm5,xmm3
-            @TransBlndQ
-            MOVQ        [EDI],xmm0
-            LEA         ESI,[ESI+8]
-            LEA         EDI,[EDI+8]
-.PasStQAp:
-            AND         BL,BYTE 3
-            JZ          .FinSHLine
-.BcStBAp:
-            MOV         AX,[ESI]
-            MOVD        xmm0,EAX
-            DEC         BL
-            MOV         AX,[EDI]
-            MOVQ        xmm1,xmm0
-            MOVD        xmm3,EAX
-            MOVQ        xmm2,xmm0
-            MOVQ        xmm4,xmm3
-            MOVQ        xmm5,xmm3
-            @TransBlndQ
-            LEA         ESI,[ESI+2]
-            PEXTRW      [EDI],xmm0,0
-            LEA         EDI,[EDI+2]
-            JNZ         .BcStBAp
-.PasStBAp:
-.FinSHLine:
-
-            POP         EBX
-            POP         ESI
-            POP         EDI
-    RETURN
 
 ; -------------------------------
 ; Put a Masked Transparent Surf
@@ -3396,7 +3000,7 @@ PutMaskSurfTrans16:
 
 
 ALIGN 32
-_SurfMaskCopyTrans16:
+SurfMaskCopyTrans16:
     ARG PDstSrfMT, 4, PSrcSrfMT, 4, SCMTrans, 4
             PUSH        EDI
             PUSH        ESI
@@ -3414,21 +3018,20 @@ _SurfMaskCopyTrans16:
             MOVD        xmm6,EDX
             MOV         ESI,[EBP+PSrcSrfMT]
             MOV         EDI,[EBP+PDstSrfMT]
-            MOVD        xmm0,[ESI+Mask-CurSurf]
             PSHUFLW     xmm7,xmm7,0
             PSHUFLW     xmm6,xmm6,0
-            PSHUFLW     xmm0,xmm0,0
+            PSHUFLW     xmm0,[ESI+DuglSurf.Mask],0
             PUNPCKLQDQ  xmm7,xmm7
             PUNPCKLQDQ  xmm6,xmm6
             PUNPCKLQDQ  xmm0,xmm0
 
-            MOV         EBX,[ESI+SizeSurf-CurSurf]
+            MOV         EBX,[ESI+DuglSurf.SizeSurf]
             MOVD        EBP,xmm0
             MOVDQA      [DQ16Mask],xmm0
 
-            MOV         EDI,[EDI+rlfb-CurSurf]
+            MOV         EDI,[EDI+DuglSurf.rlfb]
             SHR         EBX,1
-            MOV         ESI,[ESI+rlfb-CurSurf]
+            MOV         ESI,[ESI+DuglSurf.rlfb]
             XOR         ECX,ECX
 .BcStBAv:
             TEST        EDI,6   ; dword aligned ?

@@ -1773,70 +1773,70 @@ ALIGN 4
 %macro  @SolidBlndHLine16   0
         TEST            EDI,2
         JZ              %%FPasStBAv
-        MOV         AX,[EDI]
+        MOV             AX,[EDI]
         MOVD            xmm0,EAX ; B
         MOVD            xmm1,EAX ; G
         ;MOVQ       mm2,mm0   ; R
         MOVD            xmm2,EAX      ; R
         @SolidBlndQ
         MOVD            EAX,xmm0
-        DEC         ESI
+        DEC             ESI
         STOSW
         JZ              %%FinSHLine
 %%FPasStBAv:
         TEST            EDI,4
         JZ              SHORT %%PasStDAv
-        CMP         ESI,2
+        CMP             ESI,2
         JL              %%StBAp
-        MOV         EAX,[EDI]
+        MOV             EAX,[EDI]
         MOVD            xmm0,EAX ; B
         MOVD            xmm1,EAX   ; G
         MOVD            xmm2,EAX      ; R
         @SolidBlndQ
         MOVD            [EDI],xmm0
-        SUB         ESI,BYTE 2
-        LEA         EDI,[EDI+4]
+        SUB             ESI,BYTE 2
+        LEA             EDI,[EDI+4]
 %%PasStDAv:
         SHLD            ECX,ESI,30 ; ECX = ESI >> 2, ECX should be zero
         JZ              %%StDAp
 %%StoDQ:
-        CMP         CX,BYTE 2
-      JL          %%StoLastQ
-      MOVDQU        xmm0,[EDI]
-        SUB         CX,BYTE 2
-        MOVDQA      xmm1,xmm0
-        MOVDQA      xmm2,xmm0
+        CMP             CX,BYTE 2
+        JL              %%StoLastQ
+        MOVDQU          xmm0,[EDI]
+        SUB             CX,BYTE 2
+        MOVDQA          xmm1,xmm0
+        MOVDQA          xmm2,xmm0
         @SolidBlndQ
-        MOVDQU      [EDI],xmm0
-        LEA         EDI,[EDI+16]
-        JZ          SHORT %%Ap
-        JMP         SHORT %%StoDQ
+        MOVDQU          [EDI],xmm0
+        LEA             EDI,[EDI+16]
+        JZ              SHORT %%Ap
+        JMP             SHORT %%StoDQ
 %%StoLastQ:
         MOVQ            xmm0,[EDI]
-        MOVDQA      xmm1,xmm0
-        MOVDQA      xmm2,xmm0
+        MOVDQA          xmm1,xmm0
+        MOVDQA          xmm2,xmm0
         @SolidBlndQ
-        XOR         ECX,ECX
+        XOR             ECX,ECX
         MOVQ            [EDI],xmm0
-        LEA         EDI,[EDI+8]
+        LEA             EDI,[EDI+8]
 %%Ap:
-        AND         ESI,BYTE 3
+        AND             ESI,BYTE 3
         JZ              %%FinSHLine
 %%StDAp:
         TEST            ESI,2
         JZ              SHORT %%StBAp
-        MOV         EAX,[EDI] ; B
+        MOV             EAX,[EDI] ; B
         MOVD            xmm0,EAX ; B
         MOVD            xmm1,EAX ; G
         MOVD            xmm2,EAX  ; R
         @SolidBlndQ
         MOVD            [EDI],xmm0
-        SUB         ESI,BYTE 2
-        LEA         EDI,[EDI+4]
+        SUB             ESI,BYTE 2
+        LEA             EDI,[EDI+4]
 %%StBAp:
         TEST            ESI,1
         JZ              SHORT %%PasStBAp
-        MOV         AX,[EDI]
+        MOV             AX,[EDI]
         MOVD            xmm0,EAX ; B
         MOVD            xmm1,EAX ; G
         MOVD            xmm2,EAX ; R
@@ -1852,10 +1852,10 @@ ALIGN 4
         PAND            xmm0,[QBlue16Mask]
         PAND            xmm1,[QGreen16Mask]
         PAND            xmm2,[QRed16Mask]
-        PMULLW      xmm0,xmm7 ; [blend_src]
+        PMULLW          xmm0,xmm7 ; [blend_src]
         PSRLW           xmm2,5
-        PMULLW      xmm1,xmm7 ; [blend_src]
-        PMULLW      xmm2,xmm7 ; [blend_src]
+        PMULLW          xmm1,xmm7 ; [blend_src]
+        PMULLW          xmm2,xmm7 ; [blend_src]
         PADDW           xmm0,xmm3
         PADDW           xmm1,xmm4
         PADDW           xmm2,xmm5
@@ -1864,9 +1864,38 @@ ALIGN 4
         PAND            xmm2,[QRed16Mask]
         ;PAND       mm0,[QBlue16Mask]
         PAND            xmm1,[QGreen16Mask]
-        POR        xmm0,xmm2
-        POR        xmm0,xmm1
+        POR             xmm0,xmm2
+        POR             xmm0,xmm1
 %endmacro
+
+%macro  @TransBlndQ 0
+            PAND        xmm0,[QBlue16Mask]
+            PAND        xmm3,[QBlue16Mask]
+            PAND        xmm1,[QGreen16Mask]
+            PAND        xmm4,[QGreen16Mask]
+            PAND        xmm2,[QRed16Mask]
+            PAND        xmm5,[QRed16Mask]
+            PMULLW      xmm0,xmm7 ; [blend_src]
+            PMULLW      xmm3,xmm6 ; [blend_dst]
+            PSRLW       xmm2,5
+            PSRLW       xmm5,5
+            PMULLW      xmm4,xmm6 ; [blend_dst]
+            PMULLW      xmm1,xmm7 ; [blend_src]
+            PMULLW      xmm5,xmm6 ; [blend_dst]
+            PMULLW      xmm2,xmm7 ; [blend_src]
+
+            PADDW       xmm0,xmm3
+            PADDW       xmm1,xmm4
+            PADDW       xmm2,xmm5
+            PSRLW       xmm0,5
+            PSRLW       xmm1,5
+            PAND        xmm2,[QRed16Mask]
+            ;PAND       mm0,[QBlue16Mask]
+            PAND        xmm1,[QGreen16Mask]
+            POR         xmm0,xmm2
+            POR         xmm0,xmm1
+%endmacro
+
 
 ;****** TEXT BLEND
 ;**IN*TEXTure BLEND Horizontal Line***********************************************
