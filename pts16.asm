@@ -416,14 +416,11 @@ PutMaskSurf16:
 
             CopySurfDA  ; copy surf
 
-            PSHUFLW     xmm0,[SMask],0
             MOV         EAX,[EBP+MXPSN16]
             MOV         EBX,[EBP+MYPSN16]
             MOV         ECX,EAX
-            PUNPCKLQDQ  xmm0,xmm0
             MOV         EDX,EBX
             MOV         ESI,[EBP+MPSType16]
-            MOVDQA      [DQ16Mask],xmm0
 
 ; --- compute Put coordinates of the View inside the Surf
 ; EAX: MaxX, EBX; MaxY, ECX: MinX, EDX: MnY
@@ -456,8 +453,11 @@ PutMaskSurf16:
             JG          .PasPutSurf
 
             CMP         EAX,[MaxX]
+            PSHUFLW     xmm0,[SMask],0
+            PUNPCKLQDQ  xmm0,xmm0
             CMOVG       EAX,[MaxX]
             CMP         EBX,[MaxY]
+            MOVDQA      [DQ16Mask],xmm0
             MOV         [PutSurfMaxX],EAX
             CMOVG       EBX,[MaxY]
             CMP         ECX,[MinX]
