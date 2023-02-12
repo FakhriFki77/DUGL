@@ -46,6 +46,7 @@
 		<Unit filename="DCONTAIN.h" />
 		<Unit filename="DCONV.h" />
 		<Unit filename="DCORE.h" />
+		<Unit filename="DCORE2.h" />
 		<Unit filename="DFONT.h" />
 		<Unit filename="DGUTILS.asm">
 			<Option compile="0" />
@@ -86,8 +87,13 @@
 			<Option compile="0" />
 			<Option link="0" />
 		</Unit>
+		<Unit filename="font.asm" />
+		<Unit filename="fontc.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="graph.asm" />
 		<Unit filename="graphM.asm" />
+		<Unit filename="graph_C2.asm" />
 		<Unit filename="hzline16.asm">
 			<Option compile="0" />
 			<Option link="0" />

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Sprites" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="../Sprites.bin" prefix_auto="0" extension_auto="0" />
+				<Option working_dir="../" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option use_console_runner="0" />
+				<Compiler>
+					<Add option="-march=corei7" />
+					<Add option="-m32" />
+					<Add option="-g" />
+					<Add directory="../../" />
+				</Compiler>
+				<Linker>
+					<Add option="-m32" />
+					<Add option="-lwayland-egl -lwayland-client -lwayland-cursor -lxkbcommon -lpthread -lrt" />
+					<Add library="DUGL" />
+					<Add library="SDL2" />
+					<Add library="jpeg" />
+					<Add library="png" />
+					<Add library="z" />
+					<Add directory="../../bin/Debug/" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="../Sprites.bin" prefix_auto="0" extension_auto="0" />
+				<Option working_dir="../" />
+				<Option object_output="obj/Release/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-march=corei7" />
+					<Add option="-m32" />
+					<Add directory="../../" />
+				</Compiler>
+				<Linker>
+					<Add option="-O3" />
+					<Add option="-s" />
+					<Add option="-m32" />
+					<Add option="-lwayland-egl -lwayland-client -lwayland-cursor -lxkbcommon -lpthread -lrt" />
+					<Add library="DUGL" />
+					<Add library="SDL2" />
+					<Add library="jpeg" />
+					<Add library="png" />
+					<Add library="z" />
+					<Add directory="../../bin/Release/" />
+				</Linker>
+			</Target>
+		</Build>
+		<Unit filename="sprites.cpp" />
+		<Extensions>
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

@@ -62,15 +62,15 @@ int main(int argc,char *argv[]) {
         exit(-1);
     }
     // load GFX the 3 Sprites
-    if (!LoadGIF16(&sprites[0],"../Asset/PICS/man1.gif")) {
+    if (!LoadGIF16(&sprites[0],"../Asset/PICS/man1.GIF")) {
         printf("man1.gif error\n");
         exit(-1);
     }
-    if (!LoadGIF16(&sprites[1],"../Asset/PICS/cat1.gif")) {
+    if (!LoadGIF16(&sprites[1],"../Asset/PICS/cat1.GIF")) {
         printf("cat1.gif error\n");
         exit(-1);
     }
-    if (!LoadGIF16(&sprites[2],"../Asset/PICS/balcat1.gif")) {
+    if (!LoadGIF16(&sprites[2],"../Asset/PICS/balcat1.GIF")) {
         printf("balcat1.gif error\n");
         exit(-1);
     }
