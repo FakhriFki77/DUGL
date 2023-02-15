@@ -116,10 +116,15 @@ int DecodePNG() {
 
     png_number_of_passes = png_set_interlace_handling(png_ptr);
 
-    // convert palette to RGB image
+    // convert palette to RGB or RGBA (if masked) image
     if(png_color_type == PNG_COLOR_TYPE_PALETTE) {
         png_set_palette_to_rgb(png_ptr);
-        png_color_type = PNG_COLOR_TYPE_RGB;
+        png_bytep trans_alpha = NULL;
+        int num_trans = 0;
+        png_color_16p trans_color = NULL;
+
+        png_get_tRNS(png_ptr, png_info_ptr, &trans_alpha, &num_trans, &trans_color);
+        png_color_type = (trans_alpha != NULL) ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB;
     }
 
     // Convert 1-2-4 bits grayscale images to 8 bits  grayscale.
