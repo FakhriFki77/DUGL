@@ -68,21 +68,22 @@ ALIGN 32
 DgSetCurSurf:
     ARG S1, 4
 
-            PUSH        ESI
-            PUSH        EDI
 
-            MOV         ESI,[EBP+S1]
-            CMP         DWORD [ESI+ResV-CurSurf], MaxResV
-            JG          .Error
-            MOV         EDI,CurSurf
-            CopySurfSNA
-            OR          EAX,BYTE -1
-            JMP         SHORT .Ok
-.Error:
-            XOR         EAX,EAX
-.Ok:
-            POP         EDI
-            POP         ESI
+            MOV         ECX,[EBP+S1]
+            JECXZ       .NotSet
+            CMP         DWORD [ECX+DuglSurf.ResV], MaxResV
+            JG          .NotSet
+            MOV         EAX,CurSurf
+            MOVDQA      xmm0,[ECX]
+            MOVDQA      xmm1,[ECX+32]
+            MOVDQA      xmm2,[ECX+16]
+            MOVDQA      xmm3,[ECX+48]
+
+            MOVDQA      [EAX],xmm0
+            MOVDQA      [EAX+32],xmm1
+            MOVDQA      [EAX+16],xmm2
+            MOVDQA      [EAX+48],xmm3
+.NotSet:
 
     RETURN
 
@@ -90,15 +91,19 @@ ALIGN 32
 DgSetSrcSurf:
     ARG SrcS, 4
 
-            PUSH        EDI
-            PUSH        ESI
+            MOV         ECX,[EBP+SrcS]
+            JECXZ       .NotSet
+            MOV         EAX,SrcSurf
+            MOVDQA      xmm0,[ECX]
+            MOVDQA      xmm1,[ECX+32]
+            MOVDQA      xmm2,[ECX+16]
+            MOVDQA      xmm3,[ECX+48]
 
-            MOV         ESI,[EBP+SrcS]
-            MOV         EDI,SrcSurf
-            CopySurfDA
-
-            POP         ESI
-            POP         EDI
+            MOVDQA      [EAX],xmm0
+            MOVDQA      [EAX+32],xmm1
+            MOVDQA      [EAX+16],xmm2
+            MOVDQA      [EAX+48],xmm3
+.NotSet:
 
     RETURN
 
@@ -201,52 +206,6 @@ DgCGetPixel16:
             IMUL        EDX,[NegScanLine]
             ADD         EDX,[vlfb]
             MOVZX       EAX,WORD [EDX+ECX*2]
-.Clip:
-
-    RETURN
-
-DgSurfCGetPixel16:
-    ARG PSURFCGP, 4, SCGPPX, 4, SCGPPY, 4
-
-            MOV         EDX,[EBP+SCGPPY]
-            MOV         ECX,[EBP+SCGPPX]
-            MOV         EAX,0xFFFFFFFF
-            MOV         EBP,[EBP+PSURFCGP]
-            CMP         EDX,[EBP+MaxY-CurSurf]
-            JG          SHORT .Clip
-            CMP         ECX,[EBP+MaxX-CurSurf]
-            JG          SHORT .Clip
-            CMP         EDX,[EBP+MinY-CurSurf]
-            JL          SHORT .Clip
-            CMP         ECX,[EBP+MinX-CurSurf]
-            JL          SHORT .Clip
-
-            IMUL        EDX,[EBP+NegScanLine-CurSurf]
-            ADD         EDX,[EBP+vlfb-CurSurf]
-            MOVZX       EAX,WORD [EDX+ECX*2]
-.Clip:
-
-    RETURN
-
-DgSurfCPutPixel16:
-    ARG PSURFCPP, 4, SCPPPX, 4, SCPPPY, 4, SCPPCOL, 4
-
-            MOV         EAX,[EBP+PSURFCGP]
-            MOV         EDX,[EBP+SCPPPY]
-            MOV         ECX,[EBP+SCPPPX]
-            CMP         EDX,[EAX+MaxY-CurSurf]
-            JG          SHORT .Clip
-            CMP         ECX,[EAX+MaxX-CurSurf]
-            JG          SHORT .Clip
-            CMP         EDX,[EAX+MinY-CurSurf]
-            JL          SHORT .Clip
-            CMP         ECX,[EAX+MinX-CurSurf]
-            JL          SHORT .Clip
-
-            IMUL        EDX,[EAX+NegScanLine-CurSurf]
-            MOV         ECX,[EBP+SCPPCOL]
-            ADD         EDX,[EAX+vlfb-CurSurf]
-            MOV         [EDX+ECX*2],CX
 .Clip:
 
     RETURN
@@ -1186,7 +1145,7 @@ Poly16:
             @ClipCalculerContour ; use same as 8bpp as it compute xdeb and xfin for eax hzline
 
             CMP         DWORD [DebYPoly],BYTE (-1)
-            JE          .PasDrawPoly
+            JE          SHORT .PasDrawPoly
             MOV         EAX,[PType]
             JMP         [ClFillPolyProc16+EAX*4]
 .PasDrawPoly:

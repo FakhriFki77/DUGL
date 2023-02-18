@@ -240,9 +240,9 @@ PosWidthText:
 ALIGN 32
 OutText16:
     ARG Str16, 4
+            PUSH        ESI
             PUSH        EBX
             PUSH        EDI
-            PUSH        ESI
 
             MOV         ESI,[EBP+Str16]
             XOR         EAX,EAX
@@ -517,9 +517,9 @@ OutText16:
             POP         EBX
             JMP         .BcOutChar
 .FinOutText:
-            POP         ESI
             POP         EDI
             POP         EBX
+            POP         ESI
     RETURN
 
 

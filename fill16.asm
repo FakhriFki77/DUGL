@@ -56,7 +56,7 @@ ClipFillSOLID16:
         MOV         EBP,[FinYPoly]
         MOV         EBX,[DebYPoly]
         SUB         EBP,[OrgY]
-        IMUL            EBP,[NegScanLine]
+        IMUL        EBP,[NegScanLine]
         LEA         ESI,[EBX*4]
         PSHUFLW     xmm0,[clr], 0 ; xmm0 = clr16 | clr16 | clr16 | clr16
         SUB         EBX,[FinYPoly]
