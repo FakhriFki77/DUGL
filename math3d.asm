@@ -52,6 +52,7 @@ DistanceDVEC4:
 
             MOV         EAX,[EBP+DistDVEC1P]
             MOV         ECX,[EBP+DistDVEC2P]
+            MOV         EDX,[EBP+DistFResP]
             MOVDQA      xmm3,[EAX]
             SUBPS       xmm3,[ECX]
             MULPS       xmm3,xmm3
@@ -60,8 +61,7 @@ DistanceDVEC4:
             ADDSS       xmm5,xmm3
             ADDSS       xmm5,xmm4
             SQRTSS      xmm0,xmm5
-            MOV         EAX,[EBP+DistFResP]
-            MOVD        [EAX],xmm0
+            MOVD        [EDX],xmm0
 
         RETURN
 
@@ -70,6 +70,7 @@ DistancePow2DVEC4:
 
             MOV         EAX,[EBP+DistDVEC1Pow2P]
             MOV         ECX,[EBP+DistDVEC2Pow2P]
+            MOV         EDX,[EBP+DistPow2FResP]
             MOVDQA      xmm3,[EAX]
             SUBPS       xmm3,[ECX]
             MULPS       xmm3,xmm3
@@ -77,8 +78,7 @@ DistancePow2DVEC4:
             PSHUFD      xmm4,xmm3,(0<<6) | (0<<4) | (3<<2) | (2)
             ADDSS       xmm5,xmm3
             ADDSS       xmm5,xmm4
-            MOV         EAX,[EBP+DistPow2FResP]
-            MOVD        [EAX],xmm5
+            MOVD        [EDX],xmm5
 
         RETURN
 
@@ -88,14 +88,14 @@ DotDVEC4:
 
             MOV         EAX,[EBP+DotDVEC1P]
             MOV         ECX,[EBP+DotDVEC2P]
+            MOV         EDX,[EBP+DotFResP]
             MOVDQA      xmm3,[EAX]
             MULPS       xmm3,[ECX]
             PSHUFD      xmm5,xmm3,(0<<6) | (3<<4) | (2<<2) | (1)
             PSHUFD      xmm4,xmm3,(0<<6) | (0<<4) | (3<<2) | (2)
             ADDSS       xmm5,xmm3
             ADDSS       xmm5,xmm4
-            MOV         EAX,[EBP+DotFResP]
-            MOVD        [EAX],xmm5
+            MOVD        [EDX],xmm5
 
         RETURN
 
@@ -103,6 +103,7 @@ LengthDVEC4:
         ARG    LenDVECP, 4, LenFResP, 4
 
             MOV         EAX,[EBP+LenDVECP]
+            MOV         ECX,[EBP+LenFResP]
             MOVDQA      xmm3,[EAX]
             MULPS       xmm3,xmm3
             PSHUFD      xmm5,xmm3,(0<<6) | (3<<4) | (2<<2) | (1)
@@ -110,8 +111,7 @@ LengthDVEC4:
             ADDSS       xmm5,xmm3
             ADDSS       xmm5,xmm4
             SQRTSS      xmm0,xmm5
-            MOV         EAX,[EBP+LenFResP]
-            MOVD        [EAX],xmm0
+            MOVD        [ECX],xmm0
 
         RETURN
 
@@ -142,6 +142,7 @@ CrossDVEC4:
 
             MOV         EAX,[EBP+CrossDVEC1P]
             MOV         ECX,[EBP+CrossDVEC2P]
+            MOV         EDX,[EBP+CrossResDVECP]
             MOVDQA      xmm0,[EAX]
             MOVDQA      xmm1,[ECX]
             PSHUFD      xmm2,xmm0,(0<<6) | (0<<4) | (2<<2) | (1) ; v1.y | v1.Z | v1.x
@@ -150,9 +151,8 @@ CrossDVEC4:
             PSHUFD      xmm1,xmm1,(0<<6) | (0<<4) | (2<<2) | (1) ; y2.y | y2.z | y2.x
             MULPS       xmm2,xmm3
             MULPS       xmm0,xmm1
-            MOV         EAX,[EBP+CrossResDVECP]
             SUBPS       xmm2,xmm0
-            MOVDQA      [EAX],xmm2
+            MOVDQA      [EDX],xmm2
 
         RETURN
 
@@ -162,12 +162,12 @@ LerpDVEC4Res:
 
             MOV         EAX,[EBP+LerpDVEC1P]
             MOV         ECX,[EBP+LerpDVEC2P]
+            MOV         EDX,[EBP+LerpResDVECP]
             MOVD        xmm3,[EBP+LerpALPHA] ; xmm3 = ALPHA | 0 | 0 | 0
             MOVDQA      xmm0,[EAX]
             MOVDQA      xmm1,[ECX]
             PSHUFD      xmm3,xmm3,0 ; xmm3 = ALPHA | ALPHA | ALPHA | ALPHA
             SUBPS       xmm1,xmm0   ; xmm1 = v2 - v1
-            MOV         EDX,[EBP+LerpResDVECP]
             MULPS       xmm1,xmm3   ; xmm1 = alpha * (v2-v1)
             ADDPS       xmm1,xmm0   ; xmm1 = v1 + alpha * (v2-v1)
             MOVDQA      [EDX],xmm1
@@ -217,12 +217,12 @@ MulValDVEC4Res:
         ARG    MulVDVECResP, 4, MulVFRes, 4, MulDestDVECResP, 4
 
             MOV         EAX,[EBP+MulVDVECResP]
+            MOV         ECX,[EBP+MulDestDVECResP]
             MOVD        xmm0,[EBP+MulVFRes]
             MOVDQA      xmm3,[EAX]
             PSHUFD      xmm0,xmm0, 0 ; xmm0 = MulVF | MulVF | MulVF | MulVF
-            MOV         EAX,[EBP+MulDestDVECResP]
             MULPS       xmm3,xmm0
-            MOVDQA      [EAX],xmm3
+            MOVDQA      [ECX],xmm3
 
         RETURN
 
