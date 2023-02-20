@@ -629,17 +629,14 @@ unsigned int GetBytesDFileBuffer(DFileBuffer *fbuff, void *buff, unsigned int by
             SDL_memcpy(&cbuff[bytesCopied], &fbuff->m_buffRead[fbuff->m_curPos], fbuff->m_bytesInBuff);
             remainBytesToGet -= fbuff->m_bytesInBuff;
             bytesCopied += fbuff->m_bytesInBuff;
-            fbuff->m_bytesInBuff = 0;
-            if (fbuff->m_bytesInBuff == 0) {
-                // not the last chunk, try to read more
-                if (!fbuff->m_EOF) {
-                    ReadChunkDFileBuffer(fbuff);
-                    if (fbuff->m_EOF && fbuff->m_bytesInBuff == 0) {
-                        break;
-                    }
-                } else {
+            // not the last chunk, try to read more
+            if (!fbuff->m_EOF) {
+                ReadChunkDFileBuffer(fbuff);
+                if (fbuff->m_EOF && fbuff->m_bytesInBuff == 0) {
                     break;
                 }
+            } else {
+                break;
             }
         }
     }
