@@ -220,9 +220,74 @@ void RenderWorkerFunc(void *, int ) {
 	DgUpdateWindow();
 	DestroyDSTRDic(strDIC);
 
-	OutText16("\nconsole sample finished,\nEsc to exit\n");
-	DgUpdateWindow();
+    // DFileBuffer
 
-	finished = true;
-	for(;!exitApp;) DelayMs(10);
+    DFileBuffer *dbuff = CreateDFileBuffer(0);
+    char *readBuff = NULL;
+    FILE *tmpFILE = NULL;
+    int countBenchChunks = 4096*16;
+    if (dbuff != NULL) {
+        readBuff = (char*)malloc(dbuff->m_sizeBuff);
+        OutText16Format(text, SIZE_TEXT, "%i - Timing DFileBuffer\n", DgTime);
+        DgUpdateWindow();
+        OutText16Format(text, SIZE_TEXT, "%i - Creating temp file\n", DgTime);
+        DgUpdateWindow();
+        lastDgTime = DgTime;
+        if ((tmpFILE = fopen("tmpBench.bin", "wb")) != NULL) {
+            for (int i=0; i < countBenchChunks; i++) {
+                fwrite(dbuff->m_buffRead, dbuff->m_sizeBuff, 1, tmpFILE);
+            }
+            fclose(tmpFILE);
+            OutText16Format(text, SIZE_TEXT, "%i - creating tmpBench.bin in %0.2f sec\n", DgTime, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
+            DgUpdateWindow();
+
+            OutText16Format(text, SIZE_TEXT, "%i - Bench DFileBuffer\n", DgTime);
+            DgUpdateWindow();
+            lastDgTime = DgTime;
+            if (OpenFileDFileBuffer(dbuff, "tmpBench.bin", "rb")) {
+                for (int i=0; i < countBenchChunks*4; i++) {
+                    if (GetBytesDFileBuffer(dbuff, readBuff, dbuff->m_sizeBuff/4) != dbuff->m_sizeBuff/4) {
+                        OutText16Format(text, SIZE_TEXT, "%i - Error DFileBuffer::GetBytes\n", DgTime);
+                        DgUpdateWindow();
+                    }
+                }
+                CloseFileDFileBuffer(dbuff);
+                OutText16Format(text, SIZE_TEXT, "%i - DFileBuffer reading tmpBench.bin in %0.2f sec\n", DgTime, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
+                DgUpdateWindow();
+            }
+
+            OutText16Format(text, SIZE_TEXT, "%i - Bench fread\n", DgTime);
+            DgUpdateWindow();
+            if ((tmpFILE = fopen("tmpBench.bin", "wb")) != NULL) {
+                for (int i=0; i < countBenchChunks; i++) {
+                    fwrite(dbuff->m_buffRead, dbuff->m_sizeBuff, 1, tmpFILE);
+                }
+                fclose(tmpFILE);
+            }
+            lastDgTime = DgTime;
+            if ((tmpFILE = fopen("tmpBench.bin", "rb")) != NULL) {
+                for (int i=0; i < countBenchChunks*4; i++) {
+                    if (fread(readBuff, 1, dbuff->m_sizeBuff/4, tmpFILE) != dbuff->m_sizeBuff/4) {
+                        OutText16Format(text, SIZE_TEXT, "%i - Error fread\n", DgTime);
+                        DgUpdateWindow();
+                    }
+                }
+                fclose(tmpFILE);
+                OutText16Format(text, SIZE_TEXT, "%i - fread reading tmpBench.bin in %0.2f sec\n", DgTime, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
+                DgUpdateWindow();
+            }
+
+            remove("tmpBench.bin");
+        } else {
+            OutText16Format(text, SIZE_TEXT, "%i - Failed create tmpBench.bin\n", DgTime);
+            DgUpdateWindow();
+        }
+        DgUpdateWindow();
+        free(readBuff);
+    }
+
+    OutText16("\nconsole sample finished,\nEsc to exit\n");
+    DgUpdateWindow();
+    finished = true;
+    for(;!exitApp;) DelayMs(10);
 }
