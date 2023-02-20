@@ -157,10 +157,10 @@ int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, i
     if (PosY >= 0) posY = PosY;
 
     FlagCreate |= SDL_WINDOW_SHOWN;
-    if (Borderless)
+    if (Borderless || FullScreen)
         FlagCreate |= SDL_WINDOW_BORDERLESS;
     else {
-        if (ResizeWin)
+        if (ResizeWin && !FullScreen)
             FlagCreate |= SDL_WINDOW_RESIZABLE;
     }
 
