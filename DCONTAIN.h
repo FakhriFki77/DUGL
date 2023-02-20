@@ -132,6 +132,9 @@ DFileBuffer* CreateDFileBuffer(unsigned int sizeBuff);
 void DestroyDFileBuffer(DFileBuffer *ptr);
 bool OpenFileDFileBuffer(DFileBuffer *ptr, const char *filename, const char *openmode);
 void CloseFileDFileBuffer(DFileBuffer *ptr);
+bool FseekDFileBuffer(DFileBuffer *ptr, long int offset, int origin);
+bool RewindDFileBuffer(DFileBuffer *fbuff);
+unsigned int GetBytesDFileBuffer(DFileBuffer *fbuff, void *buff, unsigned int bytesToGet);
 unsigned int GetLineDFileBuffer(DFileBuffer *ptr, char *line, unsigned int maxLineSize);
 bool IsEndOfFileDFileBuffer(DFileBuffer *ptr);
 

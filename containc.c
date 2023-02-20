@@ -565,23 +565,48 @@ void ReadChunkDFileBuffer(DFileBuffer *ptr) {
     }
 }
 
-bool OpenFileDFileBuffer(DFileBuffer *ptr, const char *filename, const char *openmode) {
-    if (ptr->m_file != NULL || ptr->m_readWorkerID == 0)
+void InitFirstReadDFileBuffer(DFileBuffer *fbuff) {
+    fbuff->m_ReadJob.m_buffRead = fbuff->m_buffReadWorker;
+    fbuff->m_ReadJob.m_file = fbuff->m_file;
+    fbuff->m_ReadJob.m_sizeBuff = fbuff->m_sizeBuff;
+    fbuff->m_ReadJob.m_EOF = false;
+    fbuff->m_EOF = false;
+    RunDWorker(fbuff->m_readWorkerID, false);
+    ReadChunkDFileBuffer(fbuff);
+}
+
+bool OpenFileDFileBuffer(DFileBuffer *fbuff, const char *filename, const char *openmode) {
+    if (fbuff->m_file != NULL || fbuff->m_readWorkerID == 0)
         return false;
-    if ((ptr->m_file = fopen(filename, openmode)) == NULL)
+    if ((fbuff->m_file = fopen(filename, openmode)) == NULL)
         return false;
-    ptr->m_ReadJob.m_buffRead = ptr->m_buffReadWorker;
-    ptr->m_ReadJob.m_file = ptr->m_file;
-    ptr->m_ReadJob.m_sizeBuff = ptr->m_sizeBuff;
-    ptr->m_ReadJob.m_EOF = false;
-    ptr->m_EOF = false;
-    RunDWorker(ptr->m_readWorkerID, false);
-    ReadChunkDFileBuffer(ptr);
+    InitFirstReadDFileBuffer(fbuff);
     return true;
 }
 
+bool FseekDFileBuffer(DFileBuffer *fbuff, long int offset, int origin) {
+    if (fbuff->m_file == NULL)
+        return false;
+
+    if (fseek(fbuff->m_file, offset, origin) != 0) {
+        fbuff->m_bytesInBuff = 0;
+        fbuff->m_EOF = true;
+        return false;
+    }
+    InitFirstReadDFileBuffer(fbuff);
+    return true;
+}
+
+bool RewindDFileBuffer(DFileBuffer *fbuff) {
+    return FseekDFileBuffer(fbuff, 0, SEEK_SET);
+}
+
 unsigned int GetBytesDFileBuffer(DFileBuffer *fbuff, void *buff, unsigned int bytesToGet) {
-    /* TODO */
+    unsigned int bytesCopied = 0,
+                 remainBytesToGet = bytesToGet;
+    char * cbuff = (char*) buff;
+    if (fbuff->m_file == NULL)
+        return 0;
     if (fbuff->m_bytesInBuff == 0) {
         if (fbuff->m_EOF)
             return 0;
@@ -589,8 +614,37 @@ unsigned int GetBytesDFileBuffer(DFileBuffer *fbuff, void *buff, unsigned int by
         if (fbuff->m_bytesInBuff == 0)
             return 0;
     }
+    while (remainBytesToGet > 0) {
+        // last block
+        if (remainBytesToGet <= fbuff->m_bytesInBuff) {
+            SDL_memcpy(&cbuff[bytesCopied], &fbuff->m_buffRead[fbuff->m_curPos], remainBytesToGet);
+            fbuff->m_curPos += remainBytesToGet;
+            fbuff->m_bytesInBuff -= remainBytesToGet;
+            if (fbuff->m_bytesInBuff == 0) {
+                if (!fbuff->m_EOF)
+                    ReadChunkDFileBuffer(fbuff);
+            }
+            return bytesToGet; // success to get all bytes !!
+        } else { // get all available bytes and try to get more
+            SDL_memcpy(&cbuff[bytesCopied], &fbuff->m_buffRead[fbuff->m_curPos], fbuff->m_bytesInBuff);
+            remainBytesToGet -= fbuff->m_bytesInBuff;
+            bytesCopied += fbuff->m_bytesInBuff;
+            fbuff->m_bytesInBuff = 0;
+            if (fbuff->m_bytesInBuff == 0) {
+                // not the last chunk, try to read more
+                if (!fbuff->m_EOF) {
+                    ReadChunkDFileBuffer(fbuff);
+                    if (fbuff->m_EOF && fbuff->m_bytesInBuff == 0) {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+    }
 
-    return 0;
+    return bytesCopied;
 }
 
 unsigned int GetLineDFileBuffer(DFileBuffer *fbuff, char *line, unsigned int maxLineSize) {
@@ -600,12 +654,15 @@ unsigned int GetLineDFileBuffer(DFileBuffer *fbuff, char *line, unsigned int max
                     startPos = fbuff->m_curPos;
     bool            endLine = false;
 
+    if (fbuff->m_file == NULL)
+        return 0;
     if (fbuff->m_bytesInBuff == 0) {
         if (fbuff->m_EOF)
             return 0;
         ReadChunkDFileBuffer(fbuff);
         if (fbuff->m_bytesInBuff == 0)
             return 0;
+        startPos = 0;
     }
 
     for (i=0; i <maxLineSize-1; i++) {
