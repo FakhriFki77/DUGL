@@ -22,7 +22,7 @@
 #include <stdbool.h>
 
 #include "DCORE.h"
-#include "DCORE2.h"
+#include "DCORES.h"
 #include "DFONT.h"
 #include "DCONV.h"
 #include "DIMAGE.h"
