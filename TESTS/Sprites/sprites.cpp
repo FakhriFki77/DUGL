@@ -7,6 +7,7 @@
 /*  11 February 2023: First port */
 /*  12 February 2023: Few optimizations - First demonstration of DUGL Multi Cores rendering by splitting screen */
 /*     into left and right view and setting a DWorker to render each view, boosting fps by ~50% */
+/*  24 February 2023: Adds quad core rendering capability - Fix bug of zero speed sprites */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,6 +30,7 @@ FONT F1;
 unsigned char rouge,bleu,jaune,noir,blanc; // index of needed colors
 
 int ScrResH = 800, ScrResV = 600;
+//int ScrResH = 1024, ScrResV = 768;
 
 // render DWorker's
 // required for dual core rendering
@@ -36,15 +38,34 @@ unsigned int renderLeftViewWorkerID = 0;
 unsigned int renderRighViewtWorkerID = 0;
 void RenderLeftViewFunc(void *, int );
 void RenderRightViewFunc(void *, int );
+// required for quad core rendering
+unsigned int renderTopLeftViewWorkerID = 0;
+unsigned int renderBottomLeftViewWorkerID = 0;
+unsigned int renderTopRighViewtWorkerID = 0;
+unsigned int renderBottomRighViewtWorkerID = 0;
+void RenderTopLeftViewFunc(void *, int );
+void RenderBottomLeftViewFunc(void *, int );
+void RenderTopRightViewFunc(void *, int );
+void RenderBottomRightViewFunc(void *, int );
 
 // app controle
 bool ExitApp = false;
-bool dualCoreRender = true;
+bool dualCoreRender = false;
+bool quadCoreRender = false;
 bool PauseMove = false;
 // used view *******
-DgView SpritesView = { 0,0,ScrResH-1,ScrResV-1,0,50 },
-       SpritesLeftView = { 0, 0, ScrResH/2-1, ScrResV-1, 0,50 },
-       SpritesRightView = { 0, 0, ScrResH-1,  ScrResV-1, ScrResH/2,50 },
+int TextViewHeight = 50;
+int rendViewHeight = ScrResV - TextViewHeight;
+DgView SpritesView = { 0,0,ScrResH-1,ScrResV-1,0,TextViewHeight },
+       // dual core render
+       SpritesLeftView = { 0, 0, ScrResH/2-1, ScrResV-1, 0, TextViewHeight },
+       SpritesRightView = { 0, 0, ScrResH-1,  ScrResV-1, ScrResH/2, TextViewHeight },
+       // quad core render
+       SpritesTopLeftView = { 0, 0, ScrResH/2-1, ScrResV-1, 0, (rendViewHeight/2) + TextViewHeight },
+       SpritesBottomLeftView = { 0, 0, ScrResH/2-1, (rendViewHeight/2-1) + TextViewHeight, 0, TextViewHeight },
+       SpritesTopRightView = { 0, 0, ScrResH-1,  ScrResV-1, ScrResH/2, (rendViewHeight/2) + TextViewHeight },
+       SpritesBottomRightView = { 0, 0, ScrResH-1, (rendViewHeight/2-1) + TextViewHeight, ScrResH/2, TextViewHeight },
+       // utils view
        TextView = { 0,0,ScrResH-1,49,0,0 },
        AllView = { 0,0,ScrResH-1,ScrResV-1,0,0 };
 
@@ -83,6 +104,11 @@ int main(int argc,char *argv[]) {
     renderLeftViewWorkerID = CreateDWorker(RenderLeftViewFunc, nullptr);
     renderRighViewtWorkerID = CreateDWorker(RenderRightViewFunc, nullptr);
 
+    renderTopLeftViewWorkerID = CreateDWorker(RenderTopLeftViewFunc, nullptr);
+    renderBottomLeftViewWorkerID = CreateDWorker(RenderBottomLeftViewFunc, nullptr);
+    renderTopRighViewtWorkerID = CreateDWorker(RenderTopRightViewFunc, nullptr);
+    renderBottomRighViewtWorkerID = CreateDWorker(RenderBottomRightViewFunc, nullptr);
+
     DgInstallTimer(500);
     if (DgTimerFreq == 0) {
         DgQuit();
@@ -113,14 +139,13 @@ int main(int argc,char *argv[]) {
         Synch(SynchBuff,NULL);
         // average time
         float avgFps=SynchAverageTime(SynchBuff);
-
         // sprites DATA handling progressing
         // add a new sprite if we have not reached the max
         if (!PauseMove) {
             if (NbSprites < MAX_SPRITES) {
                 Sprites[NbSprites].x = 0;
                 Sprites[NbSprites].y = rand()%randY+20;
-                Sprites[NbSprites].xspeed = rand()%10;
+                Sprites[NbSprites].xspeed = rand()%10+1;
                 Sprites[NbSprites].sprite = sprites[rand()%3];
                 NbSprites++; // increase the number of sprites
             }
@@ -132,22 +157,31 @@ int main(int argc,char *argv[]) {
             }
         }
         // sprites rendering **********
-        if (!dualCoreRender) {
+        if (!dualCoreRender && !quadCoreRender) {
             // set the current active surface for drawing
             DgSetCurSurf(RendSurf);
             // set the view of the sprites for the current drawing surf
             SetSurfView(&CurSurf, &SpritesView);
             // clear sprites View
-            ClearSurf16(0x0);
+            ClearSurf16(0);
             // draw all the available sprites
             for (int i=0; i< NbSprites; i++) {
                 PutMaskSurf16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
             }
-        } else {
+        } else if (dualCoreRender) {
             RunDWorker(renderLeftViewWorkerID, false);
             RunDWorker(renderRighViewtWorkerID, false);
             WaitDWorker(renderLeftViewWorkerID);
             WaitDWorker(renderRighViewtWorkerID);
+        } else { // quadCoreRender
+            RunDWorker(renderTopLeftViewWorkerID, false);
+            RunDWorker(renderBottomLeftViewWorkerID, false);
+            RunDWorker(renderTopRighViewtWorkerID, false);
+            RunDWorker(renderBottomRighViewtWorkerID, false);
+            WaitDWorker(renderTopLeftViewWorkerID);
+            WaitDWorker(renderBottomLeftViewWorkerID);
+            WaitDWorker(renderTopRighViewtWorkerID);
+            WaitDWorker(renderBottomRighViewtWorkerID);
         }
         // display text
         DgSetCurSurf(RendSurf);
@@ -157,13 +191,13 @@ int main(int argc,char *argv[]) {
         SetTextCol(RGB16(255,255,255));
         char text[100];
 
-        OutText16ModeFormat(AJ_MID, text, 100, "Sprites %04i, fps %03i, '%s' Rendering, '%s'\n\n",NbSprites,
-                            (int)((avgFps>0.0)?(1.0/(avgFps)):-1),
-                            (!dualCoreRender)?"Single Core":"Dual Core",
+        OutText16ModeFormat(AJ_MID, text, 100, "Sprites %04i, fps %i, '%s' Rendering, '%s'\n\n",NbSprites,
+                            (int)((avgFps>0.0)?(1.0f/(avgFps)):-1),
+                            (!dualCoreRender && !quadCoreRender)?"Single Core":((dualCoreRender)?"Dual Core":"Quad Core"),
                             (!PauseMove)?"Moving..":"Paused"
                             );
         SetTextCol(RGB16(255,255,0));
-        OutText16Mode("Esc to Exit | Space to Toggle Pause | Tab to switch from Single/Dual Core rendering", AJ_SRC);
+        OutText16Mode("Esc to Exit | Space to Toggle Pause | Tab to switch from Single/Dual/Quad Core rendering", AJ_SRC);
 
         // get key
         unsigned char keyCode;
@@ -178,7 +212,15 @@ int main(int argc,char *argv[]) {
             ExitApp = true;
             break;
         case KB_KEY_TAB:
-            dualCoreRender = !dualCoreRender;
+            if (!dualCoreRender && !quadCoreRender)
+                dualCoreRender = true;
+            else if (dualCoreRender) {
+                dualCoreRender = false;
+                quadCoreRender = true;
+            } else { // quadCoreRender == true
+                dualCoreRender = false;
+                quadCoreRender = false;
+            }
             break;
         }
 
@@ -190,9 +232,17 @@ int main(int argc,char *argv[]) {
 
     DestroyDWorker(renderLeftViewWorkerID);
     DestroyDWorker(renderRighViewtWorkerID);
+
+    DestroyDWorker(renderTopLeftViewWorkerID);
+    DestroyDWorker(renderBottomLeftViewWorkerID);
+    DestroyDWorker(renderTopRighViewtWorkerID);
+    DestroyDWorker(renderBottomRighViewtWorkerID);
+
     DgQuit();
     return 0;
 }
+
+// dual core render
 
 void RenderLeftViewFunc(void *, int ) {
     DgSetCurSurf(RendSurf);
@@ -216,3 +266,48 @@ void RenderRightViewFunc(void *, int ) {
     }
 }
 
+// quad core render
+
+void RenderTopLeftViewFunc(void *, int ) {
+    DgSetCurSurf(RendSurf);
+    SetSurfView(&CurSurf, &SpritesTopLeftView);
+    ClearSurf16(0x0);
+
+    // draw all the available sprites
+    for (int i=0; i< NbSprites; i++) {
+        PutMaskSurf16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
+    }
+}
+
+void RenderBottomLeftViewFunc(void *, int ) {
+    DgSetCurSurf_C2(RendSurf);
+    SetSurfView(&CurSurf_C2, &SpritesBottomLeftView);
+    ClearSurf16_C2(0x0);
+
+    // draw all the available sprites
+    for (int i=0; i< NbSprites; i++) {
+        PutMaskSurf16_C2(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
+    }
+}
+
+void RenderTopRightViewFunc(void *, int ) {
+    DgSetCurSurf_C3(RendSurf);
+    SetSurfView(&CurSurf_C3, &SpritesTopRightView);
+    ClearSurf16_C3(0x0);
+
+    // draw all the available sprites
+    for (int i=0; i< NbSprites; i++) {
+        PutMaskSurf16_C3(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
+    }
+}
+
+void RenderBottomRightViewFunc(void *, int ) {
+    DgSetCurSurf_C4(RendSurf);
+    SetSurfView(&CurSurf_C4, &SpritesBottomRightView);
+    ClearSurf16_C4(0x0);
+
+    // draw all the available sprites
+    for (int i=0; i< NbSprites; i++) {
+        PutMaskSurf16_C4(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
+    }
+}
