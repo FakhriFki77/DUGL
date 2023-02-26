@@ -32,21 +32,6 @@ unsigned char rouge,bleu,jaune,noir,blanc; // index of needed colors
 int ScrResH = 800, ScrResV = 600;
 //int ScrResH = 1024, ScrResV = 768;
 
-// render DWorker's
-// required for dual core rendering
-unsigned int renderLeftViewWorkerID = 0;
-unsigned int renderRighViewtWorkerID = 0;
-void RenderLeftViewFunc(void *, int );
-void RenderRightViewFunc(void *, int );
-// required for quad core rendering
-unsigned int renderTopLeftViewWorkerID = 0;
-unsigned int renderBottomLeftViewWorkerID = 0;
-unsigned int renderTopRighViewtWorkerID = 0;
-unsigned int renderBottomRighViewtWorkerID = 0;
-void RenderTopLeftViewFunc(void *, int );
-void RenderBottomLeftViewFunc(void *, int );
-void RenderTopRightViewFunc(void *, int );
-void RenderBottomRightViewFunc(void *, int );
 
 // app controle
 bool ExitApp = false;
@@ -68,6 +53,28 @@ DgView SpritesView = { 0,0,ScrResH-1,ScrResV-1,0,TextViewHeight },
        // utils view
        TextView = { 0,0,ScrResH-1,49,0,0 },
        AllView = { 0,0,ScrResH-1,ScrResV-1,0,0 };
+
+typedef struct {
+    DgView *rendView;
+    DGCORE rendCore;
+} rendContext;
+
+// render DWorker's
+// required for dual core rendering
+unsigned int renderLeftViewWorkerID = 0;
+unsigned int renderRighViewtWorkerID = 0;
+void RenderLeftViewFunc(void *, int );
+void RenderRightViewFunc(void *, int );
+// required for quad core rendering
+unsigned int renderTopLeftViewWorkerID = 0;
+unsigned int renderBottomLeftViewWorkerID = 0;
+unsigned int renderTopRighViewtWorkerID = 0;
+unsigned int renderBottomRighViewtWorkerID = 0;
+void RenderViewFunc(void *myRendContext, int );
+rendContext LeftTopViewRendContext;
+rendContext LeftBottomViewRendContext;
+rendContext RightTopViewRendContext;
+rendContext RightBottomViewRendContext;
 
 // *** memory suface of the Sprites ****************************
 DgSurf *sprites[3];
@@ -101,13 +108,24 @@ int main(int argc,char *argv[]) {
         exit(-1);
     }
 
+    // init dual core rendering
     renderLeftViewWorkerID = CreateDWorker(RenderLeftViewFunc, nullptr);
     renderRighViewtWorkerID = CreateDWorker(RenderRightViewFunc, nullptr);
 
-    renderTopLeftViewWorkerID = CreateDWorker(RenderTopLeftViewFunc, nullptr);
-    renderBottomLeftViewWorkerID = CreateDWorker(RenderBottomLeftViewFunc, nullptr);
-    renderTopRighViewtWorkerID = CreateDWorker(RenderTopRightViewFunc, nullptr);
-    renderBottomRighViewtWorkerID = CreateDWorker(RenderBottomRightViewFunc, nullptr);
+    // init quad core rendering
+    LeftTopViewRendContext.rendView = &SpritesTopLeftView;
+    GetDGCORE(&LeftTopViewRendContext.rendCore, 0);
+    LeftBottomViewRendContext.rendView = &SpritesBottomLeftView ;
+    GetDGCORE(&LeftBottomViewRendContext.rendCore, 1);
+    RightTopViewRendContext.rendView = &SpritesTopRightView;
+    GetDGCORE(&RightTopViewRendContext.rendCore, 2);
+    RightBottomViewRendContext.rendView = &SpritesBottomRightView;
+    GetDGCORE(&RightBottomViewRendContext.rendCore, 3);
+
+    renderTopLeftViewWorkerID = CreateDWorker(RenderViewFunc, &LeftTopViewRendContext);
+    renderBottomLeftViewWorkerID = CreateDWorker(RenderViewFunc, &LeftBottomViewRendContext);
+    renderTopRighViewtWorkerID = CreateDWorker(RenderViewFunc, &RightTopViewRendContext);
+    renderBottomRighViewtWorkerID = CreateDWorker(RenderViewFunc, &RightBottomViewRendContext);
 
     DgInstallTimer(500);
     if (DgTimerFreq == 0) {
@@ -268,46 +286,16 @@ void RenderRightViewFunc(void *, int ) {
 
 // quad core render
 
-void RenderTopLeftViewFunc(void *, int ) {
-    DgSetCurSurf(RendSurf);
-    SetSurfView(&CurSurf, &SpritesTopLeftView);
-    ClearSurf16(0x0);
+void RenderViewFunc(void *myRendContext, int ) {
+    if (myRendContext == NULL)
+        return;
+    rendContext *rc = (rendContext*) myRendContext;
+    rc->rendCore.DgSetCurSurf(RendSurf);
+    SetSurfView(rc->rendCore.CurSurf, rc->rendView);
+    rc->rendCore.ClearSurf16(0x0);
 
     // draw all the available sprites
     for (int i=0; i< NbSprites; i++) {
-        PutMaskSurf16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
-    }
-}
-
-void RenderBottomLeftViewFunc(void *, int ) {
-    DgSetCurSurf_C2(RendSurf);
-    SetSurfView(&CurSurf_C2, &SpritesBottomLeftView);
-    ClearSurf16_C2(0x0);
-
-    // draw all the available sprites
-    for (int i=0; i< NbSprites; i++) {
-        PutMaskSurf16_C2(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
-    }
-}
-
-void RenderTopRightViewFunc(void *, int ) {
-    DgSetCurSurf_C3(RendSurf);
-    SetSurfView(&CurSurf_C3, &SpritesTopRightView);
-    ClearSurf16_C3(0x0);
-
-    // draw all the available sprites
-    for (int i=0; i< NbSprites; i++) {
-        PutMaskSurf16_C3(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
-    }
-}
-
-void RenderBottomRightViewFunc(void *, int ) {
-    DgSetCurSurf_C4(RendSurf);
-    SetSurfView(&CurSurf_C4, &SpritesBottomRightView);
-    ClearSurf16_C4(0x0);
-
-    // draw all the available sprites
-    for (int i=0; i< NbSprites; i++) {
-        PutMaskSurf16_C4(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
+        rc->rendCore.PutMaskSurf16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
     }
 }
