@@ -542,6 +542,7 @@ int String::Changed() {
 }
 
 int String::Length() {
+  Changed();
   return used - 1;
 }
 
