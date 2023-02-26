@@ -8,6 +8,8 @@
 /*  12 February 2023: Few optimizations - First demonstration of DUGL Multi Cores rendering by splitting screen */
 /*     into left and right view and setting a DWorker to render each view, boosting fps by ~50% */
 /*  24 February 2023: Adds quad core rendering capability - Fix bug of zero speed sprites */
+/*  25 February 2023: Update Quad core rendering to use the new GetDGCORE function,
+       use RenderContext to reduce rendering worker functions to only one function */
 
 #include <stdio.h>
 #include <stdlib.h>
