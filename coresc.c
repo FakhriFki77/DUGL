@@ -55,10 +55,6 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->LineBlnd16 = LineBlnd16;
         dgCore->LineMapBlnd16 = LineMapBlnd16;
         dgCore->InBar16 = InBar16;
-        dgCore->rect16 = rect16;
-        dgCore->rectmap16 = rectmap16;
-        dgCore->rectblnd16 = rectblnd16;
-        dgCore->rectmapblnd16 = rectmapblnd16;
         dgCore->SurfMaskCopyBlnd16 = SurfMaskCopyBlnd16;
         dgCore->SurfMaskCopyTrans16 = SurfMaskCopyTrans16;
         dgCore->ResizeViewSurf16 = ResizeViewSurf16;
@@ -100,10 +96,6 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->LineBlnd16 = LineBlnd16_C2;
         dgCore->LineMapBlnd16 = LineMapBlnd16_C2;
         dgCore->InBar16 = InBar16_C2;
-        dgCore->rect16 = rect16_C2;
-        dgCore->rectmap16 = rectmap16_C2;
-        dgCore->rectblnd16 = rectblnd16_C2;
-        dgCore->rectmapblnd16 = rectmapblnd16_C2;
         dgCore->SurfMaskCopyBlnd16 = SurfMaskCopyBlnd16_C2;
         dgCore->SurfMaskCopyTrans16 = SurfMaskCopyTrans16_C2;
         dgCore->ResizeViewSurf16 = ResizeViewSurf16_C2;
@@ -145,10 +137,6 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->LineBlnd16 = LineBlnd16_C3;
         dgCore->LineMapBlnd16 = LineMapBlnd16_C3;
         dgCore->InBar16 = InBar16_C3;
-        dgCore->rect16 = rect16_C3;
-        dgCore->rectmap16 = rectmap16_C3;
-        dgCore->rectblnd16 = rectblnd16_C3;
-        dgCore->rectmapblnd16 = rectmapblnd16_C3;
         dgCore->SurfMaskCopyBlnd16 = SurfMaskCopyBlnd16_C3;
         dgCore->SurfMaskCopyTrans16 = SurfMaskCopyTrans16_C3;
         dgCore->ResizeViewSurf16 = ResizeViewSurf16_C3;
@@ -190,10 +178,6 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->LineBlnd16 = LineBlnd16_C4;
         dgCore->LineMapBlnd16 = LineMapBlnd16_C4;
         dgCore->InBar16 = InBar16_C4;
-        dgCore->rect16 = rect16_C4;
-        dgCore->rectmap16 = rectmap16_C4;
-        dgCore->rectblnd16 = rectblnd16_C4;
-        dgCore->rectmapblnd16 = rectmapblnd16_C4;
         dgCore->SurfMaskCopyBlnd16 = SurfMaskCopyBlnd16_C4;
         dgCore->SurfMaskCopyTrans16 = SurfMaskCopyTrans16_C4;
         dgCore->ResizeViewSurf16 = ResizeViewSurf16_C4;

@@ -52,11 +52,6 @@ typedef struct {
     void (*LineMapBlnd16)(void *Point1,void *Point2,int col,unsigned int Map);
 
     void (*InBar16)(int minX,int minY,int maxX,int maxY,int rectCcol);
-    // draw empty rectangle
-    void (*rect16)(int x1,int y1,int x2,int y2,int rcol);
-    void (*rectmap16)(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
-    void (*rectblnd16)(int x1,int y1,int x2,int y2,int rcol);
-    void (*rectmapblnd16)(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
 
     // brute copy pixels data from DgSurf src to dst without any verification of BitsPixel or size
     void (*SurfMaskCopyBlnd16)(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
@@ -128,11 +123,6 @@ void LineBlnd16_C2(void *Point1,void *Point2,int col);
 void LineMapBlnd16_C2(void *Point1,void *Point2,int col,unsigned int Map);
 
 void InBar16_C2(int minX,int minY,int maxX,int maxY,int rectCcol); // fast filled rectangle with coordinates inside the current View (no checking or clipping)
-// draw empty rectangle
-void rect16_C2(int x1,int y1,int x2,int y2,int rcol);
-void rectmap16_C2(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
-void rectblnd16_C2(int x1,int y1,int x2,int y2,int rcol);
-void rectmapblnd16_C2(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
 
 // brute copy pixels data from DgSurf src to dst without any verification of BitsPixel or size
 void SurfMaskCopyBlnd16_C2(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
@@ -200,11 +190,6 @@ void LineBlnd16_C3(void *Point1,void *Point2,int col);
 void LineMapBlnd16_C3(void *Point1,void *Point2,int col,unsigned int Map);
 
 void InBar16_C3(int minX,int minY,int maxX,int maxY,int rectCcol); // fast filled rectangle with coordinates inside the current View (no checking or clipping)
-// draw empty rectangle
-void rect16_C3(int x1,int y1,int x2,int y2,int rcol);
-void rectmap16_C3(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
-void rectblnd16_C3(int x1,int y1,int x2,int y2,int rcol);
-void rectmapblnd16_C3(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
 
 // brute copy pixels data from DgSurf src to dst without any verification of BitsPixel or size
 void SurfMaskCopyBlnd16_C3(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
@@ -219,10 +204,6 @@ void MaskTransResizeViewSurf16_C3(DgSurf *SSrcSurf, int swapHz, int swapVt, int 
 void BlndResizeViewSurf16_C3(DgSurf *SSrcSurf, int swapHz, int swapVt, int colBlnd); // ColBnd =  color16 | (blend << 24),  blend 0->31 (31 color16)
 void MaskBlndResizeViewSurf16_C3(DgSurf *SSrcSurf, int swapHz, int swapVt, int colBlnd); // ColBnd =  color16 | (blend << 24),  blend 0->31 (31 color16)
 // 16bpp Surf blitting functions
-#define PUTSURF_NORM    0 // as it
-#define PUTSURF_INV_HZ  1 // reversed horizontally
-#define PUTSURF_INV_VT  2 // reversed vertically
-// Blit the Source DgSurf into current DgSurf taking care of current views
 void PutSurf16_C3(DgSurf *S,int X,int Y,int PType);
 void PutMaskSurf16_C3(DgSurf *S,int X,int Y,int PType);
 void PutSurfBlnd16_C3(DgSurf *S,int X,int Y,int PType,int colBlnd);
@@ -275,11 +256,6 @@ void LineBlnd16_C4(void *Point1,void *Point2,int col);
 void LineMapBlnd16_C4(void *Point1,void *Point2,int col,unsigned int Map);
 
 void InBar16_C4(int minX,int minY,int maxX,int maxY,int rectCcol); // fast filled rectangle with coordinates inside the current View (no checking or clipping)
-// draw empty rectangle
-void rect16_C4(int x1,int y1,int x2,int y2,int rcol);
-void rectmap16_C4(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
-void rectblnd16_C4(int x1,int y1,int x2,int y2,int rcol);
-void rectmapblnd16_C4(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);
 
 // brute copy pixels data from DgSurf src to dst without any verification of BitsPixel or size
 void SurfMaskCopyBlnd16_C4(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
