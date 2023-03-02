@@ -3,6 +3,7 @@
 /*  History : */
 /*  27 march 2022 : first release */
 /*  6 February 2023 : Few upgrades, first Debian version */
+/*  2 March 2023: Detect/handle window close request */
 
 #include <map>
 #include <string>
@@ -110,6 +111,12 @@ int main (int argc, char ** argv)
 				break;
 		}
 
+        // detect close Request
+        if (DgWindowRequestClose == 1) {
+            // Set ExitApp to true to allow render DWorker to exit and finish
+            exitApp = true;
+        }
+
 		// esc exit
         if (exitApp) {
         	// it's safer to wait the render DWorker to finish before exiting
@@ -186,6 +193,7 @@ void RenderWorkerFunc(void *, int ) {
 	}
     OutText16Format(text, SIZE_TEXT, "%i - traversing all %0.2f milions elements  (key, value) in %0.2f sec\n", DgTime, float(countKeyVal)/1000000.0f, (float)(DgTime-lastDgTime)/(float)(DgTimerFreq));
 	DgUpdateWindow();
+	mapData.clear();
 
     // DSTRDic
 

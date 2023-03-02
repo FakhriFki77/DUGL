@@ -3,6 +3,7 @@
 /*  History : */
 /*  23 march 2022 : first release */
 /*  6 February 2023 : Few upgrades, first Debian version */
+/*  2 March 2023: Detect/handle window close request */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -147,6 +148,12 @@ int main (int argc, char ** argv)
 				takeScreenShot = ((keyFLAG&(KB_SHIFT_PR|KB_CTRL_PR)) > 0);
 				break;
 		}
+
+        // detect close Request
+        if (DgWindowRequestClose == 1) {
+            // Set ExitApp to true to allow render DWorker to exit and finish
+            exitApp = true;
+        }
 
 		// esc exit
         if (exitApp) {

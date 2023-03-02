@@ -10,6 +10,7 @@
 /*  24 February 2023: Adds quad core rendering capability - Fix bug of zero speed sprites */
 /*  25 February 2023: Update Quad core rendering to use the new GetDGCORE function,
        use RenderContext to reduce rendering worker functions to only one function */
+/*  2 March 2023: Detect/handle window close request */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -244,6 +245,11 @@ int main(int argc,char *argv[]) {
             break;
         }
 
+        // detect close Request
+        if (DgWindowRequestClose == 1) {
+            ExitApp = true;
+        }
+
         // exit if esc pressed
         if (ExitApp) break;
 
@@ -257,6 +263,10 @@ int main(int argc,char *argv[]) {
     DestroyDWorker(renderBottomLeftViewWorkerID);
     DestroyDWorker(renderTopRighViewtWorkerID);
     DestroyDWorker(renderBottomRighViewtWorkerID);
+
+    DestroySurf(sprites[0]);
+    DestroySurf(sprites[1]);
+    DestroySurf(sprites[2]);
 
     DgQuit();
     return 0;

@@ -5,10 +5,11 @@
 /*  History : */
 /*  19 april 2022 : first release */
 /*  6 February 2023 : Few upgrades, first Debian version */
+/*  2 March 2023: Detect/handle window close request */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "DUGL.h"
+#include <DUGL.h>
 
 // screen resolution
 //int ScrResH=640,ScrResV=480;
@@ -80,7 +81,7 @@ int idxLAstTree=0; // defaul at startup
 // render Surf
 unsigned int smoothWorkerID = 0;
 
-int smoothSurfPlusX = 40, smoothSurfPlusY = 40;
+int smoothSurfPlusX = ScrResH, smoothSurfPlusY = ScrResV;
 DgSurf *blurSurf16;
 DgSurf *srcBlurSurf16;
 
@@ -227,7 +228,7 @@ int main (int argc, char ** argv) {
     }
 
     // init video mode
-    if (!DgInitMainWindowX("Forest", ScrResH, ScrResV, 16, -1, -1, false, false, true)) {
+    if (!DgInitMainWindowX("Forest", ScrResH, ScrResV, 16, -1, -1, false, false, false)) {
         DgQuit();
         exit(-1);
     }
@@ -293,6 +294,11 @@ int main (int argc, char ** argv) {
             break;
         }
 
+        // detect close Request
+        if (DgWindowRequestClose == 1) {
+            // Set ExitApp to true to allow render DWorker to exit and finish
+            ExitApp = true;
+        }
         // esc exit
         if (ExitApp) break;
         if (takeScreenShot) {
