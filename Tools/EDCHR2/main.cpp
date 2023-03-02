@@ -3,6 +3,7 @@
 /*  History : */
 /*  24 march 2022 : first release */
 /*  6 February 2023 : Few upgrades, first Debian version */
+/*  2 March 2023: Detect/handle window close request, fix version display in About dialog  */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -383,9 +384,10 @@ int main()
             default:
                 break;
         }
-        if (ExitNow == 1) {
+        if (ExitNow == 1 || DgWindowRequestClose == 1) {
 			confirmExit = false;
 			ExitNow = 0;
+			DgWindowRequestClose = 0;
 			// if messageBox is already waiting for confirmation of exit
 			if (!waitConfirmExit) {
 				waitConfirmExit = true;

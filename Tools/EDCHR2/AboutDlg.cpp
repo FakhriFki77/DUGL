@@ -68,9 +68,9 @@ void DrawAboutGBox(GraphBox *Me) {
 	OutText16Mode("\n", AJ_MID);
 	OutText16Mode("Edchr2: DUGL CHR FONT Editor", AJ_MID);
 	OutText16Mode("\n", AJ_MID);
-	OutText16ModeFormat(AJ_MID, midstr, 127,"V%i.%i.%i %s\n", EDCHR2_VERSION_MAJOR, EDCHR2_VERSION_MINOR, EDCHR2_VERSION_PATCH, versionType);
+	OutText16ModeFormat(AJ_MID, midstr, 127,"V%i.%i %s r%i \n", EDCHR2_VERSION_MAJOR, EDCHR2_VERSION_MINOR, versionType, EDCHR2_VERSION_PATCH);
 	OutText16Mode("\n", AJ_MID);
-	OutText16ModeFormat(AJ_MID, midstr, 127, "Made using DUGL V%i.%i.%i %s\n", DUGL_VERSION_MAJOR, DUGL_VERSION_MINOR, DUGL_VERSION_PATCH, duglVersionType);
+	OutText16ModeFormat(AJ_MID, midstr, 127, "Made using DUGL V%i.%i %s r%i \n", DUGL_VERSION_MAJOR, DUGL_VERSION_MINOR, duglVersionType, DUGL_VERSION_PATCH);
 	OutText16Mode("https://github.com/FakhriFki77/DUGL\n", AJ_MID);
 	OutText16Mode("Copyright (C) 2023 Fakhri Feki\n", AJ_MID);
 	OutText16Mode("contact: libdugl(at)hotmail.com", AJ_MID);
