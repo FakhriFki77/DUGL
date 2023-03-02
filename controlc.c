@@ -296,6 +296,7 @@ int left_ctrlDown = 0;
 unsigned int lastTime_left_ctrlDown = 0;
 unsigned char DgWindowFocused = 0;
 unsigned char DgWindowFocusLost = 0;
+unsigned char DgWindowRequestClose = 0;
 
 void DgScanEvents(SDL_Event *event) {
     if (SDL_LockMutex(mutexEvents) == 0) {
@@ -308,6 +309,9 @@ void DgScanEvents(SDL_Event *event) {
             case SDL_WINDOWEVENT_LEAVE:
                 MsInWindow = 0;
                 if (MsScanEvents == 1) SDL_ShowCursor(SDL_ENABLE);
+                break;
+            case SDL_WINDOWEVENT_CLOSE:
+                DgWindowRequestClose = 1;
                 break;
             case SDL_WINDOWEVENT_SIZE_CHANGED:
                 if (DgWindow != NULL) {

@@ -52,8 +52,9 @@ extern DgSurf   *RendSurf; // main destination render
 extern DgSurf   *RendFrontSurf; // currently displayed if double buffer enabled
 extern DgSurf   CurSurf; // The Surf that graphic functions will render to as DgClear16, Line16, Poly16 ...
 extern DgSurf   SrcSurf; // The source Surf used by graphic functions as Poly16, PutSurf16, ResizeViewSurf16 ..
-extern unsigned char DgWindowFocused;
-extern unsigned char DgWindowFocusLost;
+extern unsigned char DgWindowFocused; // set to 1 if MainWindow get Focused, 0 else
+extern unsigned char DgWindowFocusLost; // set to 1 if MainWindow lose Focus, 0 else
+extern unsigned char DgWindowRequestClose; // set to 1 if MainWindow receive close request, 0 else. it's up to user to reset its value to 0 once set to 1
 
 // init all ressources required to run DUGL
 // return 1 if success 0 if fail
