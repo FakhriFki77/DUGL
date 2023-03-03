@@ -26,6 +26,8 @@ On 2020, I decided to port it to be over **SDL** to allow it to go cross-platfor
   4. Images Resize blitting (same as sprites, allow reversing horizontally or vertically but resize source View to Destination View to avoid clipping handling and get the best performance)
   5. Blur filter adapted to 16bpp to reduce the darkening or getting greener over blurring cycles
   6. Proprietary simple Font format ...
+* **Render Cores**: 
+As DUGL uses global vars to enhance rendering performance, the only Multi-cores rendering possibility is to duplicate rendering functions. Four rendering cores are then available, the last 3 cores uses suffix in functions names (_C2, _C3 and _C4). As only assembly was used for each core, the weight of each core is less than 250kb in memory and less than 200kb in binary size. Finally, to ease cores handling, DUGL provide DGCORE struct with pointers to all rendering functions and important global vars.
 * **View System**:
 Implement an ascending Y Axis, with origin at default at bottom/left Corner. Allow to change origin and rendering bounds with zero cost in performance.
 * **Keyboard/Mouse Handling**:
