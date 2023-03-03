@@ -73,6 +73,7 @@ typedef struct {
     void (*PutMaskSurfTrans16)(DgSurf *S,int X,int Y,int PType,int trans);
 
     void (*Poly16)(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
+    void (*RePoly16)(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 
 } DGCORE;
 
@@ -149,6 +150,7 @@ void PutMaskSurfTrans16_C2(DgSurf *S,int X,int Y,int PType,int trans);
 // Point FORMAT [int ScreenX][int ScreenY][int Z reserved][int U texture coordinate][int V texture coordinate]
 // all TEXTURE Functions uses a simple affine texture interpolation mapping (not perspective corrected)
 void Poly16_C2(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
+void RePoly16_C2(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 
 // DUGL CORE 3 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -215,6 +217,7 @@ void PutMaskSurfTrans16_C3(DgSurf *S,int X,int Y,int PType,int trans);
 // Point FORMAT [int ScreenX][int ScreenY][int Z reserved][int U texture coordinate][int V texture coordinate]
 // all TEXTURE Functions uses a simple affine texture interpolation mapping (not perspective corrected)
 void Poly16_C3(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
+void RePoly16_C3(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 
 // DUGL CORE 4 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -282,7 +285,7 @@ void PutMaskSurfTrans16_C4(DgSurf *S,int X,int Y,int PType,int trans);
 // Point FORMAT [int ScreenX][int ScreenY][int Z reserved][int U texture coordinate][int V texture coordinate]
 // all TEXTURE Functions uses a simple affine texture interpolation mapping (not perspective corrected)
 void Poly16_C4(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
-
+void RePoly16_C4(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 
 #ifdef __cplusplus
         }  // extern "C" {
@@ -290,4 +293,3 @@ void Poly16_C4(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 
 
 #endif // DCORE2_H_INCLUDED
-

@@ -212,6 +212,10 @@ void PutMaskSurfTrans16(DgSurf *S,int X,int Y,int PType,int trans);
 #define POLY16_MAX_TYPE         15
 #define POLY16_FLAG_DBL_SIDED   0x80000000
 void Poly16(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
+// Redo the last rendered Poly16: *ListPt and DBL_SIDED FLAG are ignored in this call,
+// user can update *SS, TypePoly, ColPoly and texture coordinates[U,V] using the same Point List pointers the Poly16 was called with
+void RePoly16(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
+
 
 // thread safe functions /////////////////////////////////////////////////////////////////////
 
@@ -233,4 +237,3 @@ void SurfCopyTrans16(DgSurf *S16Dst, DgSurf *S16Src,int trans);
 #define RGB16(r,g,b) ((b>>3)|((g>>2)<<5)|((r>>3)<<11))
 
 #endif // DCORE_H_INCLUDED
-

@@ -40,6 +40,7 @@
 %define linemapblnd16               linemapblnd16_C3
 %define LineMapBlnd16               LineMapBlnd16_C3
 %define Poly16                      Poly16_C3
+%define RePoly16                    RePoly16_C3
 %define PutSurf16                   PutSurf16_C3
 %define PutMaskSurf16               PutMaskSurf16_C3
 %define PutSurfBlnd16               PutSurfBlnd16_C3
@@ -96,6 +97,6 @@
 %define LineBlnd16.DoLine16         LineBlnd16_C3.DoLine16
 %define LineMapBlnd16.DoLine16      LineMapBlnd16_C3.DoLine16
 %define InBar16.CommonInBar16       InBar16_C3.CommonInBar16
-
+%define Poly16.PasDrawPoly          Poly16_C3.PasDrawPoly
 
 %include "graph.asm"

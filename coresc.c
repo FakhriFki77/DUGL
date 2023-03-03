@@ -70,6 +70,7 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->PutSurfTrans16 = PutSurfTrans16;
         dgCore->PutMaskSurfTrans16 = PutMaskSurfTrans16;
         dgCore->Poly16 = Poly16;
+        dgCore->RePoly16 = RePoly16;
 
         break;
 
@@ -111,6 +112,7 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->PutSurfTrans16 = PutSurfTrans16_C2;
         dgCore->PutMaskSurfTrans16 = PutMaskSurfTrans16_C2;
         dgCore->Poly16 = Poly16_C2;
+        dgCore->RePoly16 = RePoly16_C2;
 
         break;
 
@@ -152,6 +154,7 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->PutSurfTrans16 = PutSurfTrans16_C3;
         dgCore->PutMaskSurfTrans16 = PutMaskSurfTrans16_C3;
         dgCore->Poly16 = Poly16_C3;
+        dgCore->RePoly16 = RePoly16_C3;
 
         break;
 
@@ -193,6 +196,7 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->PutSurfTrans16 = PutSurfTrans16_C4;
         dgCore->PutMaskSurfTrans16 = PutMaskSurfTrans16_C4;
         dgCore->Poly16 = Poly16_C4;
+        dgCore->RePoly16 = RePoly16_C4;
 
         break;
     }

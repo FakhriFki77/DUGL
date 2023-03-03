@@ -30,7 +30,7 @@ GLOBAL  DgSetCurSurf, DgSetSrcSurf, DgGetCurSurf
 GLOBAL  DgClear16, ClearSurf16, InBar16, DgPutPixel16, DgCPutPixel16, DgGetPixel16, DgCGetPixel16
 
 GLOBAL  line16, Line16, linemap16, LineMap16, lineblnd16, LineBlnd16, linemapblnd16, LineMapBlnd16
-GLOBAL  Poly16, PutSurf16, PutMaskSurf16, PutSurfBlnd16, PutMaskSurfBlnd16, PutSurfTrans16, PutMaskSurfTrans16
+GLOBAL  Poly16, RePoly16, PutSurf16, PutMaskSurf16, PutSurfBlnd16, PutMaskSurfBlnd16, PutSurfTrans16, PutMaskSurfTrans16
 GLOBAL  ResizeViewSurf16, MaskResizeViewSurf16, TransResizeViewSurf16, MaskTransResizeViewSurf16, BlndResizeViewSurf16, MaskBlndResizeViewSurf16
 GLOBAL  SurfMaskCopyBlnd16, SurfMaskCopyTrans16
 
@@ -1002,7 +1002,32 @@ DEL_POLY_FLAG_DBL_SIDED16 EQU 0x7FFFFFFF
 
 ;****************************************************************************
 
-ALIGN 32
+RePoly16:
+    ARG RePtrListPt16, 4, ReSSurf16, 4, ReTypePoly16, 4, ReColPoly16, 4
+
+            PUSH        ESI
+            PUSH        EBX
+            PUSH        EDI
+
+            CMP         [LastPolyStatus], BYTE 'N' ; last Poly16 failed to render ?
+            JE          Poly16.PasDrawPoly
+
+            MOV         EAX,[EBP+ReTypePoly16]
+            MOV         EBX,[EBP+ReColPoly16]
+            AND         EAX,DEL_POLY_FLAG_DBL_SIDED16
+            MOV         ECX,[EBP+ReSSurf16]
+            MOV         [clr],EBX
+            CMP         [LastPolyStatus], BYTE 'I' ; last render IN ?
+            MOV         [SSSurf],ECX
+            JNE         .CheckClip
+            JMP         [InFillPolyProc16+EAX*4]
+.CheckClip:
+            CMP         [LastPolyStatus], BYTE 'C' ; last render CLIPPED ?
+            JNE         Poly16.PasDrawPoly
+            JMP         [ClFillPolyProc16+EAX*4]
+
+
+
 Poly16:
     ARG PtrListPt16, 4, SSurf16, 4, TypePoly16, 4, ColPoly16, 4
 
@@ -1012,6 +1037,7 @@ Poly16:
             PUSH        EDI
 
             LODSD   ; MOV EAX,[ESI];  ADD ESI,4
+            MOV         [LastPolyStatus], BYTE 'N' ; default no render
             MOV         [NbPPoly],EAX
             MOV         EDX,[ESI]
             MOV         ECX,[ESI+8]
@@ -1102,6 +1128,7 @@ Poly16:
             MOV         EDX,EDI ; = NbPPoly - 1
             @InCalculerContour16
             MOV         EAX,[PType]
+            MOV         [LastPolyStatus], BYTE 'I'; In render
             JMP         [InFillPolyProc16+EAX*4]
             ;JMP        .PasDrawPoly
 .PolyClip:
@@ -1147,6 +1174,7 @@ Poly16:
             CMP         DWORD [DebYPoly],BYTE (-1)
             JE          SHORT .PasDrawPoly
             MOV         EAX,[PType]
+            MOV         [LastPolyStatus], BYTE 'C' ; Clip render
             JMP         [ClFillPolyProc16+EAX*4]
 .PasDrawPoly:
             POP         EDI
@@ -1287,7 +1315,7 @@ YP2               RESD  1
 XP3               RESD  1
 YP3               RESD  1
 Plus              RESD  1
-Temp0             RESD  1;-----------------------
+LastPolyStatus    RESD  1;-----------------------
 XT1               RESD  1
 YT1               RESD  1
 XT2               RESD  1
@@ -1353,5 +1381,4 @@ ClFillPolyProc16:
     DD  dummyFill16, dummyFill16, dummyFill16 ;ClipFillDEG_TEXT,ClipFillMASK_DEG_TEXT,ClipFillEFF_FDEG
     DD  ClipFillTEXT_TRANS16, ClipFillMASK_TEXT_TRANS16
     DD  ClipFillRGB16,ClipFillSOLID_BLND16,ClipFillTEXT_BLND16,ClipFillMASK_TEXT_BLND16
-
 
