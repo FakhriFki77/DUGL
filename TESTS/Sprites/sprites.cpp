@@ -11,6 +11,9 @@
 /*  25 February 2023: Update Quad core rendering to use the new GetDGCORE function,
        use RenderContext to reduce rendering worker functions to only one function */
 /*  2 March 2023: Detect/handle window close request */
+/*  3 March 2023: More efficient render DWorker(s) allocation, by allocating only 1 DWorker for dual cores, and 3 DWorkers for quad cores rendering */
+/*     and using the main thread as the last DWorker for a better usage of CPU cores and avoiding the overhead of waking-up a DWorker, */
+/*     this boosted quad cores rendering performance by up to 30% on QuadCore CPU */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,12 +67,10 @@ typedef struct {
 
 // render DWorker's
 // required for dual core rendering
-unsigned int renderLeftViewWorkerID = 0;
 unsigned int renderRighViewtWorkerID = 0;
 void RenderLeftViewFunc(void *, int );
 void RenderRightViewFunc(void *, int );
 // required for quad core rendering
-unsigned int renderTopLeftViewWorkerID = 0;
 unsigned int renderBottomLeftViewWorkerID = 0;
 unsigned int renderTopRighViewtWorkerID = 0;
 unsigned int renderBottomRighViewtWorkerID = 0;
@@ -112,7 +113,6 @@ int main(int argc,char *argv[]) {
     }
 
     // init dual core rendering
-    renderLeftViewWorkerID = CreateDWorker(RenderLeftViewFunc, nullptr);
     renderRighViewtWorkerID = CreateDWorker(RenderRightViewFunc, nullptr);
 
     // init quad core rendering
@@ -125,7 +125,6 @@ int main(int argc,char *argv[]) {
     RightBottomViewRendContext.rendView = &SpritesBottomRightView;
     GetDGCORE(&RightBottomViewRendContext.rendCore, 3);
 
-    renderTopLeftViewWorkerID = CreateDWorker(RenderViewFunc, &LeftTopViewRendContext);
     renderBottomLeftViewWorkerID = CreateDWorker(RenderViewFunc, &LeftBottomViewRendContext);
     renderTopRighViewtWorkerID = CreateDWorker(RenderViewFunc, &RightTopViewRendContext);
     renderBottomRighViewtWorkerID = CreateDWorker(RenderViewFunc, &RightBottomViewRendContext);
@@ -190,16 +189,18 @@ int main(int argc,char *argv[]) {
                 PutMaskSurf16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
             }
         } else if (dualCoreRender) {
-            RunDWorker(renderLeftViewWorkerID, false);
+            // start Render RightView DWorker
             RunDWorker(renderRighViewtWorkerID, false);
-            WaitDWorker(renderLeftViewWorkerID);
+            // in parallel render Left view in this main thread
+            RenderLeftViewFunc(NULL, 0);
             WaitDWorker(renderRighViewtWorkerID);
         } else { // quadCoreRender
-            RunDWorker(renderTopLeftViewWorkerID, false);
             RunDWorker(renderBottomLeftViewWorkerID, false);
             RunDWorker(renderTopRighViewtWorkerID, false);
             RunDWorker(renderBottomRighViewtWorkerID, false);
-            WaitDWorker(renderTopLeftViewWorkerID);
+            // in parallel to the other 3 render DWorker(s), render Top Left view in this main thread
+            // allowing a more efficient cpu cores usage and avoiding the overhead of waking-up a DWorker
+            RenderViewFunc(&LeftTopViewRendContext, 0);
             WaitDWorker(renderBottomLeftViewWorkerID);
             WaitDWorker(renderTopRighViewtWorkerID);
             WaitDWorker(renderBottomRighViewtWorkerID);
@@ -256,10 +257,8 @@ int main(int argc,char *argv[]) {
         DgUpdateWindow();
     }
 
-    DestroyDWorker(renderLeftViewWorkerID);
     DestroyDWorker(renderRighViewtWorkerID);
 
-    DestroyDWorker(renderTopLeftViewWorkerID);
     DestroyDWorker(renderBottomLeftViewWorkerID);
     DestroyDWorker(renderTopRighViewtWorkerID);
     DestroyDWorker(renderBottomRighViewtWorkerID);
