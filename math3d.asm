@@ -37,9 +37,10 @@ GLOBAL FetchDAAMinBBoxDVEC4Array, FetchDAABBoxDVEC4Array,  EqualDVEC4
 GLOBAL DVEC4InAAMinBBox, DVEC4MaskInAAMinBBox, DVEC4ArrayIdxCountInAAMinBBox, DVEC4ArrayIdxCountInMapAAMinBBox
 GLOBAL DVEC4MinRes, DVEC4MaxRes, DVEC4MinXYZ, DVEC4MaxXYZ
 
-
-GLOBAL DMatrix4MulDMatrix4, DMatrix4MulDMatrix4Res_DMatrix4MulDMatrix4Persp, DMatrix4MulDVEC4ArrayPerspRes
-GLOBAL DMatrix4MulDVEC4ArrayPerspResNT, DMatrix4MulDVEC4Array, DMatrix4MulDVEC4ArrayRes, DMatrix4MulDVEC4ArrayResNT
+GLOBAL DMatrix4MulDMatrix4, DMatrix4MulDMatrix4Res_DMatrix4MulDMatrix4Persp
+GLOBAL DMatrix4MulDVEC4ArrayRes, DMatrix4MulDVEC4ArrayResNT
+GLOBAL DMatrix4MulDVEC4ArrayPersp, DMatrix4MulDVEC4ArrayPerspNT
+GLOBAL DMatrix4MulDVEC4ArrayPerspRes, DMatrix4MulDVEC4ArrayPerspResNT, DMatrix4MulDVEC4Array
 GLOBAL DMatrix4MulDVEC4ArrayResDVec4i, DMatrix4MulDVEC4ArrayResDVec4iNT
 GLOBAL DMatrix4MulDVEC4ArrayResDVec2i, DMatrix4MulDVEC4ArrayResDVec2iNT
 
@@ -55,12 +56,8 @@ DistanceDVEC4:
             MOV         EDX,[EBP+DistFResP]
             MOVDQA      xmm3,[EAX]
             SUBPS       xmm3,[ECX]
-            MULPS       xmm3,xmm3
-            PSHUFD      xmm5,xmm3,(0<<6) | (3<<4) | (2<<2) | (1)
-            PSHUFD      xmm4,xmm3,(0<<6) | (0<<4) | (3<<2) | (2)
-            ADDSS       xmm5,xmm3
-            ADDSS       xmm5,xmm4
-            SQRTSS      xmm0,xmm5
+            DPPS        xmm3,xmm3,0x71
+            SQRTSS      xmm0,xmm3
             MOVD        [EDX],xmm0
 
         RETURN
@@ -73,12 +70,8 @@ DistancePow2DVEC4:
             MOV         EDX,[EBP+DistPow2FResP]
             MOVDQA      xmm3,[EAX]
             SUBPS       xmm3,[ECX]
-            MULPS       xmm3,xmm3
-            PSHUFD      xmm5,xmm3,(0<<6) | (3<<4) | (2<<2) | (1)
-            PSHUFD      xmm4,xmm3,(0<<6) | (0<<4) | (3<<2) | (2)
-            ADDSS       xmm5,xmm3
-            ADDSS       xmm5,xmm4
-            MOVD        [EDX],xmm5
+            DPPS        xmm3,xmm3,0x71
+            MOVD        [EDX],xmm3
 
         RETURN
 
@@ -90,12 +83,8 @@ DotDVEC4:
             MOV         ECX,[EBP+DotDVEC2P]
             MOV         EDX,[EBP+DotFResP]
             MOVDQA      xmm3,[EAX]
-            MULPS       xmm3,[ECX]
-            PSHUFD      xmm5,xmm3,(0<<6) | (3<<4) | (2<<2) | (1)
-            PSHUFD      xmm4,xmm3,(0<<6) | (0<<4) | (3<<2) | (2)
-            ADDSS       xmm5,xmm3
-            ADDSS       xmm5,xmm4
-            MOVD        [EDX],xmm5
+            DPPS        xmm3,[ECX],0x71
+            MOVD        [EDX],xmm3
 
         RETURN
 
@@ -105,12 +94,8 @@ LengthDVEC4:
             MOV         EAX,[EBP+LenDVECP]
             MOV         ECX,[EBP+LenFResP]
             MOVDQA      xmm3,[EAX]
-            MULPS       xmm3,xmm3
-            PSHUFD      xmm5,xmm3,(0<<6) | (3<<4) | (2<<2) | (1)
-            PSHUFD      xmm4,xmm3,(0<<6) | (0<<4) | (3<<2) | (2)
-            ADDSS       xmm5,xmm3
-            ADDSS       xmm5,xmm4
-            SQRTSS      xmm0,xmm5
+            DPPS        xmm3,xmm3,0x71
+            SQRTSS      xmm0,xmm3
             MOVD        [ECX],xmm0
 
         RETURN
@@ -121,15 +106,10 @@ NormalizeDVEC4:
             MOV         EAX,[EBP+NormDVECP]
             MOVDQA      xmm3,[EAX]
             MOVDQA      xmm1,xmm3
-            MULPS       xmm3,xmm3
-            PSHUFD      xmm5,xmm3,(0<<6) | (3<<4) | (2<<2) | (1)
-            PSHUFD      xmm4,xmm3,(0<<6) | (0<<4) | (3<<2) | (2)
-            ADDSS       xmm5,xmm3
-            ADDSS       xmm5,xmm4
-            MOVD        ECX,xmm5
+            DPPS        xmm3,xmm3,0x7F
+            MOVD        ECX,xmm3
             JECXZ       .NoDivNorm
-            SQRTSS      xmm0,xmm5
-            PSHUFD      xmm0,xmm0, 0 ; xmm0 = LEN | LEN | LEN | LEN
+            SQRTPS      xmm0,xmm3
             DIVPS       xmm1,xmm0
             MOVDQA      [EAX],xmm1
 .NoDivNorm:
@@ -1055,73 +1035,6 @@ DMatrix4MulDVEC4Array:
 
         RETURN
 
-
-DMatrix4MulDVEC4ArrayRes:
-        ARG    DMAT4MulVEC4ArrayResP, 4, DVEC4ArrayMulMAT4SrcP, 4, DVEC4ArrayMulMAT4CountRes, 4, DVEC4ArrayMulMAT4ResP, 4
-
-            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountRes]
-            MOV         EAX,[EBP+DMAT4MulVEC4ArrayResP]
-            OR          ECX,ECX
-            MOVDQA      xmm4,[EAX]
-            JZ          .endDMat4MulDVEC4
-            MOVDQA      xmm5,[EAX+16]
-            MOVDQA      xmm6,[EAX+32]
-            MOVDQA      xmm7,[EAX+48]
-
-            TEST        CL,1
-            MOV         EAX,[EBP+DVEC4ArrayMulMAT4SrcP]
-            MOV         EDX,[EBP+DVEC4ArrayMulMAT4ResP]
-            JZ          SHORT .NoUniqueMulMat4
-
-            MOVDQA      xmm0,[EAX]
-            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0)
-            PSHUFD      xmm2,xmm0,(1<<6) | (1<<4) | (1<<2) | (1)
-            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2)
-            MULPS       xmm1,xmm4
-            MULPS       xmm2,xmm5
-            ADDPS       xmm1,xmm7
-            MULPS       xmm3,xmm6
-            ADDPS       xmm1,xmm2
-            ADDPS       xmm1,xmm3
-            DEC         ECX
-            MOVDQA      [EDX],xmm1
-            JZ          SHORT .endDMat4MulDVEC4
-            LEA         EAX,[EAX+16]
-            LEA         EDX,[EDX+16]
-.NoUniqueMulMat4:
-            SHR         ECX,1
-.BcMulMAT4xVEC4:
-            MOVDQA      xmm0,[EAX]
-            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0)
-            PSHUFD      xmm2,xmm0,(1<<6) | (1<<4) | (1<<2) | (1)
-            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2)
-            MULPS       xmm1,xmm4
-            MULPS       xmm2,xmm5
-            MULPS       xmm3,xmm6
-            MOVDQA      xmm0,[EAX+16] ; ' second
-            ADDPS       xmm2,xmm1
-            ADDPS       xmm3,xmm7
-            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0) ; ' second
-            ADDPS       xmm2,xmm3
-            MULPS       xmm1,xmm4 ; ' second
-            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2) ; ' second
-            MOVDQA      [EDX],xmm2
-            PSHUFD      xmm0,xmm0,(1<<6) | (1<<4) | (1<<2) | (1) ; ' second xmm0 take place of xmm2
-            MULPS       xmm3,xmm6 ; ' second
-            MULPS       xmm0,xmm5 ; ' second
-            ADDPS       xmm3,xmm7 ; ' second
-            ADDPS       xmm0,xmm1 ; ' second
-            ADDPS       xmm0,xmm3 ; ' second
-            DEC         ECX
-            MOVDQA      [EDX+16],xmm0 ; ' second
-
-            LEA         EAX,[EAX+32]
-            LEA         EDX,[EDX+32]
-            JNZ         SHORT .BcMulMAT4xVEC4
-.endDMat4MulDVEC4:
-
-        RETURN
-
 DMatrix4MulDVEC4PerspArray:
         ARG    DMAT4MulVEC4ArrayPerspP, 4, DVEC4ArrayMulMAT4PerspP, 4, DVEC4ArrayMulMAT4CountPersp, 4
 
@@ -1156,6 +1069,77 @@ DMatrix4MulDVEC4PerspArray:
 .endDMat4MulDVEC4:
 
         RETURN
+
+DMatrix4MulDVEC4ArrayPersp:
+        ARG    DMAT4MulVEC4ArrayPerspPP, 4, DVEC4ArrayMulMAT4SrcNresPerspPP, 4, DVEC4ArrayMulMAT4CountPerspP, 4
+
+            MOV         EAX,[EBP+DMAT4MulVEC4ArrayPerspPP]
+            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountPerspP]
+            MOVDQA      xmm4,[EAX]
+            MOVDQA      xmm5,[EAX+16]
+            MOVDQA      xmm6,[EAX+32]
+            MOVDQA      xmm7,[EAX+48]
+
+            MOV         EAX,[EBP+DVEC4ArrayMulMAT4SrcNresPerspPP]
+
+.BcMulMAT4xVEC4:
+            MOVDQA      xmm0,[EAX]
+            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0)
+            PSHUFD      xmm2,xmm0,(1<<6) | (1<<4) | (1<<2) | (1)
+            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2)
+            MULPS       xmm1,xmm4
+            MULPS       xmm2,xmm5
+            ADDPS       xmm1,xmm7
+            MULPS       xmm3,xmm6
+            ADDPS       xmm1,xmm2
+            ADDPS       xmm1,xmm3
+            PSHUFD      xmm0,xmm1,(3<<6) | (3<<4) | (3<<2) | (3)
+            MAXPS       xmm0,[DQ_CONST_ONE]
+            DIVPS       xmm1,xmm0
+            MOVDQA      [EAX],xmm1
+            DEC         ECX
+            LEA         EAX,[EAX+16]
+            JNZ         SHORT .BcMulMAT4xVEC4
+
+.endDMat4MulDVEC4:
+
+        RETURN
+
+DMatrix4MulDVEC4ArrayPerspNT:
+        ARG    DMAT4MulVEC4ArrayPerspPNT, 4, DVEC4ArrayMulMAT4SrcNresPerspPNT, 4, DVEC4ArrayMulMAT4CountPerspNT, 4
+
+            MOV         EAX,[EBP+DMAT4MulVEC4ArrayPerspPNT]
+            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountPerspNT]
+            MOVDQA      xmm4,[EAX]
+            MOVDQA      xmm5,[EAX+16]
+            MOVDQA      xmm6,[EAX+32]
+            MOVDQA      xmm7,[EAX+48]
+
+            MOV         EAX,[EBP+DVEC4ArrayMulMAT4SrcNresPerspPNT]
+
+.BcMulMAT4xVEC4:
+            MOVDQA      xmm0,[EAX]
+            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0)
+            PSHUFD      xmm2,xmm0,(1<<6) | (1<<4) | (1<<2) | (1)
+            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2)
+            MULPS       xmm1,xmm4
+            MULPS       xmm2,xmm5
+            ADDPS       xmm1,xmm7
+            MULPS       xmm3,xmm6
+            ADDPS       xmm1,xmm2
+            ADDPS       xmm1,xmm3
+            PSHUFD      xmm0,xmm1,(3<<6) | (3<<4) | (3<<2) | (3)
+            MAXPS       xmm0,[DQ_CONST_ONE]
+            DIVPS       xmm1,xmm0
+            MOVNTDQ     [EAX],xmm1
+            DEC         ECX
+            LEA         EAX,[EAX+16]
+            JNZ         SHORT .BcMulMAT4xVEC4
+
+.endDMat4MulDVEC4:
+
+        RETURN
+
 
 
 DMatrix4MulDVEC4ArrayPerspRes:
@@ -1199,13 +1183,13 @@ DMatrix4MulDVEC4ArrayPerspRes:
 DMatrix4MulDVEC4ArrayPerspResNT:
         ARG    DMAT4MulVEC4ArrayResPerspNTP, 4, DVEC4ArrayMulMAT4SrcPerspNTP, 4, DVEC4ArrayMulMAT4CountResPerspNT, 4, DVEC4ArrayMulMAT4ResPerspNTP, 4
 
-            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResPerspNT]
             MOV         EAX,[EBP+DMAT4MulVEC4ArrayResPerspNTP]
+            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResPerspNT]
             MOVDQA      xmm4,[EAX]
-            JECXZ       .endDMat4MulDVEC4
             MOVDQA      xmm5,[EAX+16]
             MOVDQA      xmm6,[EAX+32]
-            MOVDQA      xmm7,[EAX+48]
+
+            MOVDQA      xmm7,[EAX+48] ; xmm7 (+x,+y,+z)
 
             MOV         EAX,[EBP+DVEC4ArrayMulMAT4SrcPerspNTP]
             MOV         EDX,[EBP+DVEC4ArrayMulMAT4ResPerspNTP]
@@ -1221,6 +1205,7 @@ DMatrix4MulDVEC4ArrayPerspResNT:
             MULPS       xmm3,xmm6
             ADDPS       xmm1,xmm2
             ADDPS       xmm1,xmm3
+
             DEC         ECX
             PSHUFD      xmm0,xmm1,(3<<6) | (3<<4) | (3<<2) | (3)
             MAXPS       xmm0,[DQ_CONST_ONE]
@@ -1304,66 +1289,58 @@ DMatrix4MulDVEC4ArrayResDVec4i:
 
 DMatrix4MulDVEC4ArrayResDVec2i:
         ARG    DMAT4MulVEC4ArrayRes2iP, 4, DVEC4ArrayMulMAT4Src2iP, 4, DVEC2iArrayMulMAT4CountResi, 4, DVEC2iArrayMulMAT4ResiP, 4
-            MOV         ECX,[EBP+DVEC2iArrayMulMAT4CountResi]
             MOV         EAX,[EBP+DMAT4MulVEC4ArrayRes2iP]
-            OR          ECX,ECX
-            MOVDQA      xmm4,[EAX]
-            JZ          .endDMat4MulDVEC4
-            MOVDQA      xmm5,[EAX+16]
-            MOVDQA      xmm6,[EAX+32]
+            MOV         ECX,[EBP+DVEC2iArrayMulMAT4CountResi]
+            MOVD        xmm4,[EAX] ; xmm4 = Matrix column1
+            MOVD        xmm5,[EAX+4] ; xmm5 = Matrix column2
+            ;MOVD        xmm6,[EAX+8] ; xmm6 = Matrix column3 : ignore column 3 as it's 2D projection
+            PINSRD      xmm4,[EAX+16], 1
+            PINSRD      xmm5,[EAX+20], 1
+            PINSRD      xmm4,[EAX+32], 2
+            PINSRD      xmm5,[EAX+36], 2
             MOVDQA      xmm7,[EAX+48]
 
-            TEST        CL,1
             MOV         EAX,[EBP+DVEC4ArrayMulMAT4Src2iP]
             MOV         EDX,[EBP+DVEC2iArrayMulMAT4ResiP]
-            JZ          SHORT .NoUniqueMulMat4
-            MOVDQA      xmm0,[EAX]
-            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0)
-            PSHUFD      xmm2,xmm0,(1<<6) | (1<<4) | (1<<2) | (1)
-            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2)
-            MULPS       xmm1,xmm4
-            MULPS       xmm2,xmm5
-            ADDPS       xmm1,xmm7
-            MULPS       xmm3,xmm6
-            ADDPS       xmm1,xmm2
-            ADDPS       xmm1,xmm3
-            CVTTPS2DQ   xmm1,xmm1
-            DEC         ECX
-            MOVQ        [EDX],xmm1
-            JZ          SHORT .endDMat4MulDVEC4
-            LEA         EAX,[EAX+16]
-            LEA         EDX,[EDX+8]
-.NoUniqueMulMat4:
+
+            MOV         EBP,ECX
             SHR         ECX,1
+            JZ          .TestOneAp
 .BcMulMAT4xVEC2i:
-            MOVDQA      xmm0,[EAX]
-            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0)
-            PSHUFD      xmm2,xmm0,(1<<6) | (1<<4) | (1<<2) | (1)
-            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2)
-            MULPS       xmm1,xmm4
-            MULPS       xmm2,xmm5
-            MULPS       xmm3,xmm6
+            MOVDQA      xmm1,[EAX]
             MOVDQA      xmm0,[EAX+16] ; ' second
-            ADDPS       xmm2,xmm1
-            ADDPS       xmm3,xmm7
-            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0) ; ' second
-            ADDPS       xmm2,xmm3
-            MULPS       xmm1,xmm4 ; ' second
-            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2) ; ' second
-            CVTTPS2DQ   xmm2,xmm2
-            PSHUFD      xmm0,xmm0,(1<<6) | (1<<4) | (1<<2) | (1) ; ' second xmm0 take place of xmm2
-            MOVQ        [EDX],xmm2
-            MULPS       xmm3,xmm6 ; ' second
-            MULPS       xmm0,xmm5 ; ' second
-            ADDPS       xmm3,xmm7 ; ' second
-            ADDPS       xmm0,xmm1 ; ' second
-            ADDPS       xmm0,xmm3 ; ' second
+            MOVDQA      xmm2,xmm1
+            MOVDQA      xmm3,xmm0 ; ' second
+
+            DPPS        xmm1,xmm4, 0x71
+            DPPS        xmm2,xmm5, 0x72
+            DPPS        xmm0,xmm4, 0x71 ; ' second
+            POR         xmm1,xmm2
+            DPPS        xmm3,xmm5, 0x72 ; ' second
+            ADDPS       xmm1,xmm7
+            POR         xmm0,xmm3 ; ' second
+
+            ADDPS       xmm0,xmm7
+            PUNPCKLQDQ  xmm1,xmm0
+            CVTTPS2DQ   xmm1,xmm1
+            MOVDQA      [EDX],xmm1 ; ' second | first
             DEC         ECX
-            CVTTPS2DQ   xmm0,xmm0
             LEA         EAX,[EAX+32]
-            MOVQ        [EDX+8],xmm0 ; ' second
             LEA         EDX,[EDX+16]
             JNZ         SHORT .BcMulMAT4xVEC2i
+.TestOneAp:
+            AND         EBP, BYTE 1
+            JZ          SHORT .NoUniqueMulMat4
+            MOVDQA      xmm1,[EAX]
+            MOVDQA      xmm2,xmm1
+            DPPS        xmm1,xmm4, 0x71
+            DPPS        xmm2,xmm5, 0x72
+            POR         xmm1,xmm2
+            ADDPS       xmm1,xmm7
+            CVTTPS2DQ   xmm1,xmm1
+            MOVQ        [EDX],xmm1
+            JZ          SHORT .endDMat4MulDVEC4
+.NoUniqueMulMat4:
 
 .endDMat4MulDVEC4:
 
@@ -1372,13 +1349,15 @@ DMatrix4MulDVEC4ArrayResDVec2i:
 DMatrix4MulDVEC4ArrayResDVec2iNT:
         ARG    DMAT4MulVEC4ArrayRes2iNTP, 4, DVEC4ArrayMulMAT4Src2iNTP, 4, DVEC2iArrayMulMAT4CountResiNT, 4, DVEC2iArrayMulMAT4ResiNTP, 4
 
-            MOV         ECX,[EBP+DVEC2iArrayMulMAT4CountResiNT]
             MOV         EAX,[EBP+DMAT4MulVEC4ArrayRes2iNTP]
-            OR              ECX,ECX
-            MOVDQA      xmm4,[EAX]
-            JZ          .endDMat4MulDVEC4
-            MOVDQA      xmm5,[EAX+16]
-            MOVDQA      xmm6,[EAX+32]
+            MOV         ECX,[EBP+DVEC2iArrayMulMAT4CountResiNT]
+            MOVD        xmm4,[EAX] ; xmm4 = Matrix column1
+            MOVD        xmm5,[EAX+4] ; xmm5 = Matrix column2
+            ;MOVD        xmm6,[EAX+8] ; xmm6 = Matrix column3 : ignore column 3 as it's 2D projection
+            PINSRD      xmm4,[EAX+16], 1
+            PINSRD      xmm5,[EAX+20], 1
+            PINSRD      xmm4,[EAX+32], 2
+            PINSRD      xmm5,[EAX+36], 2
             MOVDQA      xmm7,[EAX+48]
 
             MOV         EAX,[EBP+DVEC4ArrayMulMAT4Src2iNTP]
@@ -1386,50 +1365,38 @@ DMatrix4MulDVEC4ArrayResDVec2iNT:
 
             MOV         EBP,ECX
             SHR         ECX,1
-            JZ              SHORT .TestUnique
+            JZ          SHORT .TestUnique
 .BcMulMAT4xVEC2i:
-            MOVDQA      xmm0,[EAX]
-            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0)
-            PSHUFD      xmm2,xmm0,(1<<6) | (1<<4) | (1<<2) | (1)
-            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2)
-            MULPS       xmm1,xmm4
-            MULPS       xmm2,xmm5
-            MULPS       xmm3,xmm6
+            MOVDQA      xmm1,[EAX]
             MOVDQA      xmm0,[EAX+16] ; ' second
-            ADDPS       xmm2,xmm1
-            ADDPS       xmm3,xmm7
-            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0) ; ' second
-            ADDPS       xmm2,xmm3
-            MULPS       xmm1,xmm4 ; ' second
-            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2) ; ' second
-            CVTTPS2DQ   xmm2,xmm2
-            PSHUFD      xmm0,xmm0,(1<<6) | (1<<4) | (1<<2) | (1) ; ' second xmm0 take place of xmm2
-            ;MOVQ           [EDX],xmm2
-            MULPS       xmm3,xmm6 ; ' second
-            MULPS       xmm0,xmm5 ; ' second
-            ADDPS       xmm3,xmm7 ; ' second
-            ADDPS       xmm0,xmm1 ; ' second
-            ADDPS       xmm0,xmm3 ; ' second
+            MOVDQA      xmm2,xmm1
+            MOVDQA      xmm3,xmm0 ; ' second
+
+            DPPS        xmm1,xmm4, 0x71
+            DPPS        xmm2,xmm5, 0x72
+            DPPS        xmm0,xmm4, 0x71 ; ' second
+            POR         xmm1,xmm2
+            DPPS        xmm3,xmm5, 0x72 ; ' second
+            ADDPS       xmm1,xmm7
+            POR         xmm0,xmm3 ; ' second
+
+            ADDPS       xmm0,xmm7
+            PUNPCKLQDQ  xmm1,xmm0
+            CVTTPS2DQ   xmm1,xmm1
+            MOVNTDQ     [EDX],xmm1 ; ' second | first
             DEC         ECX
-            CVTTPS2DQ   xmm0,xmm0
             LEA         EAX,[EAX+32]
-            PUNPCKLQDQ  xmm2,xmm0
-            MOVNTDQ     [EDX],xmm2 ; ' second | first
             LEA         EDX,[EDX+16]
             JNZ         SHORT .BcMulMAT4xVEC2i
 .TestUnique:
             AND         EBP,BYTE 1
             JZ          SHORT .NoUniqueMulMat4
-            MOVDQA      xmm0,[EAX]
-            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0)
-            PSHUFD      xmm2,xmm0,(1<<6) | (1<<4) | (1<<2) | (1)
-            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2)
-            MULPS       xmm1,xmm4
-            MULPS       xmm2,xmm5
+            MOVDQA      xmm1,[EAX]
+            MOVDQA      xmm2,xmm1
+            DPPS        xmm1,xmm4, 0x71
+            DPPS        xmm2,xmm5, 0x72
+            POR         xmm1,xmm2
             ADDPS       xmm1,xmm7
-            MULPS       xmm3,xmm6
-            ADDPS       xmm1,xmm2
-            ADDPS       xmm1,xmm3
             CVTTPS2DQ   xmm1,xmm1
             MOVQ        [EDX],xmm1
 .NoUniqueMulMat4:
@@ -1438,33 +1405,106 @@ DMatrix4MulDVEC4ArrayResDVec2iNT:
 
         RETURN
 
+DMatrix4MulDVEC4ArrayRes:
+        ARG    DMAT4MulVEC4ArrayResP, 4, DVEC4ArrayMulMAT4SrcP, 4, DVEC4ArrayMulMAT4CountRes, 4, DVEC4ArrayMulMAT4ResP, 4
+
+            MOV         EAX,[EBP+DMAT4MulVEC4ArrayResP]
+            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountRes]
+            MOVD        xmm4,[EAX] ; xmm4 = Matrix column1
+            MOVD        xmm5,[EAX+4] ; xmm5 = Matrix column2
+            MOVD        xmm6,[EAX+8] ; xmm5 = Matrix column3
+            PINSRD      xmm4,[EAX+16], 1
+            PINSRD      xmm5,[EAX+20], 1
+            PINSRD      xmm6,[EAX+24], 1
+            PINSRD      xmm4,[EAX+32], 2
+            PINSRD      xmm5,[EAX+36], 2
+            PINSRD      xmm6,[EAX+40], 2
+            MOVDQA      xmm7,[EAX+48] ; xmm7 (+x,+y,+z)
+
+            TEST        CL,1
+            MOV         EAX,[EBP+DVEC4ArrayMulMAT4SrcP]
+            MOV         EDX,[EBP+DVEC4ArrayMulMAT4ResP]
+            JZ          SHORT .NoUniqueMulMat4
+
+            MOVDQA      xmm1,[EAX]
+            MOVDQA      xmm2,xmm1
+            MOVDQA      xmm3,xmm1
+
+            DPPS        xmm1,xmm4, 0x71
+            DPPS        xmm2,xmm5, 0x72
+            DPPS        xmm3,xmm6, 0x74
+            POR         xmm1,xmm2
+            POR         xmm1,xmm3
+            ADDPS       xmm1,xmm7
+            DEC         ECX
+            MOVDQA      [EDX],xmm1
+            JZ          SHORT .endDMat4MulDVEC4
+            LEA         EAX,[EAX+16]
+            LEA         EDX,[EDX+16]
+.NoUniqueMulMat4:
+            SHR         ECX,1
+.BcMulMAT4xVEC4:
+            MOVDQA      xmm1,[EAX]
+            MOVDQA      xmm2,xmm1
+            MOVDQA      xmm3,xmm1
+            DPPS        xmm1,xmm4, 0x71
+            MOVDQA      xmm0,[EAX+16] ; 2
+            DPPS        xmm2,xmm5, 0x72
+            DPPS        xmm3,xmm6, 0x74
+            POR         xmm1,xmm2
+            POR         xmm1,xmm3
+            MOVDQA      xmm2,xmm0 ; 2
+            ADDPS       xmm1,xmm7
+            MOVDQA      xmm3,xmm0 ; 2
+            DPPS        xmm2,xmm5, 0x72 ; 2
+            MOVDQA      [EDX],xmm1
+            DPPS        xmm0,xmm4, 0x71
+            DPPS        xmm3,xmm6, 0x74
+            POR         xmm0,xmm2
+            POR         xmm0,xmm3
+            ADDPS       xmm0,xmm7
+            MOVDQA      [EDX+16],xmm0 ; ' second
+            DEC         ECX
+            MOVDQA      [EDX+16],xmm0 ; ' second
+
+            LEA         EAX,[EAX+32]
+            LEA         EDX,[EDX+32]
+            JNZ         SHORT .BcMulMAT4xVEC4
+.endDMat4MulDVEC4:
+
+        RETURN
+
 DMatrix4MulDVEC4ArrayResNT:
         ARG    DMAT4MulVEC4ArrayResNTP, 4, DVEC4ArrayMulMAT4SrcNTP, 4, DVEC4ArrayMulMAT4CountResNT, 4, DVEC4ArrayMulMAT4ResNTP, 4
 
-            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResNT]
             MOV         EAX,[EBP+DMAT4MulVEC4ArrayResNTP]
-            OR          ECX,ECX
-            MOVDQA      xmm4,[EAX]
-            JZ          .endDMat4MulDVEC4
-            MOVDQA      xmm5,[EAX+16]
-            MOVDQA      xmm6,[EAX+32]
-            MOVDQA      xmm7,[EAX+48]
+            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResNT]
+            MOVD        xmm4,[EAX] ; xmm4 = Matrix column1
+            MOVD        xmm5,[EAX+4] ; xmm5 = Matrix column2
+            MOVD        xmm6,[EAX+8] ; xmm5 = Matrix column3
+            PINSRD      xmm4,[EAX+16], 1
+            PINSRD      xmm5,[EAX+20], 1
+            PINSRD      xmm6,[EAX+24], 1
+            PINSRD      xmm4,[EAX+32], 2
+            PINSRD      xmm5,[EAX+36], 2
+            PINSRD      xmm6,[EAX+40], 2
+            MOVDQA      xmm7,[EAX+48] ; xmm7 (+x,+y,+z)
 
             TEST        CL,1
             MOV         EAX,[EBP+DVEC4ArrayMulMAT4SrcNTP]
             MOV         EDX,[EBP+DVEC4ArrayMulMAT4ResNTP]
             JZ          SHORT .NoUniqueMulMat4
 
-            MOVDQA      xmm0,[EAX]
-            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0)
-            PSHUFD      xmm2,xmm0,(1<<6) | (1<<4) | (1<<2) | (1)
-            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2)
-            MULPS       xmm1,xmm4
-            MULPS       xmm2,xmm5
+            MOVDQA      xmm1,[EAX]
+            MOVDQA      xmm2,xmm1
+            MOVDQA      xmm3,xmm1
+
+            DPPS        xmm1,xmm4, 0x71
+            DPPS        xmm2,xmm5, 0x72
+            DPPS        xmm3,xmm6, 0x74
+            POR         xmm1,xmm2
+            POR         xmm1,xmm3
             ADDPS       xmm1,xmm7
-            MULPS       xmm3,xmm6
-            ADDPS       xmm1,xmm2
-            ADDPS       xmm1,xmm3
             DEC         ECX
             MOVNTDQ     [EDX],xmm1
             JZ          SHORT .endDMat4MulDVEC4
@@ -1473,30 +1513,27 @@ DMatrix4MulDVEC4ArrayResNT:
 .NoUniqueMulMat4:
             SHR         ECX,1
 .BcMulMAT4xVEC4:
-            MOVDQA      xmm0,[EAX]
-            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0)
-            PSHUFD      xmm2,xmm0,(1<<6) | (1<<4) | (1<<2) | (1)
-            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2)
-            MULPS       xmm1,xmm4
-            MULPS       xmm2,xmm5
-            MULPS       xmm3,xmm6
-            MOVDQA      xmm0,[EAX+16] ; ' second
-            ADDPS       xmm2,xmm1
-            ADDPS       xmm3,xmm7
-            PSHUFD      xmm1,xmm0,(0<<6) | (0<<4) | (0<<2) | (0) ; ' second
-            ADDPS       xmm2,xmm3
-            MULPS       xmm1,xmm4 ; ' second
-            PSHUFD      xmm3,xmm0,(2<<6) | (2<<4) | (2<<2) | (2) ; ' second
-            MOVNTDQ     [EDX],xmm2
-            PSHUFD      xmm0,xmm0,(1<<6) | (1<<4) | (1<<2) | (1) ; ' second xmm0 take place of xmm2
-            MULPS       xmm3,xmm6 ; ' second
-            MULPS       xmm0,xmm5 ; ' second
-            ADDPS       xmm3,xmm7 ; ' second
-            ADDPS       xmm0,xmm1 ; ' second
-            ADDPS       xmm0,xmm3 ; ' second
-            DEC         ECX
+            MOVDQA      xmm1,[EAX]
+            MOVDQA      xmm2,xmm1
+            MOVDQA      xmm3,xmm1
+            DPPS        xmm1,xmm4, 0x71
+            MOVDQA      xmm0,[EAX+16] ; 2
+            DPPS        xmm2,xmm5, 0x72
+            DPPS        xmm3,xmm6, 0x74
+            POR         xmm1,xmm2
+            POR         xmm1,xmm3
+            MOVDQA      xmm2,xmm0 ; 2
+            ADDPS       xmm1,xmm7
+            MOVDQA      xmm3,xmm0 ; 2
+            DPPS        xmm2,xmm5, 0x72 ; 2
+            MOVNTDQ     [EDX],xmm1
+            DPPS        xmm0,xmm4, 0x71
+            DPPS        xmm3,xmm6, 0x74
+            POR         xmm0,xmm2
+            POR         xmm0,xmm3
+            ADDPS       xmm0,xmm7
             MOVNTDQ     [EDX+16],xmm0 ; ' second
-
+            DEC         ECX
             LEA         EAX,[EAX+32]
             LEA         EDX,[EDX+32]
             JNZ         SHORT .BcMulMAT4xVEC4

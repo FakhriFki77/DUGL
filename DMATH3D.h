@@ -163,13 +163,22 @@ void DMatrix4MulDMatrix4(DMatrix4 *mat4x4_left, DMatrix4 *mat4x4_right);
 void DMatrix4MulDMatrix4Res(DMatrix4 *mat4x4_left, DMatrix4 *mat4x4_right, DMatrix4 *mat4x4_res);
 
 void DMatrix4MulDVEC4Array(DMatrix4 *mat4x4, DVEC4 *vec4Array, int count);
+// apply rotation/scale/translation DMatrix4 to an array of DVEC4 and store result on another result DVEC4 array
+// this mean that last column of DMatrix4 is ignored in transformation
+// usually the DMatrix4 is computed using GetLookAtDMatrix4
 void DMatrix4MulDVEC4ArrayRes(DMatrix4 *mat4x4, DVEC4 *vec4ArraySrc, int count, DVEC4 *vec4ArrayDst);
+void DMatrix4MulDVEC4ArrayResNT(DMatrix4 *mat4x4, DVEC4 *vec4ArraySrc, int count, DVEC4 *vec4ArrayDst);
+// apply projection matrix (perspective or orthogonal) to a VEC4 array
+// usually transformation matrix is computed using GetPerspectiveDMatrix4 or GetOrthoDMatrix4
 void DMatrix4MulDVEC4ArrayPersp(DMatrix4 *mat4x4, DVEC4 *vec4Array, int count);
+void DMatrix4MulDVEC4ArrayPerspNT(DMatrix4 *mat4x4, DVEC4 *vec4Array, int count);
 void DMatrix4MulDVEC4ArrayPerspRes(DMatrix4 *mat4x4, DVEC4 *vec4ArraySrc, int count, DVEC4 *vec4ArrayDst);
 void DMatrix4MulDVEC4ArrayPerspResNT(DMatrix4 *mat4x4, DVEC4 *vec4ArraySrc, int count, DVEC4 *vec4ArrayDst);
-void DMatrix4MulDVEC4ArrayResNT(DMatrix4 *mat4x4, DVEC4 *vec4ArraySrc, int count, DVEC4 *vec4ArrayDst);
+// apply projection to screen matrix to a DVEC4 array and store result on integer DVEC4i array
 void DMatrix4MulDVEC4ArrayResDVec4i(DMatrix4 *mat4x4, DVEC4 *vec4ArraySrc, int count, DVEC4i *vec4ArrayDst);
 void DMatrix4MulDVEC4ArrayResDVec4iNT(DMatrix4 *mat4x4, DVEC4 *vec4ArraySrc, int count, DVEC4i *vec4ArrayDst);
+// apply projection to screen matrix to a DVEC4 array and store result on integer DVEC2i array
+// usally transformation matrix is computed using GetViewDMatrix4
 void DMatrix4MulDVEC4ArrayResDVec2i(DMatrix4 *mat4x4, DVEC4 *vec4ArraySrc, int count, DVEC2i *vec2iArrayDst);
 void DMatrix4MulDVEC4ArrayResDVec2iNT(DMatrix4 *mat4x4, DVEC4 *vec4ArraySrc, int count, DVEC2i *vec2iArrayDst);
 
