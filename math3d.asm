@@ -1294,11 +1294,12 @@ DMatrix4MulDVEC4ArrayResDVec2i:
             MOVD        xmm4,[EAX] ; xmm4 = Matrix column1
             MOVD        xmm5,[EAX+4] ; xmm5 = Matrix column2
             ;MOVD        xmm6,[EAX+8] ; xmm6 = Matrix column3 : ignore column 3 as it's 2D projection
+            MOVDQA      xmm7,[EAX+48]
             PINSRD      xmm4,[EAX+16], 1
             PINSRD      xmm5,[EAX+20], 1
             PINSRD      xmm4,[EAX+32], 2
             PINSRD      xmm5,[EAX+36], 2
-            MOVDQA      xmm7,[EAX+48]
+            PUNPCKLQDQ  xmm7,xmm7
 
             MOV         EAX,[EBP+DVEC4ArrayMulMAT4Src2iP]
             MOV         EDX,[EBP+DVEC2iArrayMulMAT4ResiP]
@@ -1314,14 +1315,13 @@ DMatrix4MulDVEC4ArrayResDVec2i:
 
             DPPS        xmm1,xmm4, 0x71
             DPPS        xmm2,xmm5, 0x72
-            DPPS        xmm0,xmm4, 0x71 ; ' second
+            DPPS        xmm0,xmm4, 0x74 ; ' second
             POR         xmm1,xmm2
-            DPPS        xmm3,xmm5, 0x72 ; ' second
-            ADDPS       xmm1,xmm7
-            POR         xmm0,xmm3 ; ' second
+            DPPS        xmm3,xmm5, 0x78 ; ' second
+            POR         xmm1,xmm0
+            POR         xmm1,xmm3 ; ' second
 
-            ADDPS       xmm0,xmm7
-            PUNPCKLQDQ  xmm1,xmm0
+            ADDPS       xmm1,xmm7
             CVTTPS2DQ   xmm1,xmm1
             MOVDQA      [EDX],xmm1 ; ' second | first
             DEC         ECX
@@ -1354,11 +1354,12 @@ DMatrix4MulDVEC4ArrayResDVec2iNT:
             MOVD        xmm4,[EAX] ; xmm4 = Matrix column1
             MOVD        xmm5,[EAX+4] ; xmm5 = Matrix column2
             ;MOVD        xmm6,[EAX+8] ; xmm6 = Matrix column3 : ignore column 3 as it's 2D projection
+            MOVDQA      xmm7,[EAX+48]
             PINSRD      xmm4,[EAX+16], 1
             PINSRD      xmm5,[EAX+20], 1
             PINSRD      xmm4,[EAX+32], 2
             PINSRD      xmm5,[EAX+36], 2
-            MOVDQA      xmm7,[EAX+48]
+            PUNPCKLQDQ  xmm7,xmm7
 
             MOV         EAX,[EBP+DVEC4ArrayMulMAT4Src2iNTP]
             MOV         EDX,[EBP+DVEC2iArrayMulMAT4ResiNTP]
@@ -1374,14 +1375,13 @@ DMatrix4MulDVEC4ArrayResDVec2iNT:
 
             DPPS        xmm1,xmm4, 0x71
             DPPS        xmm2,xmm5, 0x72
-            DPPS        xmm0,xmm4, 0x71 ; ' second
+            DPPS        xmm0,xmm4, 0x74 ; ' second
             POR         xmm1,xmm2
-            DPPS        xmm3,xmm5, 0x72 ; ' second
-            ADDPS       xmm1,xmm7
-            POR         xmm0,xmm3 ; ' second
+            DPPS        xmm3,xmm5, 0x78 ; ' second
+            POR         xmm1,xmm0
+            POR         xmm1,xmm3 ; ' second
 
-            ADDPS       xmm0,xmm7
-            PUNPCKLQDQ  xmm1,xmm0
+            ADDPS       xmm1,xmm7
             CVTTPS2DQ   xmm1,xmm1
             MOVNTDQ     [EDX],xmm1 ; ' second | first
             DEC         ECX
