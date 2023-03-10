@@ -975,11 +975,9 @@ DVEC4MaxXYZ:
 DMatrix4MulDVEC4Array:
         ARG    DMAT4MulVEC4ArrayP, 4, DVEC4ArrayMulMAT4P, 4, DVEC4ArrayMulMAT4Count, 4
 
-            MOV         ECX,[EBP+DVEC4ArrayMulMAT4Count]
             MOV         EAX,[EBP+DMAT4MulVEC4ArrayP]
-            OR          ECX,ECX
+            MOV         ECX,[EBP+DVEC4ArrayMulMAT4Count]
             MOVDQA      xmm4,[EAX]
-            JZ          .endDMat4MulDVEC4
             MOVDQA      xmm5,[EAX+16]
             MOVDQA      xmm6,[EAX+32]
             MOVDQA      xmm7,[EAX+48]
@@ -1038,10 +1036,9 @@ DMatrix4MulDVEC4Array:
 DMatrix4MulDVEC4PerspArray:
         ARG    DMAT4MulVEC4ArrayPerspP, 4, DVEC4ArrayMulMAT4PerspP, 4, DVEC4ArrayMulMAT4CountPersp, 4
 
-            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountPersp]
             MOV         EAX,[EBP+DMAT4MulVEC4ArrayPerspP]
+            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountPersp]
             MOVDQA      xmm4,[EAX]
-            JECXZ       .endDMat4MulDVEC4
             MOVDQA      xmm5,[EAX+16]
             MOVDQA      xmm6,[EAX+32]
             MOV         EDX,[EBP+DVEC4ArrayMulMAT4PerspP]
@@ -1145,10 +1142,9 @@ DMatrix4MulDVEC4ArrayPerspNT:
 DMatrix4MulDVEC4ArrayPerspRes:
         ARG    DMAT4MulVEC4ArrayResPerspP, 4, DVEC4ArrayMulMAT4SrcPerspP, 4, DVEC4ArrayMulMAT4CountResPersp, 4, DVEC4ArrayMulMAT4ResPerspP, 4
 
-            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResPersp]
             MOV         EAX,[EBP+DMAT4MulVEC4ArrayResPerspP]
+            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResPersp]
             MOVDQA      xmm4,[EAX]
-            JECXZ       .endDMat4MulDVEC4
             MOVDQA      xmm5,[EAX+16]
             MOVDQA      xmm6,[EAX+32]
             MOVDQA      xmm7,[EAX+48]
@@ -1222,11 +1218,9 @@ DMatrix4MulDVEC4ArrayPerspResNT:
 DMatrix4MulDVEC4ArrayResDVec4i:
         ARG     DMAT4MulVEC4ArrayResiP, 4, DVEC4ArrayMulMAT4SrciP, 4, DVEC4ArrayMulMAT4CountResi, 4, DVEC4ArrayMulMAT4ResiP, 4
 
-            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResi]
             MOV         EAX,[EBP+DMAT4MulVEC4ArrayResiP]
-            OR          ECX,ECX
+            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResi]
             MOVDQA      xmm4,[EAX]
-            JZ          .endDMat4MulDVEC4
             MOVDQA      xmm5,[EAX+16]
             MOVDQA      xmm6,[EAX+32]
             MOVDQA      xmm7,[EAX+48]
@@ -1294,12 +1288,11 @@ DMatrix4MulDVEC4ArrayResDVec2i:
             MOVD        xmm4,[EAX] ; xmm4 = Matrix column1
             MOVD        xmm5,[EAX+4] ; xmm5 = Matrix column2
             ;MOVD        xmm6,[EAX+8] ; xmm6 = Matrix column3 : ignore column 3 as it's 2D projection
-            MOVDQA      xmm7,[EAX+48]
+            PSHUFD      xmm7,[EAX+48],(1<<6) | (0<<4) | (1<<2) | (0) ; xmm7 = x | y | x | y
             PINSRD      xmm4,[EAX+16], 1
             PINSRD      xmm5,[EAX+20], 1
             PINSRD      xmm4,[EAX+32], 2
             PINSRD      xmm5,[EAX+36], 2
-            PUNPCKLQDQ  xmm7,xmm7
 
             MOV         EAX,[EBP+DVEC4ArrayMulMAT4Src2iP]
             MOV         EDX,[EBP+DVEC2iArrayMulMAT4ResiP]
@@ -1354,12 +1347,11 @@ DMatrix4MulDVEC4ArrayResDVec2iNT:
             MOVD        xmm4,[EAX] ; xmm4 = Matrix column1
             MOVD        xmm5,[EAX+4] ; xmm5 = Matrix column2
             ;MOVD        xmm6,[EAX+8] ; xmm6 = Matrix column3 : ignore column 3 as it's 2D projection
-            MOVDQA      xmm7,[EAX+48]
+            PSHUFD      xmm7,[EAX+48],(1<<6) | (0<<4) | (1<<2) | (0) ; xmm7 = x | y | x | y
             PINSRD      xmm4,[EAX+16], 1
             PINSRD      xmm5,[EAX+20], 1
             PINSRD      xmm4,[EAX+32], 2
             PINSRD      xmm5,[EAX+36], 2
-            PUNPCKLQDQ  xmm7,xmm7
 
             MOV         EAX,[EBP+DVEC4ArrayMulMAT4Src2iNTP]
             MOV         EDX,[EBP+DVEC2iArrayMulMAT4ResiNTP]
@@ -1544,11 +1536,9 @@ DMatrix4MulDVEC4ArrayResNT:
 DMatrix4MulDVEC4ArrayResDVec4iNT:
         ARG    DMAT4MulVEC4ArrayResiNTP, 4, DVEC4ArrayMulMAT4SrciNTP, 4, DVEC4ArrayMulMAT4CountResiNT, 4, DVEC4ArrayMulMAT4ResiNTP, 4
 
-            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResiNT]
             MOV         EAX,[EBP+DMAT4MulVEC4ArrayResiNTP]
-            OR          ECX,ECX
+            MOV         ECX,[EBP+DVEC4ArrayMulMAT4CountResiNT]
             MOVDQA      xmm4,[EAX]
-            JZ          .endDMat4MulDVEC4
             MOVDQA      xmm5,[EAX+16]
             MOVDQA      xmm6,[EAX+32]
             MOVDQA      xmm7,[EAX+48]
