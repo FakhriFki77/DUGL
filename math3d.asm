@@ -25,10 +25,10 @@
 %pragma win32 gprefix   _
 
 ; GLOBAL Function*************************************************************
-GLOBAL DistanceDVEC4, DistancePow2DVEC4, DotDVEC4, LengthDVEC4, NormalizeDVEC4,  LerpDVEC4Res
+GLOBAL DistanceDVEC4, DistancePow2DVEC4, DotDVEC4, DotNormalizeDVEC4, LengthDVEC4, NormalizeDVEC4, LerpDVEC4Res, RayProjectDVEC4Res
 GLOBAL MulValDVEC4, MulValDVEC4Res, MulValDVEC4Array, MulDVEC4, MulDVEC4Res, MulDVEC4Array
 GLOBAL AddDVEC4, AddDVEC4Res, AddDVEC4Array
-GLOBAL SubDVEC4, SubDVEC4Res, CrossDVEC4
+GLOBAL SubDVEC4, SubDVEC4Res, SubNormalizeDVEC4, SubNormalizeDVEC4Res, CrossDVEC4, CrossNormalizeDVEC4, GetPlaneDVEC4
 
 GLOBAL DVEC4Array2DVec4i, DVEC4Array2DVec4iNT, DVEC4iArray2DVec4, DVEC4iArray2DVec4NT, ClipDVEC4Array
 GLOBAL CopyDVEC4, CopyDVEC4NT, StoreDVEC4, StoreDVEC4NT
@@ -88,6 +88,39 @@ DotDVEC4:
 
         RETURN
 
+DotNormalizeDVEC4:
+        ARG    DotNormDVEC1P, 4, DotNormDVEC2P, 4, DotNormFResP, 4
+
+            PUSH        EDI
+
+            MOV         EDI,[EBP+DotNormFResP]
+            XOR         EDX,EDX
+            MOV         EAX,[EBP+DotNormDVEC1P]
+            MOV         [EDI],EDX ; put default 0.0f in dot result
+            MOVDQA      xmm3,[EAX] ; DVEC4 1
+            MOVDQA      xmm1,xmm3
+            DPPS        xmm3,xmm3,0x7F
+            MOVD        ECX,xmm3
+            MOV         EDX,[EBP+DotNormDVEC2P]
+            JECXZ       .EndDotNorm
+            MOVDQA      xmm7,[EDX] ; DVEC4 2
+            SQRTPS      xmm0,xmm3
+            MOVDQA      xmm5,xmm7
+            DIVPS       xmm1,xmm0 ; ; xmm1 = normalized DEVC4 1
+            DPPS        xmm7,xmm7,0x7F
+            MOVD        ECX,xmm7
+            JECXZ       .EndDotNorm
+            SQRTPS      xmm0,xmm7
+            DIVPS       xmm5,xmm0 ; xmm5 = normalized DEVC4 2
+            DPPS        xmm1,xmm5,0x71
+            MOVD        [EDI],xmm1
+.EndDotNorm:
+
+            POP         EDI
+
+        RETURN
+
+
 LengthDVEC4:
         ARG    LenDVECP, 4, LenFResP, 4
 
@@ -116,14 +149,53 @@ NormalizeDVEC4:
 
         RETURN
 
+SubNormalizeDVEC4:
+        ARG    SubNormDVEC1P, 4, SubNormDVEC2P, 4
+
+            MOV         EAX,[EBP+SubNormDVEC1P]
+            MOV         ECX,[EBP+SubNormDVEC2P]
+            MOVDQA      xmm3,[EAX]
+            ;MOVDQA      xmm1,[ECX]
+            SUBPS       xmm3,[ECX]
+            MOVDQA      xmm1,xmm3
+            DPPS        xmm3,xmm3,0x7F
+            MOVD        ECX,xmm3
+            JECXZ       .NoDivNorm
+            SQRTPS      xmm0,xmm3
+            DIVPS       xmm1,xmm0
+.NoDivNorm:
+            MOVDQA      [EAX],xmm1
+
+        RETURN
+
+SubNormalizeDVEC4Res:
+        ARG    SubNormDVEC1ResP, 4, SubNormDVEC2ResP, 4, DVEC4ResSubNormP, 4
+
+            MOV         EAX,[EBP+SubNormDVEC1ResP]
+            MOV         ECX,[EBP+SubNormDVEC2ResP]
+            MOVDQA      xmm3,[EAX]
+            ;MOVDQA      xmm1,[ECX]
+            SUBPS       xmm3,[ECX]
+            MOVDQA      xmm1,xmm3
+            DPPS        xmm3,xmm3,0x7F
+            MOVD        ECX,xmm3
+            MOV         EAX,[EBP+DVEC4ResSubNormP]
+            JECXZ       .NoDivNorm
+            SQRTPS      xmm0,xmm3
+            DIVPS       xmm1,xmm0
+.NoDivNorm:
+            MOVDQA      [EAX],xmm1
+
+        RETURN
+
 ;([v1.y * v2.z - v1.z * v2.y],  [v1.z * v2.x - v1.x * v2.z],  [v1.x * v2.y - v1.y * v2.x])
 CrossDVEC4:
         ARG    CrossDVEC1P, 4, CrossDVEC2P, 4, CrossResDVECP, 4
 
-            MOV         EAX,[EBP+CrossDVEC1P]
+            MOV         EDX,[EBP+CrossDVEC1P]
             MOV         ECX,[EBP+CrossDVEC2P]
-            MOV         EDX,[EBP+CrossResDVECP]
-            MOVDQA      xmm0,[EAX]
+            MOV         EAX,[EBP+CrossResDVECP]
+            MOVDQA      xmm0,[EDX]
             MOVDQA      xmm1,[ECX]
             PSHUFD      xmm2,xmm0,(0<<6) | (0<<4) | (2<<2) | (1) ; v1.y | v1.Z | v1.x
             PSHUFD      xmm3,xmm1,(0<<6) | (1<<4) | (0<<2) | (2) ; y2.z | y2.x | y2.y
@@ -132,7 +204,71 @@ CrossDVEC4:
             MULPS       xmm2,xmm3
             MULPS       xmm0,xmm1
             SUBPS       xmm2,xmm0
-            MOVDQA      [EDX],xmm2
+            MOVDQA      [EAX],xmm2
+
+        RETURN
+
+;Normalize([v1.y * v2.z - v1.z * v2.y],  [v1.z * v2.x - v1.x * v2.z],  [v1.x * v2.y - v1.y * v2.x])
+CrossNormalizeDVEC4:
+        ARG    CrossNormDVEC1P, 4, CrossNormDVEC2P, 4, CrossNormResDVECP, 4
+
+            MOV         EDX,[EBP+CrossNormDVEC1P]
+            MOV         ECX,[EBP+CrossNormDVEC2P]
+            MOV         EAX,[EBP+CrossNormResDVECP]
+            MOVDQA      xmm0,[EDX]
+            MOVDQA      xmm1,[ECX]
+            PSHUFD      xmm2,xmm0,(0<<6) | (0<<4) | (2<<2) | (1) ; v1.y | v1.Z | v1.x
+            PSHUFD      xmm3,xmm1,(0<<6) | (1<<4) | (0<<2) | (2) ; y2.z | y2.x | y2.y
+            PSHUFD      xmm0,xmm0,(0<<6) | (1<<4) | (0<<2) | (2) ; v1.z | v1.x | v1.y
+            PSHUFD      xmm1,xmm1,(0<<6) | (0<<4) | (2<<2) | (1) ; y2.y | y2.z | y2.x
+            MULPS       xmm2,xmm3
+            MULPS       xmm0,xmm1
+            SUBPS       xmm2,xmm0
+
+            MOVDQA      xmm3,xmm2
+            DPPS        xmm3,xmm3,0x7F
+            MOVD        ECX,xmm3
+            JECXZ       .NoDivNorm
+            SQRTPS      xmm0,xmm3
+            DIVPS       xmm2,xmm0
+.NoDivNorm:
+            MOVDQA      [EAX],xmm2
+
+        RETURN
+
+
+GetPlaneDVEC4:
+        ARG    PlaneDVEC1P, 4, PlaneDVEC2P, 4, PlaneDVEC3P, 4, PlaneResDVECP, 4
+
+            MOV         EAX,[EBP+PlaneDVEC3P]
+            MOV         ECX,[EBP+PlaneDVEC2P]
+            MOV         EDX,[EBP+PlaneDVEC1P]
+            MOVDQA      xmm0,[EAX] ; p3
+            MOVDQA      xmm1,[ECX] ; p2
+            MOVDQA      xmm7,[EDX] ; p1
+            SUBPS       xmm0,xmm1  ; p3 - p2
+            SUBPS       xmm1,xmm7  ; p2 - p1
+            PSHUFD      xmm2,xmm0,(0<<6) | (0<<4) | (2<<2) | (1) ; v1.y | v1.Z | v1.x
+            PSHUFD      xmm3,xmm1,(0<<6) | (1<<4) | (0<<2) | (2) ; y2.z | y2.x | y2.y
+            PSHUFD      xmm0,xmm0,(0<<6) | (1<<4) | (0<<2) | (2) ; v1.z | v1.x | v1.y
+            PSHUFD      xmm1,xmm1,(0<<6) | (0<<4) | (2<<2) | (1) ; y2.y | y2.z | y2.x
+            MULPS       xmm2,xmm3
+            MULPS       xmm0,xmm1
+            SUBPS       xmm2,xmm0
+
+            MOVDQA      xmm3,xmm2
+            DPPS        xmm3,xmm3,0x7F
+            MOVD        ECX,xmm3
+            MOV         EAX,[EBP+PlaneResDVECP]
+            JECXZ       .NoDivNorm
+            SQRTPS      xmm0,xmm3
+            DIVPS       xmm2,xmm0
+.NoDivNorm:
+            DPPS        xmm7,xmm2,0x78 ; xmm7 = 0 | 0 | 0 | (p.x * v1.x + p.y * v1.y + p.z * v1.z)
+            PXOR        xmm5,xmm5
+            SUBPS       xmm5,xmm7 ; xmm7 = 0 | 0 | 0 | -(p.x * v1.x + p.y * v1.y + p.z * v1.z)
+            POR         xmm2,xmm5
+            MOVDQA      [EAX],xmm2
 
         RETURN
 
@@ -140,17 +276,34 @@ CrossDVEC4:
 LerpDVEC4Res:
         ARG    LerpALPHA, 4, LerpDVEC1P, 4, LerpDVEC2P, 4, LerpResDVECP, 4
 
-            MOV         EAX,[EBP+LerpDVEC1P]
+            MOV         EDX,[EBP+LerpDVEC1P]
             MOV         ECX,[EBP+LerpDVEC2P]
-            MOV         EDX,[EBP+LerpResDVECP]
+            MOV         EAX,[EBP+LerpResDVECP]
             MOVD        xmm3,[EBP+LerpALPHA] ; xmm3 = ALPHA | 0 | 0 | 0
-            MOVDQA      xmm0,[EAX]
+            MOVDQA      xmm0,[EDX]
             MOVDQA      xmm1,[ECX]
             PSHUFD      xmm3,xmm3,0 ; xmm3 = ALPHA | ALPHA | ALPHA | ALPHA
             SUBPS       xmm1,xmm0   ; xmm1 = v2 - v1
             MULPS       xmm1,xmm3   ; xmm1 = alpha * (v2-v1)
             ADDPS       xmm1,xmm0   ; xmm1 = v1 + alpha * (v2-v1)
-            MOVDQA      [EDX],xmm1
+            MOVDQA      [EAX],xmm1
+
+        RETURN
+
+; vRes = rdir * t + rpos
+RayProjectDVEC4Res:
+        ARG    rayProjT, 4, rprojRPOSDVECP, 4, rprojRDIRDVECP, 4, rayProjResDVECP, 4
+
+            MOV         EDX,[EBP+rprojRPOSDVECP]
+            MOV         ECX,[EBP+rprojRDIRDVECP]
+            MOV         EAX,[EBP+rayProjResDVECP]
+            MOVD        xmm3,[EBP+rayProjT] ; xmm3 = t | 0 | 0 | 0
+            MOVDQA      xmm0,[EDX]
+            MOVDQA      xmm1,[ECX]
+            PSHUFD      xmm3,xmm3,0 ; xmm3 = t | t | t| t
+            MULPS       xmm3,xmm1 ; xmm3 = rdir * t
+            ADDPS       xmm3,xmm0 ; xmm3 += rpos
+            MOVDQA      [EAX],xmm3
 
         RETURN
 
@@ -171,13 +324,13 @@ MulDVEC4:
 MulDVEC4Res:
         ARG    MulDVEC1ResP, 4, MulDVEC2ResP, 4, DVEC4ResMulP, 4
 
-            MOV         EAX,[EBP+MulDVEC1ResP]
+            MOV         EDX,[EBP+MulDVEC1ResP]
             MOV         ECX,[EBP+MulDVEC2ResP]
-            MOVDQA      xmm0,[EAX]
+            MOVDQA      xmm0,[EDX]
             ;MOVDQA      xmm1,[ECX]
-            MOV         EDX,[EBP+DVEC4ResMulP]
+            MOV         EAX,[EBP+DVEC4ResMulP]
             MULPS       xmm0,[ECX] ; xmm1
-            MOVDQA      [EDX],xmm0
+            MOVDQA      [EAX],xmm0
 
         RETURN
 
@@ -196,13 +349,13 @@ MulValDVEC4:
 MulValDVEC4Res:
         ARG    MulVDVECResP, 4, MulVFRes, 4, MulDestDVECResP, 4
 
-            MOV         EAX,[EBP+MulVDVECResP]
-            MOV         ECX,[EBP+MulDestDVECResP]
+            MOV         EDX,[EBP+MulVDVECResP]
+            MOV         EAX,[EBP+MulDestDVECResP]
             MOVD        xmm0,[EBP+MulVFRes]
-            MOVDQA      xmm3,[EAX]
+            MOVDQA      xmm3,[EDX]
             PSHUFD      xmm0,xmm0, 0 ; xmm0 = MulVF | MulVF | MulVF | MulVF
             MULPS       xmm3,xmm0
-            MOVDQA      [ECX],xmm3
+            MOVDQA      [EAX],xmm3
 
         RETURN
 
@@ -264,13 +417,13 @@ AddDVEC4:
 AddDVEC4Res:
         ARG    AddDVEC1ResP, 4, AddDVEC2ResP, 4, DVEC4ResAddP, 4
 
-            MOV         EAX,[EBP+AddDVEC1ResP]
+            MOV         EDX,[EBP+AddDVEC1ResP]
             MOV         ECX,[EBP+AddDVEC2ResP]
-            MOVDQA      xmm0,[EAX]
+            MOV         EAX,[EBP+DVEC4ResAddP]
+            MOVDQA      xmm0,[EDX]
             ;MOVDQA      xmm1,[ECX]
-            MOV         EDX,[EBP+DVEC4ResAddP]
             ADDPS       xmm0,[ECX] ;xmm1
-            MOVDQA      [EDX],xmm0
+            MOVDQA      [EAX],xmm0
 
         RETURN
 
@@ -322,13 +475,13 @@ SubDVEC4:
 SubDVEC4Res:
         ARG    SubDVEC1ResP, 4, SubDVEC2ResP, 4, DVEC4ResSubP, 4
 
-            MOV         EAX,[EBP+SubDVEC1ResP]
+            MOV         EDX,[EBP+SubDVEC1ResP]
             MOV         ECX,[EBP+SubDVEC2ResP]
-            MOVDQA      xmm0,[EAX]
+            MOV         EAX,[EBP+DVEC4ResSubP]
+            MOVDQA      xmm0,[EDX]
             ;MOVDQA      xmm1,[ECX]
-            MOV         EDX,[EBP+DVEC4ResSubP]
             SUBPS       xmm0,[ECX] ; xmm1
-            MOVDQA      [EDX],xmm0
+            MOVDQA      [EAX],xmm0
 
         RETURN
 
@@ -661,7 +814,7 @@ StoreDVEC4NT:
 
         RETURN
 
-; search/AABBox/Filtering
+; search/AABBox/Filtering/intersection
 
 FetchDAAMinBBoxDVEC4Array:
         ARG    DVEC4ArrayFMBBoxP, 4, DVEC4ArrayFMBBoxCount, 4, FAAMBBoxP, 4

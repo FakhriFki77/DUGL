@@ -81,23 +81,32 @@ void DestroyDVEC2(void *vec2);
 // Math op : Mul/Add/Sub/Cross/Distance/Dot ..
 void DistanceDVEC4(DVEC4 *v1, DVEC4 *v2, float *distanceRes);
 void DistancePow2DVEC4(DVEC4 *v1, DVEC4 *v2, float *distancePow2Res);
+//  store dot of v1 and v2 in [dotRes]
 void DotDVEC4(DVEC4 *v1, DVEC4 *v2, float *dotRes);
+// normalize v1 and v2 then store dot in [dotRes], if any of v1 and v2 length is zero, dotRes will be 0.0f
+void DotNormalizeDVEC4(DVEC4 *v1, DVEC4 *v2, float *dotRes);
 void LengthDVEC4(DVEC4 *vec4, float *lengthRes);
-void NormalizeDVEC4(DVEC4 *vec4);
-void CrossDVEC4(DVEC4 *v1, DVEC4 *v2, DVEC4 *vcrossRes);
-void LerpDVEC4Res(float alpha, DVEC4 *v1, DVEC4 *v2, DVEC4 *vlerpRes); // vRes = v1 + ((v2 - v1) * alpha)
-void LerpDVEC4DVEC2Res(float alpha, DVEC4 *v41, DVEC4 *v42, DVEC2 *v21, DVEC2 *v22, DVEC4 *v4lerpRes, DVEC2 *v2lerpRes); // vRes = v1 + ((v2 - v1) * alpha)
-void MulValDVEC4(DVEC4 *vec4, float val);
-void MulValDVEC4Res(DVEC4 *v, float val, DVEC4 *vres);
+DVEC4 *NormalizeDVEC4(DVEC4 *vec4);
+DVEC4 *CrossDVEC4(DVEC4 *v1, DVEC4 *v2, DVEC4 *vcrossRes);
+DVEC4 *CrossNormalizeDVEC4(DVEC4 *v1, DVEC4 *v2, DVEC4 *vcrossRes);
+// build plane equation from (v1, v2, v3) giving the equation a.x+b.y+c.y+d = 0 in vPlaneRes
+// CrossNormalize(v3-v2, v2-v1, vPlaneNorm) then compute  d = - ((vPlaneNorm.x*v1.x) + (vPlaneNorm.y*v1.y) + (vPlaneNorm.z*v1.z))
+DVEC4 *GetPlaneDVEC4(DVEC4 *v1, DVEC4 *v2, DVEC4 *v3, DVEC4 *vPlaneRes);
+// vRes = v1 + ((v2 - v1) * alpha)
+DVEC4 *LerpDVEC4Res(float alpha, DVEC4 *v1, DVEC4 *v2, DVEC4 *vlerpRes);
+DVEC4 *MulValDVEC4(DVEC4 *vec4, float val);
+DVEC4 *MulValDVEC4Res(DVEC4 *v, float val, DVEC4 *vres);
 void MulValDVEC4Array(DVEC4 *vec4array, int count, float val);
 void MulDVEC4Array(DVEC4 *vec4array, int count, DVEC4 *vmul);
-void MulDVEC4(DVEC4 *v1, DVEC4 *v2);
-void MulDVEC4Res(DVEC4 *v1, DVEC4 *v2, DVEC4 *vresMul);
-void AddDVEC4(DVEC4 *v1, DVEC4 *v2);
-void AddDVEC4Res(DVEC4 *v1, DVEC4 *v2, DVEC4 *vresAdd);
+DVEC4 *MulDVEC4(DVEC4 *v1, DVEC4 *v2);
+DVEC4 *MulDVEC4Res(DVEC4 *v1, DVEC4 *v2, DVEC4 *vresMul);
+DVEC4 *AddDVEC4(DVEC4 *v1, DVEC4 *v2);
+DVEC4 *AddDVEC4Res(DVEC4 *v1, DVEC4 *v2, DVEC4 *vresAdd);
 void AddDVEC4Array(DVEC4 *vec4array, int count, DVEC4 *vplus);
-void SubDVEC4(DVEC4 *v1, DVEC4 *v2);
-void SubDVEC4Res(DVEC4 *v1, DVEC4 *v2, DVEC4 *vresSub);
+DVEC4 *SubDVEC4(DVEC4 *v1, DVEC4 *v2); // v1 = v1 - v2
+DVEC4 *SubDVEC4Res(DVEC4 *v1, DVEC4 *v2, DVEC4 *vresSub); // vresSub = v1 - v2
+DVEC4 *SubNormalizeDVEC4(DVEC4 *v1, DVEC4 *v2); // v1 = Normalize(v1 - v2)
+DVEC4 *SubNormalizeDVEC4Res(DVEC4 *v1, DVEC4 *v2, DVEC4 *vresSubNormalize); // vresSubNormalize = Normalize(v1 - v2)
 void MulVEC2ArrayVEC2ValDVec2iArrayRes(DVEC2 *vec2array, int count, DVEC2 *MulVal, DVEC2i *vec2iArrayRes);
 void MulVEC2ArrayVEC2ValDVec2iArrayResNT(DVEC2 *vec2array, int count, DVEC2 *MulVal, DVEC2i *vec2iArrayRes);
 // Conversion/Copy/Clip /////////////////////////////////////////
@@ -127,7 +136,13 @@ void DVEC4MaxRes(DVEC4 *v1, DVEC4 *v2, DVEC4 *vec4_maxRes);
 void DVEC4MinXYZ(DVEC4 *v, float *minXYZRes);
 /* return max value of x, y, z components in maxXYZRes */
 void DVEC4MaxXYZ(DVEC4 *v, float *maxXYZRes);
-
+// Ray/plane functions ////////////////////////////////////////////////////
+/* return true if [plane] intersect with ray ([raypos], [raydir]) */
+bool IntersectRayPlane(DVEC4 *plane, DVEC4 *raypos, DVEC4 *raydir);
+/* return true if [plane] intersect with ray ([raypos], [raydir]) and store interesction pos in intrscPos */
+bool IntersectRayPlaneRes(DVEC4 *plane, DVEC4 *raypos, DVEC4 *raydir, DVEC4 *intrscPos);
+/* project Ray ([rpos], [rdir]) vResProj = rdir * t + rpos */
+DVEC4 *RayProjectDVEC4Res(float t, DVEC4 *rpos, DVEC4 *rdir, DVEC4 *vResProj);
 // culling / collision / clipping //////////////////////////////////////
 bool DVEC4InAAMinBBox(DVEC4 *vec4Pos, DAAMinBBox *aaMinBbox);
 #define DVEC4_IN_MASK_X 0x0001
@@ -144,23 +159,23 @@ DMatrix4 *CreateDMatrix4();
 DMatrix4 *CreateDMatrix4Array(size_t count);
 void DestroyDMatrix4(DMatrix4 *matrix4);
 
-void GetIdentityDMatrix4(DMatrix4 *mat4x4Dst);
-void GetLookAtDMatrix4(DMatrix4 *mat4x4Dst, DVEC4 *eye, DVEC4 *center, DVEC4 *up);
-void GetLookAtDMatrix4Val(DMatrix4 *mat4x4, float eye_x, float eye_y, float eye_z, float center_x, float center_y, float center_z, float up_x, float up_y, float up_z);
-void GetPerspectiveDMatrix4(DMatrix4 *mat4x4, float fov, float aspect, float znear, float zfar);
-void GetOrthoDMatrix4(DMatrix4 *mat4x4, float left, float right, float bottom, float top, float znear, float zfar);
-void GetViewDMatrix4(DMatrix4 *mat4x4, DgView *view, float startX, float endX, float startY, float endY);
-void GetRotDMatrix4(DMatrix4 *FMG, float Rx, float Ry, float Rz);
-void GetXRotDMatrix4(DMatrix4 *FMX, float Rx);
-void GetYRotDMatrix4(DMatrix4 *FMY, float Ry);
-void GetZRotDMatrix4(DMatrix4 *FMZ, float Rz);
-void GetTranslateDMatrix4(DMatrix4 *mat4x4Trans, DVEC4 *vecTrans);
-void GetTranslateDMatrix4Val(DMatrix4 *mat4x4Trans, float tx, float ty, float tz);
-void GetScaleDMatrix4(DMatrix4 *mat4x4Trans, DVEC4 *vecScale);
-void GetScaleDMatrix4Val(DMatrix4 *mat4x4Trans, float sx, float sy, float sz);
+DMatrix4 *GetIdentityDMatrix4(DMatrix4 *mat4x4Dst);
+DMatrix4 *GetLookAtDMatrix4(DMatrix4 *mat4x4Dst, DVEC4 *eye, DVEC4 *center, DVEC4 *up);
+DMatrix4 *GetLookAtDMatrix4Val(DMatrix4 *mat4x4, float eye_x, float eye_y, float eye_z, float center_x, float center_y, float center_z, float up_x, float up_y, float up_z);
+DMatrix4 *GetPerspectiveDMatrix4(DMatrix4 *mat4x4, float fov, float aspect, float znear, float zfar);
+DMatrix4 *GetOrthoDMatrix4(DMatrix4 *mat4x4, float left, float right, float bottom, float top, float znear, float zfar);
+DMatrix4 *GetViewDMatrix4(DMatrix4 *mat4x4, DgView *view, float startX, float endX, float startY, float endY);
+DMatrix4 *GetRotDMatrix4(DMatrix4 *FMG, float Rx, float Ry, float Rz);
+DMatrix4 *GetXRotDMatrix4(DMatrix4 *FMX, float Rx);
+DMatrix4 *GetYRotDMatrix4(DMatrix4 *FMY, float Ry);
+DMatrix4 *GetZRotDMatrix4(DMatrix4 *FMZ, float Rz);
+DMatrix4 *GetTranslateDMatrix4(DMatrix4 *mat4x4Trans, DVEC4 *vecTrans);
+DMatrix4 *GetTranslateDMatrix4Val(DMatrix4 *mat4x4Trans, float tx, float ty, float tz);
+DMatrix4 *GetScaleDMatrix4(DMatrix4 *mat4x4Trans, DVEC4 *vecScale);
+DMatrix4 *GetScaleDMatrix4Val(DMatrix4 *mat4x4Trans, float sx, float sy, float sz);
 
-void DMatrix4MulDMatrix4(DMatrix4 *mat4x4_left, DMatrix4 *mat4x4_right);
-void DMatrix4MulDMatrix4Res(DMatrix4 *mat4x4_left, DMatrix4 *mat4x4_right, DMatrix4 *mat4x4_res);
+DMatrix4 *DMatrix4MulDMatrix4(DMatrix4 *mat4x4_left, DMatrix4 *mat4x4_right);
+DMatrix4 *DMatrix4MulDMatrix4Res(DMatrix4 *mat4x4_left, DMatrix4 *mat4x4_right, DMatrix4 *mat4x4_res);
 
 void DMatrix4MulDVEC4Array(DMatrix4 *mat4x4, DVEC4 *vec4Array, int count);
 // apply rotation/scale/translation DMatrix4 to an array of DVEC4 and store result on another result DVEC4 array
