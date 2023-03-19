@@ -117,6 +117,9 @@ void DgSetSrcSurf(DgSurf *S);
 // thread safe functions //////////////////
 // Gets Max Height in pixels for a DgSurf used with SetCurSurf
 int  GetMaxResVSetSurf();
+// mix RGB components of src and dst color according to blndVal
+// blndVal = 0 => srcCol, blndVal = 31 => dstCol, other value give intermediate
+int BlndCol16(int srcCol16, int dslCol16, int blndVal);
 // Set Origin of DgSurf
 void SetOrgSurf(DgSurf *S,int newOrgX,int newOrgY);
 // Create a DgSurf by allocating its buffer and initializing DgSurf, return new created DgSurf in *S

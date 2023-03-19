@@ -26,7 +26,7 @@
 %pragma win32 gprefix   _
 
 ; GLOBAL Functions
-GLOBAL  GetMaxResVSetSurf
+GLOBAL  GetMaxResVSetSurf, BlndCol16
 GLOBAL  DgSurfCGetPixel16, DgSurfCPutPixel16
 GLOBAL  SurfCopy, SurfMaskCopy16, SurfCopyBlnd16, SurfCopyTrans16
 
@@ -45,6 +45,49 @@ SECTION .text  ALIGN=32
 
 %include "fasthzline16.asm"
 %include "hzline16.asm"
+
+BlndCol16:
+  ARG SrcCol16, 4, DstCol16, 4, BlndVal16, 4
+
+            MOV         ECX,[EBP+BlndVal16] ;
+            MOV         EAX,[EBP+SrcCol16] ;
+            AND         ECX,BYTE BlendMask
+            MOV         EDX,[EBP+DstCol16] ;
+            JZ          .FinBlndCol16
+            CMP         CL,31
+            JZ          .ChooseDst16
+            MOVD        xmm3,ECX ; dst Mul
+            MOVD        xmm0,EAX ; srcCol16 | 0 | 0 | 0
+            MOVD        xmm1,EDX ; dstCol16 | 0 | 0 | 0
+            XOR         CL,BlendMask ; = 31-blendVal
+            PSHUFD      xmm3,xmm3, (0<<6) | (0<<4) | (0<<2) | (0) ; dst Mul | dst Mul | dst Mul | dst Mul
+            PSHUFLW     xmm0,xmm0,(0<<6) | (0<<4) | (0<<2) | (0) ; srcCol16 | srcCol16 | srcCol16 | srcCol16
+            PSHUFLW     xmm1,xmm1,(0<<6) | (0<<4) | (0<<2) | (0) ; dstCol16 | dstCol16 | dstCol16 | dstCol16
+            MOVD        xmm2,ECX ; src Mul
+            PAND        xmm0, [WBGR16Mask] ; srcColB16 | srcColG16 | srcColR16 | srcColR16
+            PSHUFD      xmm2,xmm2, (0<<6) | (0<<4) | (0<<2) | (0) ; src Mul | src Mul | src Mul | src Mul
+            PAND        xmm1, [WBGR16Mask] ; dstColB16 | dstColG16 | dstColR16 | dstColR16
+            PMOVZXWD    xmm0, xmm0 ; extend 16 bits Word src color de 32 bit DWord
+            PMOVZXWD    xmm1, xmm1 ; extend 16 bits Word dst color de 32 bit DWord
+            PMULLD      xmm0, xmm2 ; *= srcMul
+            PMULLD      xmm1, xmm3 ; *= dstMul
+            PADDD       xmm0, xmm1
+            PSRLD       xmm0, 5
+            PSHUFD      xmm4,xmm0, (1<<6) | (1<<4) | (1<<2) | (1)
+            PSHUFD      xmm5,xmm0, (2<<6) | (2<<4) | (2<<2) | (2)
+            ;PAND        xmm0,[QBlue16Mask]
+            PAND        xmm4,[QGreen16Mask]
+            PAND        xmm5,[QRed16Mask]
+            POR         xmm0,xmm4
+            POR         xmm0,xmm5
+            MOVD        EAX,xmm0
+
+            JMP         .FinBlndCol16
+.ChooseDst16:
+            MOV         EAX,EDX
+.FinBlndCol16:
+
+      RETURN
 
 GetMaxResVSetSurf:
             MOV         EAX,MaxResV
