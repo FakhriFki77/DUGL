@@ -1342,11 +1342,10 @@ PutMaskSurfBlnd16:
             MOVD        xmm4,ECX
             MOVD        xmm5,EDX
             MOVD        xmm7,EDI
-
             PSHUFLW     xmm3,xmm3,0
             PSHUFLW     xmm4,xmm4,0
             PSHUFLW     xmm5,xmm5,0
-            PSHUFLW     xmm7,xmm4,0
+            PSHUFLW     xmm7,xmm7,0
 
             PUNPCKLQDQ  xmm0,xmm0
             PUNPCKLQDQ  xmm3,xmm3
