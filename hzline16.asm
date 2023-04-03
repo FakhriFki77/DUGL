@@ -3770,8 +3770,8 @@ ALIGN 4
         MOV         AX,[ESI+EBX]
         CMP         AX,[SMask]
         JE          .NoStBAv
-        MOVD        mm0,EAX
         PINSRW      xmm3,[EDI],0
+        MOVD        xmm0,EAX
         MOVQ        xmm4,xmm3
         MOVQ        xmm5,xmm3
         MOVQ        xmm1,xmm0
@@ -3893,8 +3893,8 @@ ALIGN 4
 %%LastB:
         CMP         AX,[SMask]
         JE          .NoStBAp
-        MOVD        mm0,EAX
         PINSRW      xmm3,[EDI],0
+        MOVD        xmm0,EAX
         MOVQ        xmm4,xmm3
         MOVQ        xmm5,xmm3
         MOVQ        xmm1,xmm0

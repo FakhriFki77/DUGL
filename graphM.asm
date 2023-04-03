@@ -71,7 +71,7 @@ BlndCol16:
             PMOVZXWD    xmm1, xmm1 ; extend 16 bits Word dst color de 32 bit DWord
             PMULLD      xmm0, xmm2 ; *= srcMul
             PMULLD      xmm1, xmm3 ; *= dstMul
-            PADDD       xmm0, xmm1
+            PADDD       xmm0, xmm1 ; xmm0 = srcCol (R|G|B|B) * srcMul + dstCol (R|G|B|B) * dstMul
             PSRLD       xmm0, 5
             PSHUFD      xmm4,xmm0, (1<<6) | (1<<4) | (1<<2) | (1)
             PSHUFD      xmm5,xmm0, (2<<6) | (2<<4) | (2<<2) | (2)

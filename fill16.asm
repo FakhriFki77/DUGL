@@ -1115,6 +1115,7 @@ ALIGN 4
         XCHG        EDI,ECX
 .PasSwapAd:
         SUB         ECX,EDI
+        ;INC         ECX
         SHR         ECX,1
         @InMaskTransTextHLine16
         MOVD        EDX,mm6
