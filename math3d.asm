@@ -25,9 +25,9 @@
 %pragma win32 gprefix   _
 
 ; GLOBAL Function*************************************************************
-GLOBAL DistanceDVEC4, DistancePow2DVEC4, DotDVEC4, DotNormalizeDVEC4, LengthDVEC4, NormalizeDVEC4, LerpDVEC4Res, RayProjectDVEC4Res
+GLOBAL DistanceDVEC4, DistancePow2DVEC4, DotDVEC4, DotNormalizeDVEC4, LengthDVEC4, NormalizeDVEC4, NormalizeDVEC4Res
 GLOBAL MulValDVEC4, MulValDVEC4Res, MulValDVEC4Array, MulDVEC4, MulDVEC4Res, MulDVEC4Array
-GLOBAL AddDVEC4, AddDVEC4Res, AddDVEC4Array
+GLOBAL AddDVEC4, AddDVEC4Res, AddDVEC4Array, LerpDVEC4Res, RayProjectDVEC4Res
 GLOBAL SubDVEC4, SubDVEC4Res, SubNormalizeDVEC4, SubNormalizeDVEC4Res, CrossDVEC4, CrossNormalizeDVEC4, GetPlaneDVEC4
 
 GLOBAL DVEC4Array2DVec4i, DVEC4Array2DVec4iNT, DVEC4iArray2DVec4, DVEC4iArray2DVec4NT, ClipDVEC4Array
@@ -51,27 +51,27 @@ ALIGN 32
 DistanceDVEC4:
         ARG    DistDVEC1P, 4, DistDVEC2P, 4, DistFResP, 4
 
-            MOV         EAX,[EBP+DistDVEC1P]
+            MOV         EDX,[EBP+DistDVEC1P]
             MOV         ECX,[EBP+DistDVEC2P]
-            MOV         EDX,[EBP+DistFResP]
-            MOVDQA      xmm3,[EAX]
+            MOV         EAX,[EBP+DistFResP]
+            MOVDQA      xmm3,[EDX]
             SUBPS       xmm3,[ECX]
             DPPS        xmm3,xmm3,0x71
             SQRTSS      xmm0,xmm3
-            MOVD        [EDX],xmm0
+            MOVD        [EAX],xmm0
 
         RETURN
 
 DistancePow2DVEC4:
         ARG    DistDVEC1Pow2P, 4, DistDVEC2Pow2P, 4, DistPow2FResP, 4
 
-            MOV         EAX,[EBP+DistDVEC1Pow2P]
+            MOV         EDX,[EBP+DistDVEC1Pow2P]
             MOV         ECX,[EBP+DistDVEC2Pow2P]
-            MOV         EDX,[EBP+DistPow2FResP]
-            MOVDQA      xmm3,[EAX]
+            MOV         EAX,[EBP+DistPow2FResP]
+            MOVDQA      xmm3,[EDX]
             SUBPS       xmm3,[ECX]
             DPPS        xmm3,xmm3,0x71
-            MOVD        [EDX],xmm3
+            MOVD        [EAX],xmm3
 
         RETURN
 
@@ -79,25 +79,23 @@ DistancePow2DVEC4:
 DotDVEC4:
         ARG    DotDVEC1P, 4, DotDVEC2P, 4, DotFResP, 4
 
-            MOV         EAX,[EBP+DotDVEC1P]
+            MOV         EDX,[EBP+DotDVEC1P]
             MOV         ECX,[EBP+DotDVEC2P]
-            MOV         EDX,[EBP+DotFResP]
-            MOVDQA      xmm3,[EAX]
+            MOV         EAX,[EBP+DotFResP]
+            MOVDQA      xmm3,[EDX]
             DPPS        xmm3,[ECX],0x71
-            MOVD        [EDX],xmm3
+            MOVD        [EAX],xmm3
 
         RETURN
 
 DotNormalizeDVEC4:
         ARG    DotNormDVEC1P, 4, DotNormDVEC2P, 4, DotNormFResP, 4
 
-            PUSH        EDI
-
-            MOV         EDI,[EBP+DotNormFResP]
+            MOV         EAX,[EBP+DotNormFResP]
             XOR         EDX,EDX
-            MOV         EAX,[EBP+DotNormDVEC1P]
-            MOV         [EDI],EDX ; put default 0.0f in dot result
-            MOVDQA      xmm3,[EAX] ; DVEC4 1
+            MOV         ECX,[EBP+DotNormDVEC1P]
+            MOV         [EAX],EDX ; put default 0.0f in dot result
+            MOVDQA      xmm3,[ECX] ; DVEC4 1
             MOVDQA      xmm1,xmm3
             DPPS        xmm3,xmm3,0x7F
             MOVD        ECX,xmm3
@@ -113,10 +111,8 @@ DotNormalizeDVEC4:
             SQRTPS      xmm0,xmm7
             DIVPS       xmm5,xmm0 ; xmm5 = normalized DEVC4 2
             DPPS        xmm1,xmm5,0x71
-            MOVD        [EDI],xmm1
+            MOVD        [EAX],xmm1
 .EndDotNorm:
-
-            POP         EDI
 
         RETURN
 
@@ -124,12 +120,12 @@ DotNormalizeDVEC4:
 LengthDVEC4:
         ARG    LenDVECP, 4, LenFResP, 4
 
-            MOV         EAX,[EBP+LenDVECP]
-            MOV         ECX,[EBP+LenFResP]
-            MOVDQA      xmm3,[EAX]
+            MOV         ECX,[EBP+LenDVECP]
+            MOV         EAX,[EBP+LenFResP]
+            MOVDQA      xmm3,[ECX]
             DPPS        xmm3,xmm3,0x71
             SQRTSS      xmm0,xmm3
-            MOVD        [ECX],xmm0
+            MOVD        [EAX],xmm0
 
         RETURN
 
@@ -148,6 +144,25 @@ NormalizeDVEC4:
 .NoDivNorm:
 
         RETURN
+
+NormalizeDVEC4Res:
+        ARG    NormDVECResP, 4, NormDVECPRes, 4
+
+            MOV         EDX,[EBP+NormDVECResP]
+            MOV         EAX,[EBP+NormDVECPRes]
+            MOVDQA      xmm3,[EDX]
+            MOVDQA      xmm1,xmm3
+            MOVDQA      [EAX],xmm3
+            DPPS        xmm3,xmm3,0x7F
+            MOVD        ECX,xmm3
+            JECXZ       .NoDivNorm
+            SQRTPS      xmm0,xmm3
+            DIVPS       xmm1,xmm0
+            MOVDQA      [EAX],xmm1
+.NoDivNorm:
+
+        RETURN
+
 
 SubNormalizeDVEC4:
         ARG    SubNormDVEC1P, 4, SubNormDVEC2P, 4
@@ -923,7 +938,7 @@ FetchDAABBoxDVEC4Array:
 
 ;// culling / collision / comparison
 
-; compare equality of x,y and z
+; compare equality of x,y,z and d
 ;ALIGN 32
 EqualDVEC4:
         ARG    DVEC4Equal1P, 4, DVEC4Equal2P, 4
@@ -931,14 +946,10 @@ EqualDVEC4:
             MOV         ECX,[EBP+DVEC4Equal1P]
             MOV         EDX,[EBP+DVEC4Equal2P]
             MOVDQA      xmm0,[ECX] ; xmm0 = v1 (x, y, z, d)
-            ;MOVDQA     xmm1,[EDX] ; xmm1 = min (x, y, z, d)
             XOR         EAX,EAX
-            ;CMPEQPS        xmm0,[EDX]
-            PCMPEQD     xmm0,[EDX]
-            MOV         EBP,0x111
+            CMPEQPS     xmm0,[EDX]
             PMOVMSKB    EDX,xmm0
-            AND         EDX,EBP
-            CMP         EDX,EBP ; x, y, Z mask
+            CMP         EDX,0xffff
             SETE        AL
 
         RETURN

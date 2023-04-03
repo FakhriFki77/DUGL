@@ -316,11 +316,11 @@ bool IntersectRayPlane(DVEC4 *plane, DVEC4 *raypos, DVEC4 *raydir) {
     float dpos = 0.0f;
     DotDVEC4(plane, raydir, &ddir);
     // plane normal and ray dir should in reverse direction or no interesection occur
-    if (ddir >= -0.00005f ) {
+    if (ddir <= 0.00005f ) {
         return false;
     }
-    DotDVEC4(plane, raypos, &dpos);
-    float t = -(dpos+plane->d) / ddir;
+
+    float t = -(*DotDVEC4(plane, raypos, &dpos)+plane->d) / ddir;
 
     if (t < 0.0f)
         return false;
@@ -333,11 +333,11 @@ bool IntersectRayPlaneRes(DVEC4 *plane, DVEC4 *raypos, DVEC4 *raydir, DVEC4 *int
     float dpos = 0.0f;
     DotDVEC4(plane, raydir, &ddir);
 
-    if (ddir >= -0.00005f ) {
+    if (ddir <= 0.00005f ) {
         return false;
     }
-    DotDVEC4(plane, raypos, &dpos);
-    float t = -(dpos+plane->d) / ddir;
+
+    float t = -(*DotDVEC4(plane, raypos, &dpos)+plane->d) / ddir;
 
     if (t < 0.0f)
         return false;

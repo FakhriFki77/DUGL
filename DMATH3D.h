@@ -79,14 +79,15 @@ void *CreateDVEC2Array(int count);
 void DestroyDVEC2(void *vec2);
 
 // Math op : Mul/Add/Sub/Cross/Distance/Dot ..
-void DistanceDVEC4(DVEC4 *v1, DVEC4 *v2, float *distanceRes);
-void DistancePow2DVEC4(DVEC4 *v1, DVEC4 *v2, float *distancePow2Res);
+float *DistanceDVEC4(DVEC4 *v1, DVEC4 *v2, float *distanceRes);
+float *DistancePow2DVEC4(DVEC4 *v1, DVEC4 *v2, float *distancePow2Res);
 //  store dot of v1 and v2 in [dotRes]
-void DotDVEC4(DVEC4 *v1, DVEC4 *v2, float *dotRes);
+float *DotDVEC4(DVEC4 *v1, DVEC4 *v2, float *dotRes);
 // normalize v1 and v2 then store dot in [dotRes], if any of v1 and v2 length is zero, dotRes will be 0.0f
-void DotNormalizeDVEC4(DVEC4 *v1, DVEC4 *v2, float *dotRes);
-void LengthDVEC4(DVEC4 *vec4, float *lengthRes);
+float *DotNormalizeDVEC4(DVEC4 *v1, DVEC4 *v2, float *dotRes);
+float *LengthDVEC4(DVEC4 *vec4, float *lengthRes);
 DVEC4 *NormalizeDVEC4(DVEC4 *vec4);
+DVEC4 *NormalizeDVEC4Res(DVEC4 *vec4, DVEC4 *nvres);
 DVEC4 *CrossDVEC4(DVEC4 *v1, DVEC4 *v2, DVEC4 *vcrossRes);
 DVEC4 *CrossNormalizeDVEC4(DVEC4 *v1, DVEC4 *v2, DVEC4 *vcrossRes);
 // build plane equation from (v1, v2, v3) giving the equation a.x+b.y+c.y+d = 0 in vPlaneRes
