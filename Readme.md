@@ -21,6 +21,7 @@ On 2020, I decided to port it to be over **SDL** to allow it to go cross-platfor
 
 * **Primary render functions**: 
   1. Polygones (Solid, Textured, Masked Textured, Textured Colour Blended, Masked Textured Colour Blended, Transparent Textured, Masked Transparent Textured..).
+  2. RePoly function to re-render last rendered Polygone but with another texture mapping, color, transparency .., much faster than regular Poly and could be used for character clothes/marker, shadow casting, mixing textures for sample polygone ...
   2. Lines (Solid, mapped, Transparent, Transparent mapped).
   3. Sprites/Images blitting (without resize, but capability to reverse horizontally and vertically, could be Masked, Colour Blended or Transparent)
   4. Images Resize blitting (same as sprites, allow reversing horizontally or vertically but resize source View to Destination View to avoid clipping handling and get the best performance)
@@ -78,21 +79,39 @@ You need to (1) Go to **Global compilers Settings** => **Other settings** => **A
 ### Screenshots ###
 
 **HelloWorld**
+"Hello, world!" sample.
 
 ![HelloWorld](https://github.com/FakhriFki77/DUGL/blob/main/Screenshots/HelloWorld.png)
 
 **Forest**
 
+Infinite progressing forest/road sample.
+
 ![Forest](https://github.com/FakhriFki77/DUGL/blob/main/Screenshots/forest.png)
 
 **keybmap**
+
+Keyboard map editor.
 
 ![keybmap](https://github.com/FakhriFki77/DUGL/blob/main/Screenshots/keybmap.png)
 
 **Edchr2**
 
+DUGL CHR font format editor.
+
 ![Echr2](https://github.com/FakhriFki77/DUGL/blob/main/Screenshots/Edchr2.png)
 
+**Shadow**
+
+Sample unoptimized 3D engine, with Sprite shadow casting on ground.
+
+![Shadow](https://github.com/FakhriFki77/DUGL/blob/main/Screenshots/Shadow.png)
+
+**Sprites**
+
+Sample benchmark of sprites blitting.
+
+![Shadow](https://github.com/FakhriFki77/DUGL/blob/main/Screenshots/Sprites.png)
 
 ### Contact ###
 
