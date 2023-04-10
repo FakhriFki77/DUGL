@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Shadow" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="../Shadow.exe" prefix_auto="0" extension_auto="0" />
+				<Option working_dir="../" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option use_console_runner="0" />
+				<Compiler>
+					<Add option="-m32" />
+					<Add option="-g" />
+					<Add directory="../../" />
+				</Compiler>
+				<Linker>
+					<Add option="-static-libstdc++" />
+					<Add option="-static-libgcc" />
+					<Add option="-static" />
+					<Add option="-m32" />
+					<Add library="mingw32" />
+					<Add library="DUGL" />
+					<Add library="SDL2Main" />
+					<Add library="SDL2.dll" />
+					<Add library="png" />
+					<Add library="zlib" />
+					<Add directory="../../bin/Debug/" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="../Shadow.exe" prefix_auto="0" extension_auto="0" />
+				<Option working_dir="../" />
+				<Option object_output="obj/Release/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-march=corei7" />
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-m32" />
+					<Add directory="../../" />
+				</Compiler>
+				<Linker>
+					<Add option="-O3" />
+					<Add option="-s" />
+					<Add option="-static-libstdc++" />
+					<Add option="-static-libgcc" />
+					<Add option="-static" />
+					<Add option="-m32" />
+					<Add library="mingw32" />
+					<Add library="DUGL" />
+					<Add library="SDL2Main" />
+					<Add library="SDL2.dll" />
+					<Add library="png" />
+					<Add library="zlib" />
+					<Add directory="../../bin/Release/" />
+				</Linker>
+			</Target>
+		</Build>
+		<Unit filename="D3DLoader.cpp" />
+		<Unit filename="D3DLoader.h" />
+		<Unit filename="DCamera3D.cpp" />
+		<Unit filename="DCamera3D.h" />
+		<Unit filename="Shadow.cpp" />
+		<Extensions>
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

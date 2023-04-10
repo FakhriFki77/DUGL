@@ -1,5 +1,5 @@
 /*  Dust Ultimate Game Library (DUGL) - (C) 2023 Fakhri Feki */
-/*  Experimental 3d loader */
+/*  Experimental 3d OBJ loader */
 
 #include <stdio.h>
 #include <string.h>

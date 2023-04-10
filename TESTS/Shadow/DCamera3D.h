@@ -1,3 +1,5 @@
+/*  Dust Ultimate Game Library (DUGL) - (C) 2023 Fakhri Feki */
+
 #ifndef DCAMERA3D_H_INCLUDED
 #define DCAMERA3D_H_INCLUDED
 

@@ -2,7 +2,7 @@
 /*  Shadow Sample*/
 /*  Simple/unoptimized 3d engine, with z-sorting polygones, moving camera, shadow casting on ground, 3d obj loader .. */
 /*  History : */
-/*  10 April march 2023 : first release */
+/*  10 April 2023 : first release */
 
 #include <stdio.h>
 #include <stdlib.h>
