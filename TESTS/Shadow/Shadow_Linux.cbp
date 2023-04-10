@@ -7,7 +7,7 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="../Shadow.exe" prefix_auto="0" extension_auto="0" />
+				<Option output="../Shadow.bin" prefix_auto="0" extension_auto="0" />
 				<Option working_dir="../" />
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
@@ -19,44 +19,35 @@
 					<Add directory="../../" />
 				</Compiler>
 				<Linker>
-					<Add option="-static-libstdc++" />
-					<Add option="-static-libgcc" />
-					<Add option="-static" />
 					<Add option="-m32" />
-					<Add library="mingw32" />
+					<Add option="-lwayland-egl -lwayland-client -lwayland-cursor -lxkbcommon -lpthread -lrt" />
 					<Add library="DUGL" />
-					<Add library="SDL2Main" />
-					<Add library="SDL2.dll" />
+					<Add library="SDL2" />
 					<Add library="png" />
-					<Add library="zlib" />
+					<Add library="z" />
 					<Add directory="../../bin/Debug/" />
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="../Shadow.exe" prefix_auto="0" extension_auto="0" />
+				<Option output="../Shadow.bin" prefix_auto="0" extension_auto="0" />
 				<Option working_dir="../" />
 				<Option object_output="obj/Release/" />
 				<Option type="0" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-march=corei7" />
-					<Add option="-fexpensive-optimizations" />
 					<Add option="-m32" />
 					<Add directory="../../" />
 				</Compiler>
 				<Linker>
 					<Add option="-O3" />
 					<Add option="-s" />
-					<Add option="-static-libstdc++" />
-					<Add option="-static-libgcc" />
-					<Add option="-static" />
 					<Add option="-m32" />
-					<Add library="mingw32" />
+					<Add option="-lwayland-egl -lwayland-client -lwayland-cursor -lxkbcommon -lpthread -lrt" />
 					<Add library="DUGL" />
-					<Add library="SDL2Main" />
-					<Add library="SDL2.dll" />
+					<Add library="SDL2" />
 					<Add library="png" />
-					<Add library="zlib" />
+					<Add library="z" />
 					<Add directory="../../bin/Release/" />
 				</Linker>
 			</Target>
