@@ -21,12 +21,12 @@ On 2020, I decided to port it to be over **SDL** to allow it to go cross-platfor
 
 * **Primary render functions**: 
   1. Polygones (Solid, Textured, Masked Textured, Textured Colour Blended, Masked Textured Colour Blended, Transparent Textured, Masked Transparent Textured..).
-  2. RePoly function to re-render last rendered Polygone but with another texture mapping, color, transparency .., much faster than regular Poly and could be used for character clothes/marker, shadow casting, mixing textures for sample polygone ...
-  2. Lines (Solid, mapped, Transparent, Transparent mapped).
-  3. Sprites/Images blitting (without resize, but capability to reverse horizontally and vertically, could be Masked, Colour Blended or Transparent)
-  4. Images Resize blitting (same as sprites, allow reversing horizontally or vertically but resize source View to Destination View to avoid clipping handling and get the best performance)
-  5. Blur filter adapted to 16bpp to reduce the darkening or getting greener over blurring cycles
-  6. Proprietary simple Font format ...
+  2. RePoly function to re-render last rendered Polygone but with another texture mapping, color, transparency .., much faster than regular Poly and could be used for character clothes/marker, shadow casting, mixing textures for same polygone ...
+  3. Lines (Solid, mapped, Transparent, Transparent mapped).
+  4. Sprites/Images blitting (without resize, but capability to reverse horizontally and vertically, could be Masked, Colour Blended or Transparent)
+  5. Images Resize blitting (same as sprites, allow reversing horizontally or vertically but resize source View to Destination View to avoid clipping handling and get the best performance)
+  6. Blur filter adapted to 16bpp to reduce the darkening or getting greener over blurring cycles
+  7. Proprietary simple Font format ...
 * **Render Cores**: 
 As DUGL uses global vars to enhance rendering performance, the only Multi-cores rendering possibility is to duplicate rendering functions. Four rendering cores are then available, the last 3 cores uses suffix in functions names (_C2, _C3 and _C4). As only assembly was used for each core, the weight of each core is less than 250kb in memory and less than 200kb in binary size. Finally, to ease cores handling, DUGL provide DGCORE struct with pointers to all rendering functions and important global vars.
 * **View System**:
@@ -79,6 +79,7 @@ You need to (1) Go to **Global compilers Settings** => **Other settings** => **A
 ### Screenshots ###
 
 **HelloWorld**
+
 "Hello, world!" sample.
 
 ![HelloWorld](https://github.com/FakhriFki77/DUGL/blob/main/Screenshots/HelloWorld.png)
