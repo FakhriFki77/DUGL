@@ -14,6 +14,7 @@
 				<Option compiler="gcc" />
 				<Option use_console_runner="0" />
 				<Compiler>
+					<Add option="-m32" />
 					<Add option="-g" />
 					<Add directory="../../" />
 				</Compiler>
@@ -26,10 +27,8 @@
 					<Add library="DUGL" />
 					<Add library="SDL2Main" />
 					<Add library="SDL2.dll" />
-					<Add library="user32" />
-					<Add library="gdi32" />
-					<Add library="winmm" />
-					<Add library="dxguid" />
+					<Add library="png" />
+					<Add library="zlib" />
 					<Add directory="../../bin/Debug/" />
 				</Linker>
 			</Target>
@@ -37,9 +36,8 @@
 				<Option output="../Shadow.exe" prefix_auto="0" extension_auto="0" />
 				<Option working_dir="../" />
 				<Option object_output="obj/Release/" />
-				<Option type="1" />
+				<Option type="0" />
 				<Option compiler="gcc" />
-				<Option use_console_runner="0" />
 				<Compiler>
 					<Add option="-march=corei7" />
 					<Add option="-fexpensive-optimizations" />
