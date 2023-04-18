@@ -14,6 +14,7 @@
 /*  3 March 2023: More efficient render DWorker(s) allocation, by allocating only 1 DWorker for dual cores, and 3 DWorkers for quad cores rendering */
 /*     and using the main thread as the last DWorker for a better usage of CPU cores and avoiding the overhead of waking-up a DWorker, */
 /*     this boosted quad cores rendering performance by up to 30% on QuadCore CPU */
+/* 18 April 2023: Add screenshot capability */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,6 +36,7 @@ mySprite Sprites[MAX_SPRITES];
 FONT F1;
 unsigned char rouge,bleu,jaune,noir,blanc; // index of needed colors
 
+//int ScrResH = 640, ScrResV = 480;
 int ScrResH = 800, ScrResV = 600;
 //int ScrResH = 1024, ScrResV = 768;
 
@@ -44,6 +46,7 @@ bool ExitApp = false;
 bool dualCoreRender = false;
 bool quadCoreRender = false;
 bool PauseMove = false;
+bool takeScreenShot=false;
 // used view *******
 int TextViewHeight = 50;
 int rendViewHeight = ScrResV - TextViewHeight;
@@ -234,6 +237,7 @@ int main(int argc,char *argv[]) {
             ExitApp = true;
             break;
         case KB_KEY_TAB:
+            takeScreenShot = ((keyFLAG&(KB_SHIFT_PR|KB_CTRL_PR)) > 0);
             if (!dualCoreRender && !quadCoreRender)
                 dualCoreRender = true;
             else if (dualCoreRender) {
@@ -253,6 +257,11 @@ int main(int argc,char *argv[]) {
 
         // exit if esc pressed
         if (ExitApp) break;
+		// need screen shot
+		if (takeScreenShot) {
+			SaveBMP16(RendSurf,(char*)"Sprites.bmp");
+			takeScreenShot = false;
+		}
 
         DgUpdateWindow();
     }
