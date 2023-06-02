@@ -33,23 +33,21 @@ SDL_Surface *surfaceW = NULL;
 SDL_mutex *mutexEvents = NULL;
 SDL_Surface *surf16bpp = NULL;
 SDL_Surface *surfFront16bpp = NULL;
+SDL_DisplayMode orgDispMode;
+SDL_DisplayMode wantedFullDispMode;
+SDL_DisplayMode setFullDispMode;
 DgWindowResizeCallBack dgWindowResizeCallBack = NULL;
 DgWindowResizeCallBack dgWindowPreResizeCallBack = NULL;
 void *dgResizeWinMutex = NULL;
 bool *dgRequestResizeWinMutex = NULL;
-bool enableDoubleBuff = true;
-
+bool enableDoubleBuff = false;
+bool dgEnableFullScreen = false;
+int dgLastErrID = 0;
 
 int DgInit() {
-    mutexEvents = SDL_CreateMutex();
-    if (mutexEvents == NULL) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "failed to create SDL_mutex\n");
-        return 0;
-    }
-
     /* Initialize SDL */
     if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init fail : %s\n", SDL_GetError());
+        dgLastErrID = DG_ERRS_SYSTEM_INIT_FAIL;
         return 0;
     }
     SDL_memset4(&CurSurf, 0, sizeof(DgSurf) / 4);
@@ -59,10 +57,16 @@ int DgInit() {
 
     SDL_AddEventWatch(SDLEventHandler, NULL);
     if (!InitDWorkers(0)) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "failed to init DWorkers\n");
+        dgLastErrID = DG_ERSS_DWORKERS_INIT_FAIL;
         return 0;
     }
     enableDoubleBuff = DEFAULT_DBLBUFF_ENABLED;
+
+    mutexEvents = SDL_CreateMutex();
+    if (mutexEvents == NULL) {
+        dgLastErrID = DG_ERSS_EVENT_MUTEX_INIT_FAIL;
+        return 0;
+    }
 
     return 1;
 }
@@ -79,6 +83,7 @@ void DgQuit() {
     DestroyDWorkers();
     if (DgWindow != NULL) {
         SDL_DestroyWindow(DgWindow);
+        DgWindow = NULL;
         if (RendSurf!=NULL && RendSurf->rlfb != 0) {
             DestroySurf(RendSurf);
             RendSurf = NULL;
@@ -94,6 +99,51 @@ void DgQuit() {
         }
     }
     SDL_Quit();
+}
+
+int DgGetLastErr() {
+    return dgLastErrID;
+}
+
+int dgCurDisplayMode = -1, dgDisplayModeCount = 0, dgDisplayInUse = 0;
+SDL_DisplayMode dgMode;
+
+int DgGetFirstDisplayMode(int *width, int *height, int *bpp, int *refreshRate) {
+    if (DgWindow != NULL && RendSurf != NULL) {
+        dgDisplayInUse = SDL_GetWindowDisplayIndex(DgWindow);
+        if (dgDisplayInUse >= 0) {
+            dgDisplayModeCount = SDL_GetNumDisplayModes(dgDisplayInUse);
+            if (dgDisplayModeCount > 0 && SDL_GetDisplayMode(dgDisplayInUse, 0, &dgMode) == 0) {
+                *width = dgMode.w;
+                *height = dgMode.h;
+                *bpp = SDL_BITSPERPIXEL(dgMode.format);
+                *refreshRate = dgMode.refresh_rate;
+                dgCurDisplayMode = 1;
+                return dgDisplayModeCount;
+            }
+        }
+    }
+
+    dgDisplayModeCount = 0;
+    dgCurDisplayMode = -1;
+    return 0;
+}
+
+
+bool DgGetNextDisplayMode(int *width, int *height, int *bpp, int *refreshRate) {
+    if (dgCurDisplayMode > 0 && dgCurDisplayMode < dgDisplayModeCount) {
+        if (SDL_GetDisplayMode(dgDisplayInUse, dgCurDisplayMode, &dgMode) == 0) {
+            *width = dgMode.w;
+            *height = dgMode.h;
+            *bpp = SDL_BITSPERPIXEL(dgMode.format);
+            *refreshRate = dgMode.refresh_rate;
+            dgCurDisplayMode++;
+            return true;
+        }
+    }
+    dgDisplayModeCount = 0;
+    dgCurDisplayMode = -1;
+    return false;
 }
 
 void DgResizeRendSurf(int resH, int resV) {
@@ -113,20 +163,21 @@ void DgResizeRendSurf(int resH, int resV) {
         }
 
         // recreate the render Surface 16bpp
-        if (!CreateSurf(&RendSurf, resH, resV, 16))
+        if (!CreateSurf(&RendSurf, resH, resV, 16)) {
             return;
+        }
         surf16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendSurf->rlfb), resH, resV, 16, resH*2, SDL_PIXELFORMAT_RGB565);
         if (surf16bpp == NULL) {
-            SDL_Log("SDL_CreateRGBSurfaceWithFormat() failed: %s", SDL_GetError());
+            dgLastErrID = DG_ERSS_FAIL_CREATE_SYSTEM_RGB_SURF;
             return;
         }
         if (enableDoubleBuff) {
-            if (!CreateSurf(&RendFrontSurf, resH, resV, 16))
+            if (!CreateSurf(&RendFrontSurf, resH, resV, 16)) {
                 return;
-
+            }
             surfFront16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendFrontSurf->rlfb), resH, resV, 16, resH*2, SDL_PIXELFORMAT_RGB565);
             if (surfFront16bpp == NULL) {
-                SDL_Log("SDL_CreateRGBSurfaceWithFormat() failed: %s", SDL_GetError());
+                dgLastErrID = DG_ERSS_FAIL_CREATE_SYSTEM_RGB_SURF;
                 return;
             }
         }
@@ -157,21 +208,24 @@ int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, i
     if (PosY >= 0) posY = PosY;
 
     FlagCreate |= SDL_WINDOW_SHOWN;
-    if (Borderless || FullScreen)
+    if (Borderless)
         FlagCreate |= SDL_WINDOW_BORDERLESS;
-    else {
-        if (ResizeWin && !FullScreen)
-            FlagCreate |= SDL_WINDOW_RESIZABLE;
+    if (ResizeWin)
+        FlagCreate |= SDL_WINDOW_RESIZABLE;
+
+    if (SDL_GetCurrentDisplayMode(0, &orgDispMode) != 0) {
+        dgLastErrID = DG_ERSS_FAIL_QUERY_DISPLAY_MODE;
+        return 0;
     }
 
     DgWindow = SDL_CreateWindow(title, posX, posY, ResHz, ResVt, FlagCreate);
     if (DgWindow == NULL) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Window creation fail : %s\n",SDL_GetError());
+        dgLastErrID = DG_ERSS_WINDOW_CREATION_FAIL;
         return 0;
     }
     surfaceW = SDL_GetWindowSurface(DgWindow);
     if (surfaceW == NULL) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Window Surface creation fail : %s\n",SDL_GetError());
+        dgLastErrID = DG_ERSS_WINDOW_SURFACE_CREATION_FAIL;
         return 0;
     }
 
@@ -181,7 +235,7 @@ int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, i
     // create the render Surface 16bpp
     surf16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendSurf->rlfb), ResHz, ResVt, 16, ResHz*2, SDL_PIXELFORMAT_RGB565);
     if (surf16bpp == NULL) {
-        SDL_Log("SDL_CreateRGBSurfaceWithFormat() failed: %s", SDL_GetError());
+        dgLastErrID = DG_ERSS_FAIL_CREATE_SYSTEM_RGB_SURF;
         return 0;
     }
     if (enableDoubleBuff) {
@@ -190,13 +244,14 @@ int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, i
 
         surfFront16bpp = SDL_CreateRGBSurfaceWithFormatFrom((void*)(RendFrontSurf->rlfb), ResHz, ResVt, 16, ResHz*2, SDL_PIXELFORMAT_RGB565);
         if (surfFront16bpp == NULL) {
-            SDL_Log("SDL_CreateRGBSurfaceWithFormat() failed: %s", SDL_GetError());
+            dgLastErrID = DG_ERSS_FAIL_CREATE_SYSTEM_RGB_SURF;
             return 0;
         }
     }
 
+    dgEnableFullScreen = false;
     if (FullScreen) {
-        SDL_SetWindowFullscreen(DgWindow, SDL_WINDOW_FULLSCREEN);
+        DgToggleFullScreen(true);
     }
 
     if (MsScanEvents == 1) {
@@ -269,7 +324,7 @@ void DgGetMainWindowMaxSize(int *maxResHz, int *maxResVt) {
     }
 }
 
-void DgSetMainWindowResizeCallBack(DgWindowResizeCallBack preresizeCallBack, DgWindowResizeCallBack resizeCallBack, void *resizeMutex, bool *requestResizeMutex) {
+void DgSetMainWindowResizeCallBack(DgWindowResizeCallBack preresizeCallBack, DgWindowResizeCallBack resizeCallBack, PDMutex resizeMutex, bool *requestResizeMutex) {
     if (DgWindow != NULL) {
         dgWindowResizeCallBack = resizeCallBack;
         dgWindowPreResizeCallBack = preresizeCallBack;
@@ -282,13 +337,55 @@ DgWindowResizeCallBack GetMainWindowResizeCallBack() {
     return dgWindowResizeCallBack;
 }
 
+int DgPreferredFullSwidth = 0, DgPreferredFullSheight = 0, DgPreferredFullSrefreshRate = 0;
+int DgNFSWidth = 0, DgNFSHeight = 0;
 
 void DgToggleFullScreen(bool fullScreen) {
-    SDL_SetWindowFullscreen(DgWindow, (fullScreen) ? SDL_WINDOW_FULLSCREEN : 0);
+    if (!DgWindow || RendSurf == NULL)
+        return;
+
+    if (fullScreen && !dgEnableFullScreen) {
+        wantedFullDispMode.w = (DgPreferredFullSwidth > 0) ? DgPreferredFullSwidth : RendSurf->ResH;
+        wantedFullDispMode.h = (DgPreferredFullSheight > 0) ? DgPreferredFullSheight : RendSurf->ResV;
+        wantedFullDispMode.format = SDL_PIXELFORMAT_RGB565;
+        wantedFullDispMode.refresh_rate = (DgPreferredFullSrefreshRate > 0) ? DgPreferredFullSrefreshRate : 0;
+        wantedFullDispMode.driverdata = 0;
+        DgNFSWidth = RendSurf->ResH;
+        DgNFSHeight = RendSurf->ResV;
+
+        if (SDL_GetClosestDisplayMode(SDL_GetWindowDisplayIndex(DgWindow), &wantedFullDispMode, &setFullDispMode) == NULL)
+            return; // fail
+        SDL_SetWindowDisplayMode(DgWindow, &setFullDispMode);
+        SDL_SetWindowFullscreen(DgWindow, SDL_WINDOW_FULLSCREEN);
+        dgEnableFullScreen = true;
+    } else if (!fullScreen && dgEnableFullScreen) {
+        SDL_SetWindowDisplayMode(DgWindow, &orgDispMode);
+        SDL_SetWindowSize(DgWindow, DgNFSWidth, DgNFSHeight);
+        SDL_SetWindowFullscreen(DgWindow, 0);
+        dgEnableFullScreen = false;
+    }
 }
 
 bool DgIsFullScreen() {
-    return ((SDL_GetWindowFlags(DgWindow) & SDL_WINDOW_FULLSCREEN) != 0);
+    return (DgWindow != NULL && (SDL_GetWindowFlags(DgWindow) & SDL_WINDOW_FULLSCREEN) != 0);
+}
+
+void DgSetPreferredFullScreenMode(int width, int height, int refreshRate) {
+    DgPreferredFullSwidth = (width <= 0) ? 0 : width;
+    DgPreferredFullSheight = (height <= 0) ? 0 : height;
+    DgPreferredFullSrefreshRate = (refreshRate <= 0) ? 0 : refreshRate;
+}
+
+void DgGetPreferredFullScreenMode(int *width, int *height, int *refreshRate) {
+    if (width != NULL) {
+        *width = DgPreferredFullSwidth;
+    }
+    if (height != NULL) {
+        *height = DgPreferredFullSheight;
+    }
+    if (refreshRate != NULL) {
+        *refreshRate = DgPreferredFullSrefreshRate;
+    }
 }
 
 void DgCheckEvents() {
@@ -390,36 +487,36 @@ void SetOrgSurf(DgSurf *S,int LOrgX,int LOrgY) {
 }
 
 int CreateSurf(DgSurf **S, int ResHz, int ResVt, char BitsPixel) {
-    int cvlfb;
     int pixelsize = GetPixelSize(BitsPixel);
 
-    if (pixelsize==0 || ResHz<=1 || ResVt<=1) return 0;
-
-    if ((*S = (DgSurf*)SDL_SIMDAlloc(sizeof(DgSurf)+(ResHz*ResVt*pixelsize))) == NULL)
+    if (pixelsize==0 || ResHz<=1 || ResVt<=1) {
+        dgLastErrID = DG_ERSS_INVALID_DGSURF_FORMAT;
         return 0;
+    }
+
+    if ((*S = (DgSurf*)SDL_SIMDAlloc(sizeof(DgSurf)+(ResHz*ResVt*pixelsize))) == NULL) {
+        dgLastErrID = DG_ERSS_NO_MEM;
+        return 0;
+    }
 
     SDL_memset4(*S, 0, sizeof(DgSurf)/4);
 
-    cvlfb = (int)(&((char*)(*S))[sizeof(DgSurf)]);
-    if (cvlfb != 0) {
-        (*S)->vlfb=(*S)->rlfb= cvlfb;
-        (*S)->ResH= ResHz;
-        (*S)->ResV= ResVt;
+    (*S)->vlfb=(*S)->rlfb= (int)(&((char*)(*S))[sizeof(DgSurf)]);
+    (*S)->ResH= ResHz;
+    (*S)->ResV= ResVt;
 
-        (*S)->MaxX= ResHz-1;
-        (*S)->MaxY= (*S)->MinX= 0;
-        (*S)->MinY= -ResVt+1;      // Y axis ascendent
-        (*S)->SizeSurf= ResHz*ResVt*pixelsize;
-        (*S)->Mask= 0;
-        (*S)->OrgX= 0;
-        (*S)->OrgY= ResVt-1;
-        (*S)->BitsPixel= BitsPixel;
-        (*S)->ScanLine= ResHz *pixelsize;
-        (*S)->NegScanLine = -((*S)->ScanLine);
-        SetOrgSurf(*S, 0, 0);
-        return 1;
-    }
-    return 0;
+    (*S)->MaxX= ResHz-1;
+    (*S)->MaxY= (*S)->MinX= 0;
+    (*S)->MinY= -ResVt+1;      // Y axis ascendent
+    (*S)->SizeSurf= ResHz*ResVt*pixelsize;
+    (*S)->Mask= 0;
+    (*S)->OrgX= 0;
+    (*S)->OrgY= ResVt-1;
+    (*S)->BitsPixel= BitsPixel;
+    (*S)->ScanLine= ResHz *pixelsize;
+    (*S)->NegScanLine = -((*S)->ScanLine);
+    SetOrgSurf(*S, 0, 0);
+    return 1;
 }
 
 void DestroySurf(DgSurf *S) {
@@ -430,13 +527,19 @@ void DestroySurf(DgSurf *S) {
 }
 
 int CreateSurfBuff(DgSurf **S, int ResHz, int ResVt, char BitsPixel, void *Buff) {
-    if ((*S = (DgSurf*)SDL_SIMDAlloc(sizeof(DgSurf))) == NULL)
+    if ((*S = (DgSurf*)SDL_SIMDAlloc(sizeof(DgSurf))) == NULL) {
+        dgLastErrID = DG_ERSS_NO_MEM;
         return 0;
+    }
     SDL_memset4(*S, 0, sizeof(DgSurf)/4);
     int pixelsize=GetPixelSize(BitsPixel);
 
-    if (pixelsize == 0 || ResHz <= 1 || ResVt <= 1 || Buff == NULL)
+    if (pixelsize == 0 || ResHz <= 1 || ResVt <= 1 || Buff == NULL) {
+        free(*S);
+        *S = NULL;
+        dgLastErrID = DG_ERSS_INVALID_DGSURF_FORMAT;
         return 0;
+    }
     (*S)->vlfb = (*S)->rlfb = (int)(Buff);
     (*S)->ResH= ResHz;
     (*S)->ResV= ResVt;
@@ -455,7 +558,6 @@ int CreateSurfBuff(DgSurf **S, int ResHz, int ResVt, char BitsPixel, void *Buff)
 }
 
 // View or (clipped area) handling
-
 
 // sets DgSurf View
 void SetSurfView(DgSurf *S, DgView *V) {

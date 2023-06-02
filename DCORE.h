@@ -50,21 +50,24 @@ typedef struct
 
 extern DgSurf   *RendSurf; // main destination render
 extern DgSurf   *RendFrontSurf; // currently displayed if double buffer enabled
+
 extern DgSurf   CurSurf; // The Surf that graphic functions will render to as DgClear16, Line16, Poly16 ...
 extern DgSurf   SrcSurf; // The source Surf used by graphic functions as Poly16, PutSurf16, ResizeViewSurf16 ..
+extern char LastPolyStatus; // Last Rendered Poly Status: ='N' not rendered, ='C' clipped, ='I' In rendererd
+
 extern unsigned char DgWindowFocused; // set to 1 if MainWindow get Focused, 0 else
 extern unsigned char DgWindowFocusLost; // set to 1 if MainWindow lose Focus, 0 else
 extern unsigned char DgWindowRequestClose; // set to 1 if MainWindow receive close request, 0 else. it's up to user to reset its value to 0 once set to 1
+extern unsigned char DgWindowResized; // set to 1 if MainWindow has been resized, (user window resize, or toggle full screen event...). it's up to user to reset its value to 0 once set to 1
 
 // init all ressources required to run DUGL
 // return 1 if success 0 if fail
 int DgInit();
-
 // free all ressources allocated to run DUGL
 void DgQuit();
+// Get Last DUGL Errors ID, 0 if none
+int DgGetLastErr();
 
-// events
-typedef void (*DgWindowResizeCallBack)(int,int);
 // Init Main DUGL window
 // for BitPixels only is 16 bpp
 // return 1 if success 0 if fail
@@ -83,12 +86,15 @@ void DgGetMainWindowSize(int *ResHz, int *ResVt);
 void DgGetMainWindowMinSize(int *minResHz, int *minResVt);
 // Get MainWindow maximum size
 void DgGetMainWindowMaxSize(int *maxResHz, int *maxResVt);
+
+// events
+typedef void (*DgWindowResizeCallBack)(int,int);
 // Set MainWindow resize event call back, pass NULL to disable
 // preresizeCallBack is called with old (w, h), resizeCallBack is called with new (w, h)
 // if RendSurf and or RendFrontSurf are accessed by another thread a DMutex locked/unlocked by this thread is required
 // to avoid concurrency problem, if this thread is very fast a boolean activating a Delay of 10msec with this mutex unlocked
 // and setting the boolean to false to tell that the delay of 10 msec started
-void DgSetMainWindowResizeCallBack(DgWindowResizeCallBack preresizeCallBack, DgWindowResizeCallBack resizeCallBack, void *resizeMutex, bool *requestResizeMutex);
+void DgSetMainWindowResizeCallBack(DgWindowResizeCallBack preresizeCallBack, DgWindowResizeCallBack resizeCallBack, PDMutex resizeMutex, bool *requestResizeMutex);
 // Get MainWindow resize event call back, return NULL if disabled
 DgWindowResizeCallBack GetMainWindowResizeCallBack();
 // update window with contents of RendSurf, and swap RendFrontSurf and RendSurf
@@ -97,6 +103,14 @@ void DgUpdateWindow();
 void DgToggleFullScreen(bool fullScreen);
 // Full screen Enabled
 bool DgIsFullScreen();
+// Set/Get Preferred full screen resolution, refresh rate, set 0 DgWindow res, and current display refresh
+void DgSetPreferredFullScreenMode(int width, int height, int refreshRate);
+void DgGetPreferredFullScreenMode(int *width, int *height, int *refreshRate);
+// Enumerate current window full display modes
+// return count of display mode, and fill attributes of first display mode, if any
+int DgGetFirstDisplayMode(int *width, int *height, int *bpp, int *refreshRate);
+// return true, and fill Display mode attributes if any, else return false
+bool DgGetNextDisplayMode(int *width, int *height, int *bpp, int *refreshRate);
 // Check events
 void DgCheckEvents();
 // Set/Get Double buffers or screen swap when DgUpdateWindow is called
