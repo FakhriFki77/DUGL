@@ -21,6 +21,8 @@
 
 #include <stdbool.h>
 
+#include "DERRS.h"
+#include "DWORKER.h"
 #include "DCORE.h"
 #include "DCORES.h"
 #include "DFONT.h"
@@ -30,7 +32,6 @@
 #include "DKEYB.h"
 #include "DMOUSE.h"
 #include "DMATH3D.h"
-#include "DWORKER.h"
 #include "DCONTAIN.h"
 #include "DAUDIO.h"
 

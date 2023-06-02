@@ -297,6 +297,7 @@ unsigned int lastTime_left_ctrlDown = 0;
 unsigned char DgWindowFocused = 0;
 unsigned char DgWindowFocusLost = 0;
 unsigned char DgWindowRequestClose = 0;
+unsigned char DgWindowResized = 0;
 
 void DgScanEvents(SDL_Event *event) {
     if (SDL_LockMutex(mutexEvents) == 0) {
@@ -316,6 +317,7 @@ void DgScanEvents(SDL_Event *event) {
             case SDL_WINDOWEVENT_SIZE_CHANGED:
                 if (DgWindow != NULL) {
                     int w = 0, h = 0;
+                    DgWindowResized = 1;
                     if (dgWindowPreResizeCallBack != NULL) {
                         dgWindowPreResizeCallBack(RendSurf->ResH, RendSurf->ResV);
                     }

@@ -26,6 +26,7 @@ extern "C" {
 typedef struct {
     DgSurf   *CurSurf; // Pointer to current render DgSurf
     DgSurf   *SrcSurf; // Pointer to current source DgSurf
+    char *LastPolyStatus; // last rendered Poly status
 
     // DgSurf handling functions ============================
 
@@ -90,6 +91,7 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore);
 
 extern DgSurf   CurSurf_C2; // The Surf that graphic functions will render to as DgClear16_C2, Line16_C2, Poly16_C2 ...
 extern DgSurf   SrcSurf_C2; // The source Surf used by graphic functions as Poly16_C2, PutSurf16_C2, ResizeViewSurf16_C2 ..
+extern char     LastPolyStatus_C2;
 
 // DgSurf handling ========================
 
@@ -158,6 +160,7 @@ void RePoly16_C2(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 
 extern DgSurf   CurSurf_C3; // The Surf that graphic functions will render to as DgClear16_C3, Line16_C3, Poly16_C3 ...
 extern DgSurf   SrcSurf_C3; // The source Surf used by graphic functions as Poly16_C3, PutSurf16_C3, ResizeViewSurf16_C3 ..
+extern char     LastPolyStatus_C3;
 
 // DgSurf handling ========================
 
@@ -225,7 +228,7 @@ void RePoly16_C3(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 
 extern DgSurf   CurSurf_C4; // The Surf that graphic functions will render to as DgClear16_C4, Line16_C4, Poly16_C4 ...
 extern DgSurf   SrcSurf_C4; // The source Surf used by graphic functions as Poly16_C4, PutSurf16_C4, ResizeViewSurf16_C4 ..
-
+extern char     LastPolyStatus_C4;
 // DgSurf handling ========================
 
 // Set Current DgSurf for rendering

@@ -35,6 +35,7 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
     case 0:
         dgCore->CurSurf = &CurSurf;
         dgCore->SrcSurf = &SrcSurf;
+        dgCore->LastPolyStatus = &LastPolyStatus;
 
         dgCore->DgSetCurSurf = DgSetCurSurf;
         dgCore->DgGetCurSurf = DgGetCurSurf;
@@ -77,6 +78,7 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
     case 1:
         dgCore->CurSurf = &CurSurf_C2;
         dgCore->SrcSurf = &SrcSurf_C2;
+        dgCore->LastPolyStatus = &LastPolyStatus_C2;
 
         dgCore->DgSetCurSurf = DgSetCurSurf_C2;
         dgCore->DgGetCurSurf = DgGetCurSurf_C2;
@@ -119,6 +121,7 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
     case 2:
         dgCore->CurSurf = &CurSurf_C3;
         dgCore->SrcSurf = &SrcSurf_C3;
+        dgCore->LastPolyStatus = &LastPolyStatus_C3;
 
         dgCore->DgSetCurSurf = DgSetCurSurf_C3;
         dgCore->DgGetCurSurf = DgGetCurSurf_C3;
@@ -161,6 +164,7 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
     case 3:
         dgCore->CurSurf = &CurSurf_C4;
         dgCore->SrcSurf = &SrcSurf_C4;
+        dgCore->LastPolyStatus = &LastPolyStatus_C4;
 
         dgCore->DgSetCurSurf = DgSetCurSurf_C4;
         dgCore->DgGetCurSurf = DgGetCurSurf_C4;
