@@ -118,24 +118,23 @@ ALIGN 4
 ; utilise xmm5,xmm4,xmm3,xmm2,xmm1,xmm0
 ;***************************************************************************
 
-; AX : DYT, EBP : DXT
+; EAX : DYT, EBP : DXT
 
 %macro  @InTextHLineNorm16 0
         IMUL        ESI,[SNegScanLine]    ; - 2
         JECXZ       %%PDivPntPXPY
-        NEG         EAX
-        MOVD        xmm0,ECX ; 1
-        PINSRD      xmm1,EAX,1 ; 0
-        PUNPCKLDQ   xmm0,xmm0 ; 1
-        PSLLD       xmm1,Prec ; 0
-
-        CVTDQ2PS    xmm0,xmm0 ; 1
-        CVTDQ2PS    xmm1,xmm1 ; 0
-        DIVPS       xmm1,xmm0 ; 0 1
+        SAL         EAX,Prec
+        SAL         EBP,Prec
+        CDQ
+        IDIV        ECX
+        XCHG        EBP,EAX
+        CDQ
+        IDIV        ECX
+        NEG         EBP
+        MOVD        xmm1,EAX
+        PINSRD      xmm1,EBP,1
         LEA         ESI,[ESI+EBX*2]      ; - 4(2) as 16bpp
-        CVTPS2DQ    xmm1,xmm1 ; 0
-        MOVQ        [PntPlusX],xmm1 ; 0
-        MOVD        EAX,xmm1 ; 0
+        MOVQ        [PntPlusX],xmm1 ; [PntPlusX]|[PntPlusY]
 
         JMP         SHORT %%DivPntPXPY
 %%PDivPntPXPY:
@@ -147,13 +146,13 @@ ALIGN 4
         ;--- ajuste Cpt Dbrd X et Y pour SAR
         XOR         EBX,EBX
         OR          EAX,EAX
-        SETL        BL
+        SETS        BL
         PEXTRD      EAX,xmm1,1 ;[PntPlusY]
         MOV         EDX,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr X
 
         OR          EAX,EAX
         LEA         ECX,[ECX+1]
-        SETL        BL
+        SETS        BL
         ADD         ESI,[Svlfb]    ; - 5
         MOV         EBP,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
 %%BcStBAv:
@@ -184,7 +183,7 @@ ALIGN 4
         JZ          %%StoLastQ
 
         @AjAdNormQ16
-      PINSRW        xmm0,[ESI+EBX], 4
+        PINSRW        xmm0,[ESI+EBX], 4
         @AjAdNormQ16
         PINSRW      xmm0,[ESI+EBX], 5
         @AjAdNormQ16
@@ -239,7 +238,7 @@ ALIGN 4
 
 %macro  @InTextHLineDXZ16  0
         IMUL        ESI,[SNegScanLine]  ; - 2
-        SHL         EAX,Prec
+        SAL         EAX,Prec
         JECXZ       %%PDivPntPX
         CDQ
         IDIV        ECX
@@ -251,12 +250,12 @@ ALIGN 4
         JMP         %%LastB
 %%DivPntPX:
         LEA         ESI,[ESI+EBX*2]      ; - 3
-        XOR         EBX,EBX      ; Cpt Dbrd Y
+        XOR         EDX,EDX      ; Cpt Dbrd Y
         ADD         ESI,[Svlfb]  ; - 5
-        OR          EAX,EAX
-        SETG        BL
+        CMP         EAX,EDX
         MOV         EBP,EAX ; [PntPlusY]
-        MOV         EDX,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
+        SETG        DL
+        MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
         INC         ECX
 %%BcStBAv:
         TEST        EDI,6
@@ -328,7 +327,7 @@ ALIGN 4
 %macro  @InTextHLineDYZ16 0
         MOV         EAX,EBP
         IMUL        ESI,[SNegScanLine] ; - 2
-        SHL         EAX,Prec
+        SAL         EAX,Prec
         JECXZ       %%PDivPntPX
         CDQ
         IDIV        ECX
@@ -340,13 +339,13 @@ ALIGN 4
         JMP         %%LastB
 %%DivPntPX:
         LEA         ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
+        XOR         EDX,EDX      ; Cpt Dbrd Y
         ADD         ESI,[Svlfb] ; - 5
-        XOR         EBX,EBX      ; Cpt Dbrd Y
         OR          EAX,EAX         ; SAR
         LEA         ECX,[ECX+1]
-        SETL        BL
+        SETL        DL
         MOV         EBP,EAX  ;[PntPlusX]
-        MOV         EDX,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
+        MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
 %%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv
@@ -417,8 +416,10 @@ ALIGN 4
         MOVD        EBX,xmm0 ; = [XT1]
         PEXTRD      EAX,xmm1, 1 ; DYT
         MOVD        EBP,xmm1 ; DXT
+
         OR          EAX,EAX   ; EAX = DYT
         JZ          %%CasDYZ
+
         OR          EBP,EBP   ; EBP = DXT
         JZ          %%CasDXZ
 %%CasNorm:
@@ -456,7 +457,7 @@ ALIGN 4
 %endmacro
 
 %macro  @ClipTextHLineNorm16 0
-        SHL         EAX,Prec
+        SAL         EAX,Prec
         MOV         ESI,[YT1]      ; - 1'
         CMP         DWORD [Plus2],BYTE 0
         MOV         EBX,[XT1]
@@ -473,7 +474,7 @@ ALIGN 4
         MOV         [PntPlusY],EAX  ;[PntPlusY]
         MOV         EAX,EBP
         ADD         ESI,[Svlfb]    ; - 5'
-        SHL         EAX,Prec
+        SAL         EAX,Prec
         CMP         DWORD [Plus2],BYTE 0
         JZ          %%PDivPPlusX
         CDQ
@@ -489,16 +490,13 @@ ALIGN 4
         IMUL        EBP,EBX        ; - 3
         IMUL        EDX,EBX        ; - 4
         ;--- ajuste Cpt Dbrd X et Y pour SAR
-        MOV         EAX,[PntPlusY]
-        OR          EAX,EAX
-        JGE         %%PosPntPlusY
-        LEA         EBP,[EBP+((1<<Prec)-1)] ; EBP += 2**N-1
-%%PosPntPlusY:
-        MOV         EAX,[PntPlusX]
-        OR          EAX,EAX
-        JGE         %%PosPntPlusX
-        LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
-%%PosPntPlusX:  ;-----------------------------------
+        XOR         EAX,EAX
+        CMP         DWORD [PntPlusY], BYTE 0
+        SETS        AL
+        ADD         EBP,[PntInitCPTDbrd+EAX*4]
+        CMP         DWORD [PntPlusX], BYTE 0
+        SETS        AL
+        ADD         EDX,[PntInitCPTDbrd+EAX*4]
 %%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv
@@ -560,7 +558,7 @@ ALIGN 4
 ;*******************************************************************
 %macro  @ClipTextHLineDXZ16  0
         MOV         ESI,[YT1]   ; - 1
-        SHL         EAX,Prec
+        SAL         EAX,Prec
         IMUL        ESI,[SNegScanLine] ; - 2
         CMP         DWORD [Plus2],0
         MOV         EBX,[XT1]
@@ -578,7 +576,7 @@ ALIGN 4
         NEG         EDX
         IMUL        EDX,EBP ;-[PntPlusY] axe Y montant
         OR          EAX,EAX
-        JLE         %%PosPntPlusY
+        JLE         SHORT %%PosPntPlusY
         LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusY:
 %%BcStBAv:
@@ -661,7 +659,7 @@ ALIGN 4
         ADD         ESI,[Svlfb]
         IMUL        EDX,EBP ;+[PntPlusX]
         OR          EAX,EAX
-        JGE         %%PosPntPlusX
+        JGE         SHORT %%PosPntPlusX
         LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusX:
 %%BcStBAv:
@@ -734,8 +732,10 @@ ALIGN 4
         MOVD        EBX,xmm0 ; = [XT1]
         PEXTRD      EAX,xmm1, 1 ; DYT
         MOVD        EBP,xmm1 ; DXT
+
         OR          EAX,EAX   ; EAX = DYT
         JZ          %%CasDYZ
+
         OR          EBP,EBP   ; EBP = DXT
         JZ          %%CasDXZ
 %%CasNorm:
@@ -755,19 +755,18 @@ ALIGN 4
         IMUL        ESI,[SNegScanLine]    ; - 2
 ;----------
         JECXZ       %%PDivPntPXPY
-        NEG         EAX
-        MOVD        xmm0,ECX ; 1
-        PINSRD      xmm1,EAX,1 ; 0
-        PUNPCKLDQ   xmm0,xmm0 ; 1
-        PSLLD       xmm1,Prec ; 0
-
-        CVTDQ2PS    xmm0,xmm0 ; 1
-        CVTDQ2PS    xmm1,xmm1 ; 0
-        DIVPS       xmm1,xmm0 ; 0 1
+        SAL         EAX,Prec
+        SAL         EBP,Prec
+        CDQ
+        IDIV        ECX
+        XCHG        EBP,EAX
+        CDQ
+        IDIV        ECX
+        NEG         EBP
+        MOVD        xmm1,EAX
+        PINSRD      xmm1,EBP,1
         LEA         ESI,[ESI+EBX*2]      ; - 4(2) as 16bpp
-        CVTPS2DQ    xmm1,xmm1 ; 0
-        MOVQ        [PntPlusX],xmm1 ; 0
-        MOVD        EAX,xmm1 ; 0
+        MOVQ        [PntPlusX],xmm1 ; [PntPlusX]|[PntPlusY]
 
         JMP         SHORT %%DivPntPXPY
 %%PDivPntPXPY:
@@ -877,7 +876,7 @@ ALIGN 4
 ;********************************************************
 
 %macro  @InMaskTextHLineDXZ16  0
-        SHL         EAX,Prec
+        SAL         EAX,Prec
         IMUL        ESI,[SNegScanLine]  ; - 2
         CDQ
         JECXZ       %%PDivPntPX;JZ      %%PDivPntPX
@@ -889,14 +888,14 @@ ALIGN 4
         MOV         AX,[ESI+EBX*2]       ; ; - 4 (+XT1*2) as 16bpp
         JMP         %%LastB
 %%DivPntPX:
-        LEA         ESI,[ESI+EBX*2]      ; ; - 4 (+XT1*2) as 16bpp
-        MOV         EBP,EAX ; [PntPlusY]
-        XOR         EBX,EBX      ; Cpt Dbrd Y
-        ADD         ESI,[Svlfb]  ; - 5
-        OR          EAX,EAX
-        SETG        BL
+        LEA         ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
+        XOR         EDX,EDX      ; Cpt Dbrd Y
+        ADD         ESI,[Svlfb] ; - 5
+        CMP         EAX,EDX
+        MOV         EBP,EAX  ;[PntPlusX]
+        SETG        DL
         INC         ECX
-        MOV         EDX,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
+        MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
 %%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv
@@ -1001,13 +1000,13 @@ ALIGN 4
         JMP         %%LastB
 %%DivPntPX:
         LEA         ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
+        XOR         EDX,EDX      ; Cpt Dbrd Y
         ADD         ESI,[Svlfb] ; - 5
-        XOR         EBX,EBX      ; Cpt Dbrd Y
-        OR          EAX,EAX         ; SAR
+        CMP         EAX,EDX
         MOV         EBP,EAX  ;[PntPlusX]
-        SETL        BL
+        SETL        DL
         INC         ECX
-        MOV         EDX,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
+        MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
 %%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv
@@ -1149,16 +1148,13 @@ ALIGN 4
         IMUL        EBP,EBX        ; - 3
         IMUL        EDX,EBX        ; - 4
         ;--- ajuste Cpt Dbrd X et Y pour SAR
-        MOV         EAX,[PntPlusY]
-        OR          EAX,EAX
-        JGE         %%PosPntPlusY
-        LEA         EBP,[EBP+((1<<Prec)-1)] ; EBP += 2**N-1
-%%PosPntPlusY:
-        MOV         EAX,[PntPlusX]
-        OR          EAX,EAX
-        JGE         %%PosPntPlusX
-        LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
-%%PosPntPlusX:  ;-----------------------------------
+        XOR         EAX,EAX
+        CMP         DWORD [PntPlusY], BYTE 0
+        SETS        AL
+        ADD         EBP,[PntInitCPTDbrd+EAX*4]
+        CMP         DWORD [PntPlusX], BYTE 0
+        SETS        AL
+        ADD         EDX,[PntInitCPTDbrd+EAX*4]
 %%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv
@@ -1248,7 +1244,7 @@ ALIGN 4
 ;*******************************************************************
 %macro  @ClipMaskTextHLineDXZ16  0
         MOV         ESI,[YT1]   ; - 1
-        SHL         EAX,Prec
+        SAL         EAX,Prec
         IMUL        ESI,[SNegScanLine] ; - 2
         CMP         DWORD [Plus2],0
         MOV         EBX,[XT1]
@@ -1265,7 +1261,7 @@ ALIGN 4
         NEG         EDX
         IMUL        EDX,EBP ;-[PntPlusY] axe Y montant
         OR          EAX,EAX
-        JLE         %%PosPntPlusY
+        JLE         SHORT %%PosPntPlusY
         LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusY:
 %%BcStBAv:
@@ -1377,7 +1373,7 @@ ALIGN 4
         ADD         ESI,[Svlfb]
         IMUL        EDX,EBP ;+[PntPlusX]
         OR          EAX,EAX
-        JGE         %%PosPntPlusX
+        JGE         SHORT %%PosPntPlusX
         LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusX:
 %%BcStBAv:
@@ -1915,10 +1911,10 @@ ALIGN 4
         JZ          %%CasDXZ
 %%CasNorm:
         @InTextBlndHLineNorm16
-        JMP     %%FinInTextHLg
+        JMP         %%FinInTextHLg
 %%CasDXZ:
         @InTextBlndHLineDXZ16
-        JMP     %%FinInTextHLg
+        JMP         %%FinInTextHLg
 %%CasDYZ:
         @InTextBlndHLineDYZ16
 %%FinInTextHLg:
@@ -1931,19 +1927,18 @@ ALIGN 4
         ;JMP         %%FinSHLine
 ;----------
         JECXZ       %%PDivPntPXPY
-        NEG         EAX
-        MOVD        xmm0,ECX ; 1
-        PINSRD      xmm1,EAX,1 ; 0
-        PUNPCKLDQ   xmm0,xmm0 ; 1
-        PSLLD       xmm1,Prec ; 0
-
-        CVTDQ2PS    xmm0,xmm0 ; 1
-        CVTDQ2PS    xmm1,xmm1 ; 0
-        DIVPS       xmm1,xmm0 ; 0 1
+        SAL         EAX,Prec
+        SAL         EBP,Prec
+        CDQ
+        IDIV        ECX
+        XCHG        EBP,EAX
+        CDQ
+        IDIV        ECX
+        NEG         EBP
+        MOVD        xmm1,EAX
+        PINSRD      xmm1,EBP,1
         LEA         ESI,[ESI+EBX*2]      ; - 4(2) as 16bpp
-        CVTPS2DQ    xmm1,xmm1 ; 0
-        MOVQ        [PntPlusX],xmm1 ; 0
-        MOVD        EAX,xmm1 ; 0
+        MOVQ        [PntPlusX],xmm1 ; [PntPlusX]|[PntPlusY]
 
         JMP         SHORT %%DivPntPXPY
 %%PDivPntPXPY:
@@ -2137,7 +2132,7 @@ ALIGN 4
 ;********************************************************
 
 %macro  @InTextBlndHLineDXZ16  0
-        SHL         EAX,Prec
+        SAL         EAX,Prec
         IMUL        ESI,[SNegScanLine]  ; - 2
         JECXZ       %%PDivPntPX ;JZ     %%PDivPntPX
         CDQ
@@ -2149,24 +2144,24 @@ ALIGN 4
         PINSRW      xmm0,[ESI+EBX*2],0
         JMP         %%LastB
 %%DivPntPX:
-        LEA         ESI,[ESI+EBX*2]    ; - 4 (+XT1*2) as 16bpp
-        MOV         EBP,EAX ; [PntPlusY]
-        XOR         EBX,EBX      ; Cpt Dbrd Y
-        OR          EAX,EAX
-        ADD         ESI,[Svlfb]  ; - 5
-        SETG        BL
+        LEA         ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
+        XOR         EDX,EDX      ; Cpt Dbrd Y
+        ADD         ESI,[Svlfb] ; - 5
+        CMP         EAX,EDX
+        MOV         EBP,EAX  ;[PntPlusX]
+        SETG        DL
         INC         ECX
-        MOV         EDX,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
+        MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
 %%BcStBAv:
-        TEST            EDI,6
-        JZ              %%FPasStBAv
+        TEST        EDI,6
+        JZ          %%FPasStBAv
         @AjAdDXZ16
         DEC         ECX
         PINSRW      xmm0,[ESI+EBX],0
         @InSolidTextBlndW
         PEXTRW      [EDI],xmm2,0
         LEA         EDI,[EDI+2]
-        JZ              %%FinSHLine
+        JZ          %%FinSHLine
 
         JMP         %%BcStBAv
 %%FPasStBAv:
@@ -2174,20 +2169,20 @@ ALIGN 4
         JZ              %%StBAp
 ;ALIGN 4
 %%StoMMX:
-      @AjAdDXZ16
-      PINSRW      xmm0,[ESI+EBX], 0
         @AjAdDXZ16
-      PINSRW      xmm0,[ESI+EBX], 1
+        PINSRW      xmm0,[ESI+EBX], 0
         @AjAdDXZ16
-      PINSRW      xmm0,[ESI+EBX], 2
+        PINSRW      xmm0,[ESI+EBX], 1
+        @AjAdDXZ16
+        PINSRW      xmm0,[ESI+EBX], 2
         @AjAdDXZ16
         SUB         CX,BYTE 4
-      PINSRW      xmm0,[ESI+EBX], 3
+        PINSRW      xmm0,[ESI+EBX], 3
         TEST        CX,0xFFFC
         JZ          %%StoLastQ
 
-      @AjAdDXZ16
-      PINSRW      xmm0,[ESI+EBX], 4
+        @AjAdDXZ16
+        PINSRW      xmm0,[ESI+EBX], 4
         @AjAdDXZ16
         PINSRW      xmm0,[ESI+EBX], 5
         @AjAdDXZ16
@@ -2196,19 +2191,19 @@ ALIGN 4
         PINSRW      xmm0,[ESI+EBX], 7
 
         @InSolidTextBlndQ
-        SUB        CX,BYTE 4
+        SUB         CX,BYTE 4
         MOVDQU      [EDI],xmm0 ; write the 8 bytes
-        TEST            CX,0xFFFC
-        LEA        EDI,[EDI+16]
-        JNZ        %%StoMMX
+        TEST        CX,0xFFFC
+        LEA         EDI,[EDI+16]
+        JNZ         %%StoMMX
         JMP         SHORT %%StBAp
 %%StoLastQ:
         @InSolidTextBlndQ
-        MOVQ            [EDI],xmm0 ; write the 8 bytes
+        MOVQ        [EDI],xmm0 ; write the 8 bytes
         LEA         EDI,[EDI+8]
 %%StBAp:
-      AND           CL,3
-        JZ              %%FinSHLine
+        AND           CL,3
+        JZ          %%FinSHLine
 %%BcStBAp:
         @AjAdDXZ16
         DEC         CL
@@ -2245,13 +2240,13 @@ ALIGN 4
         JMP         %%LastB
 %%DivPntPX:
         LEA         ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
-        XOR         EBX,EBX      ; Cpt Dbrd Y
+        XOR         EDX,EDX      ; Cpt Dbrd Y
         ADD         ESI,[Svlfb] ; - 5
-        OR          EAX,EAX         ; SAR
+        CMP         EAX,EDX
         MOV         EBP,EAX  ;[PntPlusX]
-        SETL        BL
+        SETL        DL
         INC         ECX
-        MOV         EDX,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
+        MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
 %%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv
@@ -2377,17 +2372,15 @@ ALIGN 4
         IMUL    EBP,EBX        ; - 3
         IMUL    EDX,EBX        ; - 4
         ;--- ajuste Cpt Dbrd X et Y pour SAR
-        MOV     EAX,[PntPlusY]
-        OR      EAX,EAX
-        JGE     %%PosPntPlusY
-        LEA     EBP,[EBP+((1<<Prec)-1)] ; EBP += 2**N-1
-%%PosPntPlusY:
-        MOV     EAX,[PntPlusX]
-        OR      EAX,EAX
-        JGE     %%PosPntPlusX
-        LEA     EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
-%%PosPntPlusX:  ;-----------------------------------
-%%BcStBAv:  TEST        EDI,6
+        XOR     EAX,EAX
+        CMP     DWORD [PntPlusY], BYTE 0
+        SETS    AL
+        ADD     EBP,[PntInitCPTDbrd+EAX*4]
+        CMP     DWORD [PntPlusX], BYTE 0
+        SETS    AL
+        ADD     EDX,[PntInitCPTDbrd+EAX*4]
+%%BcStBAv:
+        TEST    EDI,6
         JZ      %%FPasStBAv
         @AjAdNormB16
         DEC     ECX
@@ -2452,7 +2445,7 @@ ALIGN 4
 ;*******************************************************************
 %macro  @ClipTextBlndHLineDXZ16  0
         MOV     ESI,[YT1]   ; - 1
-        SHL     EAX,Prec
+        SAL     EAX,Prec
         IMUL    ESI,[SNegScanLine] ; - 2
         CMP     DWORD [Plus2],0
         MOV     EBX,[XT1]
@@ -2470,7 +2463,7 @@ ALIGN 4
         NEG     EDX
         IMUL    EDX,EBP ;-[PntPlusY] axe Y montant
         OR      EAX,EAX
-        JLE     %%PosPntPlusY
+        JLE     SHORT %%PosPntPlusY
         LEA     EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusY:
 %%BcStBAv:
@@ -2561,7 +2554,7 @@ ALIGN 4
         IMUL    EDX,EBP ;+[PntPlusX]
         ADD     ESI,[Svlfb]
         OR      EAX,EAX
-        JGE     %%PosPntPlusX
+        JGE     SHORT %%PosPntPlusX
         LEA     EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusX:
 %%BcStBAv:
@@ -2644,11 +2637,14 @@ ALIGN 4
         JZ          %%CasDYZ
         OR          EBP,EBP   ; EBP = DXT
         JZ          %%CasDXZ
-%%CasNorm:  @InMaskTextBlndHLineNorm16
-        JMP     %%FinInTextHLg
-%%CasDXZ:   @InMaskTextBlndHLineDXZ16
-        JMP     %%FinInTextHLg
-%%CasDYZ:   @InMaskTextBlndHLineDYZ16
+%%CasNorm:
+        @InMaskTextBlndHLineNorm16
+        JMP         %%FinInTextHLg
+%%CasDXZ:
+        @InMaskTextBlndHLineDXZ16
+        JMP         %%FinInTextHLg
+%%CasDYZ:
+        @InMaskTextBlndHLineDYZ16
 %%FinInTextHLg:
 %endmacro
 
@@ -2658,19 +2654,18 @@ ALIGN 4
         IMUL            ESI,[SNegScanLine]    ; - 2
 ;----------
         JECXZ           %%PDivPntPXPY
-        NEG             EAX
-        MOVD            xmm0,ECX ; 1
-        PINSRD          xmm1,EAX,1 ; 0
-        PUNPCKLDQ       xmm0,xmm0 ; 1
-        PSLLD           xmm1,Prec ; 0
-
-        CVTDQ2PS        xmm0,xmm0 ; 1
-        CVTDQ2PS        xmm1,xmm1 ; 0
-        DIVPS           xmm1,xmm0 ; 0 1
+        SAL             EAX,Prec
+        SAL             EBP,Prec
+        CDQ
+        IDIV            ECX
+        XCHG            EBP,EAX
+        CDQ
+        IDIV            ECX
+        NEG             EBP
+        MOVD            xmm1,EAX
+        PINSRD          xmm1,EBP,1
         LEA             ESI,[ESI+EBX*2]      ; - 4(2) as 16bpp
-        CVTPS2DQ        xmm1,xmm1 ; 0
-        MOVQ            [PntPlusX],xmm1 ; 0
-        MOVD            EAX,xmm1 ; 0
+        MOVQ            [PntPlusX],xmm1 ; [PntPlusX]|[PntPlusY]
 
         JMP             SHORT %%DivPntPXPY
 %%PDivPntPXPY:
@@ -2787,7 +2782,7 @@ ALIGN 4
 ;********************************************************
 
 %macro  @InMaskTextBlndHLineDXZ16  0
-        SHL             EAX,Prec
+        SAL             EAX,Prec
         IMUL            ESI,[SNegScanLine]  ; - 2
         CDQ
         JECXZ           %%PDivPntPX;JZ      %%PDivPntPX
@@ -3080,16 +3075,13 @@ ALIGN 4
         IMUL        EBP,EBX        ; - 3
         IMUL        EDX,EBX        ; - 4
         ;--- ajuste Cpt Dbrd X et Y pour SAR
-        MOV         EAX,[PntPlusY]
-        OR          EAX,EAX
-        JGE         %%PosPntPlusY
-        LEA         EBP,[EBP+((1<<Prec)-1)] ; EBP += 2**N-1
-%%PosPntPlusY:
-        MOV         EAX,[PntPlusX]
-        OR          EAX,EAX
-        JGE         %%PosPntPlusX
-        LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
-%%PosPntPlusX:  ;-----------------------------------
+        XOR         EAX,EAX
+        CMP         DWORD [PntPlusY], BYTE 0
+        SETS        AL
+        ADD         EBP,[PntInitCPTDbrd+EAX*4]
+        CMP         DWORD [PntPlusX], BYTE 0
+        SETS        AL
+        ADD         EDX,[PntInitCPTDbrd+EAX*4]
 %%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv
@@ -3183,7 +3175,7 @@ ALIGN 4
 ;*******************************************************************
 %macro  @ClipMaskTextBlndHLineDXZ16  0
         MOV         ESI,[YT1]   ; - 1
-        SHL         EAX,Prec
+        SAL         EAX,Prec
         IMUL        ESI,[SNegScanLine] ; - 2
         CMP         DWORD [Plus2],0
         MOV         EBX,[XT1]
@@ -3202,7 +3194,7 @@ ALIGN 4
 
         IMUL        EDX,EBP ;-[PntPlusY] axe Y montant
         OR          EAX,EAX
-        JLE         %%PosPntPlusY
+        JLE         SHORT %%PosPntPlusY
         LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusY:
 %%BcStBAv:
@@ -3320,7 +3312,7 @@ ALIGN 4
         IMUL        EDX,EBP ;+[PntPlusX]
         ADD         ESI,[Svlfb]
         OR          EAX,EAX
-        JGE         %%PosPntPlusX
+        JGE         SHORT %%PosPntPlusX
         LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusX:
 %%BcStBAv:
@@ -3427,19 +3419,18 @@ ALIGN 4
 %macro  @InTextTransHLineNorm16 0
         IMUL        ESI,[SNegScanLine]    ; - 2
         JECXZ       %%PDivPntPXPY
-        NEG         EAX
-        MOVD        xmm0,ECX ; 1
-        PINSRD      xmm1,EAX,1 ; 0
-        PUNPCKLDQ   xmm0,xmm0 ; 1
-        PSLLD       xmm1,Prec ; 0
-
-        CVTDQ2PS    xmm0,xmm0 ; 1
-        CVTDQ2PS    xmm1,xmm1 ; 0
-        DIVPS       xmm1,xmm0 ; 0 1
+        SAL         EAX,Prec
+        SAL         EBP,Prec
+        CDQ
+        IDIV        ECX
+        XCHG        EBP,EAX
+        CDQ
+        IDIV        ECX
+        NEG         EBP
+        MOVD        xmm1,EAX
+        PINSRD      xmm1,EBP,1
         LEA         ESI,[ESI+EBX*2]      ; - 4(2) as 16bpp
-        CVTPS2DQ    xmm1,xmm1 ; 0
-        MOVQ        [PntPlusX],xmm1 ; 0
-        MOVD        EAX,xmm1 ; 0
+        MOVQ        [PntPlusX],xmm1 ; [PntPlusX]|[PntPlusY]
 
         JMP         SHORT %%DivPntPXPY
 %%PDivPntPXPY:
@@ -3623,16 +3614,13 @@ ALIGN 4
         IMUL        EBP,EBX        ; - 3
         IMUL        EDX,EBX        ; - 4
         ;--- ajuste Cpt Dbrd X et Y pour SAR
-        MOV         EAX,[PntPlusY]
-        OR          EAX,EAX
-        JGE         %%PosPntPlusY
-        LEA         EBP,[EBP+((1<<Prec)-1)] ; EBP += 2**N-1
-%%PosPntPlusY:
-        MOV         EAX,[PntPlusX]
-        OR          EAX,EAX
-        JGE         %%PosPntPlusX
-        LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
-%%PosPntPlusX:  ;-----------------------------------
+        XOR         EAX,EAX
+        CMP         DWORD [PntPlusY], BYTE 0
+        SETS        AL
+        ADD         EBP,[PntInitCPTDbrd+EAX*4]
+        CMP         DWORD [PntPlusX], BYTE 0
+        SETS        AL
+        ADD         EDX,[PntInitCPTDbrd+EAX*4]
 %%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv
@@ -3730,19 +3718,18 @@ ALIGN 4
 %macro  @InMaskTextTransHLineNorm16 0
         IMUL        ESI,[SNegScanLine]    ; - 2
         JECXZ       %%PDivPntPXPY
-        NEG         EAX
-        MOVD        xmm0,ECX ; 1
-        PINSRD      xmm1,EAX,1 ; 0
-        PUNPCKLDQ   xmm0,xmm0 ; 1
-        PSLLD       xmm1,Prec ; 0
-
-        CVTDQ2PS    xmm0,xmm0 ; 1
-        CVTDQ2PS    xmm1,xmm1 ; 0
-        DIVPS       xmm1,xmm0 ; 0 1
+        SAL         EAX,Prec
+        SAL         EBP,Prec
+        CDQ
+        IDIV        ECX
+        XCHG        EBP,EAX
+        CDQ
+        IDIV        ECX
+        NEG         EBP
+        MOVD        xmm1,EAX
+        PINSRD      xmm1,EBP,1
         LEA         ESI,[ESI+EBX*2]      ; - 4(2) as 16bpp
-        CVTPS2DQ    xmm1,xmm1 ; 0
-        MOVQ        [PntPlusX],xmm1 ; 0
-        MOVD        EAX,xmm1 ; 0
+        MOVQ        [PntPlusX],xmm1 ; [PntPlusX]|[PntPlusY]
 
         JMP         SHORT %%DivPntPXPY
 %%PDivPntPXPY:
@@ -3952,16 +3939,13 @@ ALIGN 4
         IMUL        EBP,EBX        ; - 3
         IMUL        EDX,EBX        ; - 4
         ;--- ajuste Cpt Dbrd X et Y pour SAR
-        MOV         EAX,[PntPlusY]
-        OR          EAX,EAX
-        JGE         %%PosPntPlusY
-        LEA         EBP,[EBP+((1<<Prec)-1)] ; EBP += 2**N-1
-%%PosPntPlusY:
-        MOV         EAX,[PntPlusX]
-        OR          EAX,EAX
-        JGE         %%PosPntPlusX
-        LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
-%%PosPntPlusX:  ;-----------------------------------
+        XOR         EAX,EAX
+        CMP         DWORD [PntPlusY], BYTE 0
+        SETS        AL
+        ADD         EBP,[PntInitCPTDbrd+EAX*4]
+        CMP         DWORD [PntPlusX], BYTE 0
+        SETS        AL
+        ADD         EDX,[PntInitCPTDbrd+EAX*4]
 %%BcStBAv:
         TEST        EDI,6
         JZ          %%FPasStBAv

@@ -36,14 +36,14 @@ GLOBAL  SurfMaskCopyBlnd16, SurfMaskCopyTrans16
 
 ; GLOBAL Variables
 GLOBAL  CurSurf, SrcSurf
-GLOBAL  TPolyAdDeb, TPolyAdFin, TexXDeb, TexXFin, TexYDeb, TexYFin, PColDeb, PColFin
+GLOBAL  TPolyAdDeb, TPolyAdFin, TexXDeb, TexXFin, TexYDeb, TexYFin, PColDeb, PColFin, DebYPoly, FinYPoly, LastPolyStatus;
 
 GLOBAL  vlfb,rlfb,ResH,ResV, MaxX, MaxY, MinX, MinY, OrgY, OrgX, SizeSurf,OffVMem
 GLOBAL  BitsPixel, ScanLine,Mask,NegScanLine
 
 ; EXTERN GLOBAL VARS
 EXTERN  QBlue16Mask, QGreen16Mask, QRed16Mask, WBGR16Mask
-EXTERN  PntInitCPTDbrd
+EXTERN  PntInitCPTDbrd, NegDecPosInc
 EXTERN  MaskB_RGB16, MaskG_RGB16, MaskR_RGB16, RGB16_PntNeg, Mask2B_RGB16, Mask2G_RGB16, Mask2R_RGB16
 EXTERN  RGBDebMask_GGG, RGBDebMask_IGG, RGBDebMask_GIG, RGBDebMask_IIG, RGBDebMask_GGI, RGBDebMask_IGI, RGBDebMask_GII, RGBDebMask_III
 EXTERN  RGBFinMask_GGG, RGBFinMask_IGG, RGBFinMask_GIG, RGBFinMask_IIG, RGBFinMask_GGI, RGBFinMask_IGI, RGBFinMask_GII, RGBFinMask_III
@@ -1048,7 +1048,7 @@ Poly16:
             MOVDQA      xmm3,xmm0 ; = XP1, YP1
             MOVDQA      xmm4,xmm1 ; = XP2, YP2
             MOVDQA      xmm5,xmm2 ; = XP3, YP3
-            MOVQ        [XP1],xmm0 ; XP1, YP1
+            MOVDQ2Q     mm0,xmm0 ; mm0 = XP1, YP1
 
 ;(XP2-XP1)*(YP3-YP2)-(XP3-XP2)*(YP2-YP1)
 ; s'assure que les points suive le sens inverse de l'aiguille d'une montre
@@ -1096,13 +1096,17 @@ Poly16:
             PMAXSD      xmm2,xmm0
             JNZ         .PBoucMnMxXY
 .NoBcMnMxXY:
-            MOVD        EAX,xmm2 ; maxx
-            MOVD        ECX,xmm1 ; minx
             PEXTRD      EBX,xmm2,1 ; maxy
             PEXTRD      EDX,xmm1,1 ; miny
+            MOVD        EAX,xmm2 ; maxx
+            MOVD        ECX,xmm1 ; minx
+            CMP         EBX,EDX  ; ignore single hline polygones
+            JE          .PasDrawPoly
+            MOVD        mm6,ESI
+
 ;-----------------------------------------
 
-; poly clipper ? dans l'ecran ? hors de l'ecran ?
+; poly clipped ? in View ? out View ?
             ;JMP      .PolyClip
             CMP         EAX,[MaxX]
             JG          .PolyClip
@@ -1113,20 +1117,21 @@ Poly16:
             CMP         EDX,[MinY]
             JL          .PolyClip
 
-; trace Poly non Clipper  **************************************************
+; render Poly not Clipped  **************************************************
 
             MOV         ECX,[OrgY]  ; calcule DebYPoly, FinYPoly
             MOV         EAX,[ESI+EDI*4]
             ADD         EDX,ECX
             ADD         EBX,ECX
             MOV         [DebYPoly],EDX
-            MOVQ        xmm3,[EAX] ; XP2, YP2
+            MOVQ        mm1,[EAX] ; XP2, YP2
+            PSHUFW      mm2,mm0, (0<<6) | (0<<4) | (3<<2) | (2) ; mm2 = YP1, mm0 = XP1, YP1
+            PSHUFW      mm3,mm1, (0<<6) | (0<<4) | (3<<2) | (2) ; mm3 = YP2, mm1 = XP2, YP2
             MOV         [FinYPoly],EBX
-            MOVQ        xmm0,[XP1] ; = XP1 | YP1
-            MOVQ        [XP2],xmm3 ; save XP2, YP2
 ; calcule les bornes horizontal du poly
             MOV         EDX,EDI ; = NbPPoly - 1
             @InCalculerContour16
+            MOVD        ESI,mm6
             MOV         EAX,[PType]
             MOV         [LastPolyStatus], BYTE 'I'; In render
             JMP         [InFillPolyProc16+EAX*4]
@@ -1167,6 +1172,7 @@ Poly16:
             MOVQ        xmm4,[EAX] ; read XP2 | YP2
             MOV         [DebYPoly],EDX
             MOV         [FinYPoly],EBX
+            MOVQ        [XP1],mm0
             MOVQ        [XP2],xmm4 ; write XP2 | YP2
             MOV         EDX,EDI ; EDX compteur de point = NbPPoly-1
             @ClipCalculerContour ; use same as 8bpp as it compute xdeb and xfin for eax hzline
@@ -1177,6 +1183,7 @@ Poly16:
             MOV         [LastPolyStatus], BYTE 'C' ; Clip render
             JMP         [ClFillPolyProc16+EAX*4]
 .PasDrawPoly:
+            EMMS
             POP         EDI
             POP         EBX
             POP         ESI

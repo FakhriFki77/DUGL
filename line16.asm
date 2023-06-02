@@ -65,7 +65,8 @@ Line16:
             CMP         EAX,EBX
             JL          .VMaxX
             XCHG        EAX,EBX
-.VMaxX:    CMP          EAX,[MaxX]
+.VMaxX:
+            CMP         EAX,[MaxX]
             JG          .FinLine
             CMP         EBX,[MinX]
             JL          .FinLine
@@ -78,7 +79,8 @@ Line16:
             CMP         EAX,EBX
             JL          .VMaxY
             XCHG        EAX,EBX
-.VMaxY:    CMP          EAX,[MaxY]
+.VMaxY:
+            CMP          EAX,[MaxY]
             JG          .FinLine
             CMP         EBX,[MinY]
             JL          .FinLine       ; fin du test

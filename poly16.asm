@@ -19,29 +19,32 @@
 
 
 ;****************************************************************************
-; MACRO UTILISER DANS POLY
+; MACRO USED BY POLY
 ;****************************************************************************
-; calcule adresse physique du contour
+
+; compute polygone hlines left-right borders
 
 ; IN: XP1,YP1,XP2,YP2,EBX: Index TPolyAdFin,EAX: XP1, EDI XP2,ECX: YP1,ESI; YP2:EBP[ScanLine]
 ; condition XP1<XP2 && YP1<YP2
-%macro  @InContourGch16 0
+%macro  @InContourLeft16 0
         CMP         EAX,EDI
         MOV         EBX,ECX
         SETG        DL
         SUB         EAX,EDI ; EAX = [XP1]-[XP2]
-        SUB         ECX,EBP  ; [YP1]-[YP2]
-        MOV         EDI,EBX ; [YP1]
-        NEG         EAX ; EAX = [XP2]-[XP1]
-        NEG         ECX ; = [YP2]-[YP1] counter in ECX
         MOVD        xmm4,[PntInitCPTDbrd+EDX*4] ; count Dbdr In xmm4
+        SUB         ECX,EBP  ; [YP1]-[YP2]
+        NEG         EAX ; EAX = [XP2]-[XP1]
+        MOV         EDI,EBX ; [YP1]
+        SETGE       DL
+        NEG         ECX ; = [YP2]-[YP1] counter in ECX
+        ADD         EAX,[NegDecPosInc+EDX*4]
 
         IMUL        EDI,ESI ; YP1*ScanLine
-        SHL         EAX,Prec
+        SAL         EAX,Prec
         CDQ
         ADD         EDI,[vlfb]
         IDIV        ECX
-        MOVD        EBP,xmm0 ; [XP1]
+        MOVD        EBP,mm0 ; [XP1]
         ADD         EBX,[OrgY]
         LEA         EDI,[EDI+EBP*2] ; 2*XP1 as 16bpp
         TEST        CL,1
@@ -51,15 +54,17 @@
 ; IN : XP1, YP1, XP2, YP2, EBX: Index dans TPolyAdFin, EAX : XP1, ECX : YP1
 ; condition XP1<XP2 && YP1>YP2
 
-%macro  @InContourDrt16 0
+%macro  @InContourRight16 0
         CMP         EAX,EDI
         MOV         EBX,EBP  ; [YP2]
-        SETG        DL
+        SETL        DL
         SUB         EAX,EDI ; EAX = [XP1]-[XP2]
-        SUB         ECX,EBP  ; [YP1]-[YP2]
         MOVD        xmm4,[PntInitCPTDbrd+EDX*4] ; count Dbdr In xmm4
+        SETGE       DL
+        SUB         ECX,EBP  ; [YP1]-[YP2]
+        ADD         EAX,[NegDecPosInc+EDX*4]
         XCHG        EDI,EBP  ; swap [XP2] <=> [YP2]
-        SHL         EAX,Prec
+        SAL         EAX,Prec
         IMUL        EDI,ESI
         ADD         EBX,[OrgY]
         ADD         EDI,[vlfb]
@@ -79,21 +84,21 @@
         MOVD        xmm1,[NegScanLine]
 ;ALIGN 4
 %%InBcCalCont:
-        MOVD        xmm2,EDX     ; save EDX counter
-        PEXTRD      ECX,xmm0,1 ;  = [YP1]
-        PEXTRD      EBP,xmm3,1 ;  = [YP2]
+        MOVD        mm7,EDX     ; save EDX counter
+        MOVD        ECX,mm2   ;  = [YP1]
+        MOVD        EBP,mm3   ;  = [YP2]
         MOVD        ESI,xmm1
         XOR         EDX,EDX
         CMP         ECX,EBP  ; YP2
         JE          %%DYZero
-        MOVD        EAX,xmm0 ; = [XP1]
-        MOVD        EDI,xmm3 ; = [XP2]
+        MOVD        EAX,mm0 ; = [XP1]
+        MOVD        EDI,mm1 ; = [XP2]
         JG          SHORT %%ContDrt; si YP1<YP2 alors drt sinon gch
-        @InContourGch16     ; YP1<YP2  &&  (XP1<XP2 || XP1>XP2)
+        @InContourLeft16     ; YP1<YP2  &&  (XP1<XP2 || XP1>XP2)
         JNZ         SHORT %%PasClc1Pt
         JMP         SHORT %%DoOdd
 %%ContDrt:
-        @InContourDrt16     ; YP1>YP2  &&  (XP1<XP2 || XP1>XP2)
+        @InContourRight16     ; YP1>YP2  &&  (XP1<XP2 || XP1>XP2)
         JNZ         SHORT %%PasClc1Pt
 %%DoOdd:
         MOV         [EBP],EDI
@@ -132,15 +137,15 @@
         JNZ         SHORT %%BcClcCtr
 
 %%DYZero:
-        MOVD        EDX,xmm2     ; restore EDX counter
+        MOVD        EDX,mm7     ; restore EDX counter
         DEC         EDX
-        JS          NEAR %%FinCalcContr ; EDX < 0
-        MOV         ESI,[PPtrListPt]     ; ESI = PtrListPt
+        JS          SHORT %%FinCalcContr ; EDX < 0
+        MOVD        ESI,mm6     ; ESI = PtrListPt
         MOV         EAX,[ESI+EDX*4] ; EAX=PtrPt[EDX]
-        MOVQ        xmm0,[XP2] ; old XP2 | YP2 will be new XP1 | YP1
-        ;MOVQ       [XP1],xmm0 ; put XP2 | YP2 in XP1 | YP1
-        MOVQ        xmm3,[EAX] ; read new XP2 | YP2
-        MOVQ        [XP2],xmm3 ; save XP2 | YP2
+        MOVQ        mm0,mm1 ; [XP2] ; old XP2 | YP2 will be new XP1 | YP1
+        MOVQ        mm1,[EAX] ; read new XP2 | YP2
+        PSHUFW      mm2,mm0, (0<<6) | (0<<4) | (3<<2) | (2) ; mm2 = YP1, mm0 = XP1, YP1
+        PSHUFW      mm3,mm1, (0<<6) | (0<<4) | (3<<2) | (2) ; mm3 = YP2, mm1 = XP2, YP2
 
         JMP         %%InBcCalCont
 %%FinCalcContr:

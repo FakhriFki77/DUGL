@@ -37,7 +37,7 @@ InFillSOLID16:
         XOR         ECX,ECX ; ECX = 0, SolidHLineSSE16 requirement
 ;ALIGN 4
 .BcFillSolid16:
-      MOV           EDI,[TPolyAdDeb+ESI+EBX*4]
+        MOV         EDI,[TPolyAdDeb+ESI+EBX*4]
         MOV         EDX,[TPolyAdFin+ESI+EBX*4]
         CMP         EDX,EDI
         JG          SHORT .PasSwapAd
@@ -982,7 +982,6 @@ ALIGN 4
         SUB         EDX,BYTE 4
         DEC         EBX
         JNS         .BcFillText
-        EMMS
 .End:
     @FILLRET
 
@@ -1063,7 +1062,6 @@ ClipFillTEXT_TRANS16:
         DEC         EBX
         PADDD       mm3,mm4
         JNS     .BcFillText
-        EMMS
 .End:
     @FILLRET
 
@@ -1123,7 +1121,6 @@ ALIGN 4
         SUB         EDX,BYTE 4
         DEC         EBX
         JNS         .BcFillMaskText
-        EMMS
 .End:
     @FILLRET
 
@@ -1211,6 +1208,5 @@ ClipFillMASK_TEXT_TRANS16:
         DEC         EBX
         PADDD       mm3,mm4
         JNS         .BcFillText
-        EMMS
 .End:
     @FILLRET

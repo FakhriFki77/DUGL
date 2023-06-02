@@ -67,6 +67,9 @@
 %define TexYFin                     TexYFin_C3
 %define PColDeb                     PColDeb_C3
 %define PColFin                     PColFin_C3
+%define DebYPoly                    DebYPoly_C3
+%define FinYPoly                    FinYPoly_C3
+%define LastPolyStatus              LastPolyStatus_C3
 
 %define vlfb                        vlfb_C3
 %define rlfb                        rlfb_C3

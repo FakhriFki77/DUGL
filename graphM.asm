@@ -33,7 +33,7 @@ GLOBAL  SurfCopy, SurfMaskCopy16, SurfCopyBlnd16, SurfCopyTrans16
 ; GLOBAL Vars
 GLOBAL  QBlue16Mask, QGreen16Mask, QRed16Mask, WBGR16Mask
 
-GLOBAL  PntInitCPTDbrd
+GLOBAL  PntInitCPTDbrd, NegDecPosInc
 GLOBAL  MaskB_RGB16, MaskG_RGB16, MaskR_RGB16, RGB16_PntNeg, Mask2B_RGB16, Mask2G_RGB16, Mask2R_RGB16
 GLOBAL  RGBDebMask_GGG, RGBDebMask_IGG, RGBDebMask_GIG, RGBDebMask_IIG, RGBDebMask_GGI, RGBDebMask_IGI, RGBDebMask_GII, RGBDebMask_III
 GLOBAL  RGBFinMask_GGG, RGBFinMask_IGG, RGBFinMask_GIG, RGBFinMask_IIG, RGBFinMask_GGI, RGBFinMask_IGI, RGBFinMask_GII, RGBFinMask_III
@@ -655,6 +655,8 @@ RGBFinMask_GGI  DD  ((1<<Prec)-1),((1<<(Prec+5))-1),0,0
 RGBFinMask_IGI  DD  0,((1<<(Prec+5))-1),0,0
 RGBFinMask_GII  DD  ((1<<Prec)-1),0,0,0
 RGBFinMask_III  DD  0,0,0,0
+
+NegDecPosInc    DD  -1, 1
 
 ; the main Surf 16bpp that DUGL will render to
 ;   user mostly has to set this as CurSurf unless other intermediate DgSurf
