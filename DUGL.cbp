@@ -69,6 +69,7 @@
 		<Unit filename="DCONV.h" />
 		<Unit filename="DCORE.h" />
 		<Unit filename="DCORES.h" />
+		<Unit filename="DERRS.h" />
 		<Unit filename="DFONT.h" />
 		<Unit filename="DGUTILS.asm">
 			<Option compile="0" />
