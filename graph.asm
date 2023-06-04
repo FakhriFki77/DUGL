@@ -1248,24 +1248,24 @@ Poly16:
 .NoBcMnMxXY:
             PEXTRD      EBX,xmm2,1 ; maxy
             PEXTRD      EDX,xmm1,1 ; miny
-            MOVD        EAX,xmm2 ; maxx
-            MOVD        ECX,xmm1 ; minx
             CMP         EBX,EDX  ; ignore single hline polygones
             JE          .PasDrawPoly
+            MOVQ        xmm7,[MaxX]
+            MOVQ        xmm6,[MinX]
             MOVD        mm6,ESI
 
 ;-----------------------------------------
 
 ; poly clipped ? in View ? out View ?
             ;JMP      .PolyClip
-            CMP         EAX,[MaxX]
-            JG          .PolyClip
-            CMP         ECX,[MinX]
-            JL          .PolyClip
-            CMP         EBX,[MaxY]
-            JG          .PolyClip
-            CMP         EDX,[MinY]
-            JL          .PolyClip
+            MOVQ        xmm4,xmm2 ; PMaxX | PMaxY
+            MOVQ        xmm5,xmm6 ; MinX | MinY
+            PCMPGTD     xmm4,xmm7 ; PMax > Max
+            PCMPGTD     xmm5,xmm1 ; Min > PMin
+            PMOVMSKB    EAX,xmm4
+            PMOVMSKB    ECX,xmm5
+            OR          ECX,EAX
+            JNZ         .PolyClip
 
 ; render Poly not Clipped  **************************************************
 
@@ -1288,17 +1288,19 @@ Poly16:
             ;JMP        .PasDrawPoly
 .PolyClip:
 ; outside view ? now draw !
-            CMP         EAX,[MinX]
-            JL          .PasDrawPoly
-            CMP         EBX,[MinY]
-            JL          .PasDrawPoly
-            CMP         ECX,[MaxX]
-            JG          .PasDrawPoly
-            CMP         EDX,[MaxY]
-            JG          .PasDrawPoly
+            MOVQ        xmm4,xmm1 ; PMinX | PMinY
+            ;MOVQ        xmm5,xmm6 ; MinX | MinY
+            PCMPGTD     xmm6,xmm2 ; Min > PMax
+            PCMPGTD     xmm4,xmm7 ; PMin > Max
+            PMOVMSKB    ECX,xmm6
+            PMOVMSKB    EAX,xmm4
+            OR          ECX,EAX
+            JNZ         .PasDrawPoly
 
 ; Drop too big poly
     ; drop too BIG poly
+            MOVD        EAX,xmm2 ; maxx
+            MOVD        ECX,xmm1 ; minx
             SUB         ECX,EAX  ; deltaY
             SUB         EDX,EBX  ; deltaX
             CMP         ECX,MaxDeltaDim
