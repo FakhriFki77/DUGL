@@ -567,7 +567,7 @@ InFillTEXT_BLND16:
         ;JZ     InFillTEXT16
         AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
         XOR         AL,BlendMask ; 31-blendsrc
-        MOV         EBP,EAX
+        MOVD        xmm7,EAX
         XOR         AL,BlendMask ; 31-blendsrc
         ;JZ     InFillSOLID16 ; 31 mean no blend flat color
         INC         AL
@@ -578,7 +578,6 @@ InFillTEXT_BLND16:
         MOV         [WBGR16Blend],BX
         MOV         [WBGR16Blend+2],CX
         MOV         [WBGR16Blend+4],DX
-        MOVD        xmm7,EBP
         MOVD        xmm3,EBX
         MOVD        xmm4,ECX
         MOVD        xmm5,EDX
@@ -642,7 +641,7 @@ ClipFillTEXT_BLND16:
         AND         AL,BlendMask ; remove any ineeded bits
         AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
         XOR         AL,BlendMask ; 31-blendsrc
-        MOV         EBP,EAX
+        MOVD        xmm7,EAX
         XOR         AL,BlendMask ; 31-blendsrc
         INC         AL
         SHR         DX,5 ; right shift red 5bits
@@ -652,7 +651,6 @@ ClipFillTEXT_BLND16:
         MOV         [WBGR16Blend],BX
         MOV         [WBGR16Blend+2],CX
         MOV         [WBGR16Blend+4],DX
-        MOVD        xmm7,EBP
         MOVD        xmm3,EBX
         MOVD        xmm4,ECX
         MOVD        xmm5,EDX
@@ -759,7 +757,7 @@ InFillMASK_TEXT_BLND16:
         AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
         XOR         AL,BlendMask ; 31-blendsrc
         ;MOVDQA     [DQ16Mask],xmm7
-        MOV         EBP,EAX
+        MOVD        xmm6,EAX
         XOR         AL,BlendMask ; 31-blendsrc
         ;JZ     InFillSOLID16 ; 31 mean no blend flat color
         INC         AL
@@ -770,7 +768,6 @@ InFillMASK_TEXT_BLND16:
         MOV         [WBGR16Blend],BX
         MOV         [WBGR16Blend+2],CX
         MOV         [WBGR16Blend+4],DX
-        MOVD        xmm6,EBP
         MOVD        xmm3,EBX
         MOVD        xmm4,ECX
         MOVD        xmm5,EDX
@@ -836,7 +833,7 @@ ClipFillMASK_TEXT_BLND16:
         AND         AL,BlendMask ; remove any ineeded bits
         AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
         XOR         AL,BlendMask ; 31-blendsrc
-        MOV         BP,AX
+        MOVD        xmm1,EAX
         XOR         AL,BlendMask ; 31-blendsrc
         INC         AL
         SHR         DX,5 ; right shift red 5bits
@@ -846,7 +843,6 @@ ClipFillMASK_TEXT_BLND16:
         MOV         [WBGR16Blend],BX
         MOV         [WBGR16Blend+2],CX
         MOV         [WBGR16Blend+4],DX
-        MOVD        xmm1,EBP
         MOVD        xmm3,EBX
         MOVD        xmm4,ECX
         MOVD        xmm5,EDX
