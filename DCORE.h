@@ -179,11 +179,12 @@ void LineMap16(void *Point1,void *Point2,int col,unsigned int Map);
 void LineBlnd16(void *Point1,void *Point2,int col);
 void LineMapBlnd16(void *Point1,void *Point2,int col,unsigned int Map);
 
-void InBar16(int minX,int minY,int maxX,int maxY,int rectCcol); // fast filled rectangle with coordinates inside the current View (no checking or clipping)
-void Bar16(void *Pt1,void *Pt2,int bcol);  // use Poly16 / clipped
-void bar16(int x1,int y1,int x2,int y2,int bcol);  // use Poly16  / clipped
-void BarBlnd16(void *Pt1,void *Pt2,int bcol);  // use Poly16  / clipped
-void barblnd16(int x1,int y1,int x2,int y2,int bcol);  // use Poly16  / clipped
+void InBar16(int minX,int minY,int maxX,int maxY,int barCol); // fast filled rectangle with coordinates inside the current View (no checking or clipping)
+void Bar16(void *Pt1,void *Pt2,int bcol);  // use InBar16 / clipped
+void bar16(int x1,int y1,int x2,int y2,int bcol);  // use InBar16  / clipped
+void InBarBlnd16(int minX,int minY,int maxX,int maxY,int blendCol); // fast filled transluent rectangle with coordinates inside the current View (no checking or clipping)
+void BarBlnd16(void *Pt1,void *Pt2,int bcol);  // use InBarBlnd16  / clipped
+void barblnd16(int x1,int y1,int x2,int y2,int bcol);  // use InBarBlnd16  / clipped
 // draw empty rectangle
 void rect16(int x1,int y1,int x2,int y2,int rcol);
 void rectmap16(int x1,int y1,int x2,int y2,int rcol,unsigned int rmap);

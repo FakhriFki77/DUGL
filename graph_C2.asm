@@ -25,7 +25,10 @@
 %define DgGetCurSurf                DgGetCurSurf_C2
 %define DgClear16                   DgClear16_C2
 %define ClearSurf16                 ClearSurf16_C2
+%define Bar16                       Bar16_C2
 %define InBar16                     InBar16_C2
+%define BarBlnd16                   BarBlnd16_C2
+%define InBarBlnd16                 InBarBlnd16_C2
 %define DgPutPixel16                DgPutPixel16_C2
 %define DgCPutPixel16               DgCPutPixel16_C2
 %define DgGetPixel16                DgGetPixel16_C2
@@ -100,6 +103,9 @@
 %define LineBlnd16.DoLine16         LineBlnd16_C2.DoLine16
 %define LineMapBlnd16.DoLine16      LineMapBlnd16_C2.DoLine16
 %define InBar16.CommonInBar16       InBar16_C2.CommonInBar16
+%define InBar16.EndInBar            InBar16_C2.EndInBar
+%define InBarBlnd16.EndInBarBlnd    InBarBlnd16_C2.EndInBarBlnd
+%define InBarBlnd16.CommonInBar16   InBarBlnd16_C2.CommonInBar16
 %define Poly16.PasDrawPoly          Poly16_C2.PasDrawPoly
 
 %include "graph.asm"

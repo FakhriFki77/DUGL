@@ -53,6 +53,9 @@ typedef struct {
     void (*LineMapBlnd16)(void *Point1,void *Point2,int col,unsigned int Map);
 
     void (*InBar16)(int minX,int minY,int maxX,int maxY,int rectCcol);
+    void (*Bar16)(void *Pt1,void *Pt2,int bcol);
+    void (*InBarBlnd16)(int minX,int minY,int maxX,int maxY,int blendCol);
+    void (*BarBlnd16)(void *Pt1,void *Pt2,int bcol);
 
     // brute copy pixels data from DgSurf src to dst without any verification of BitsPixel or size
     void (*SurfMaskCopyBlnd16)(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
@@ -125,7 +128,10 @@ void LineMap16_C2(void *Point1,void *Point2,int col,unsigned int Map);
 void LineBlnd16_C2(void *Point1,void *Point2,int col);
 void LineMapBlnd16_C2(void *Point1,void *Point2,int col,unsigned int Map);
 
-void InBar16_C2(int minX,int minY,int maxX,int maxY,int rectCcol); // fast filled rectangle with coordinates inside the current View (no checking or clipping)
+void InBar16_C2(int minX,int minY,int maxX,int maxY,int barCol);
+void Bar16_C2(void *Pt1,void *Pt2,int bcol);  // use InBar16 / clipped
+void InBarBlnd16_C2(int minX,int minY,int maxX,int maxY,int blendCol);
+void BarBlnd16_C2(void *Pt1,void *Pt2,int bcol);  // use InBarBlnd16  / clipped
 
 // brute copy pixels data from DgSurf src to dst without any verification of BitsPixel or size
 void SurfMaskCopyBlnd16_C2(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
@@ -194,7 +200,10 @@ void LineMap16_C3(void *Point1,void *Point2,int col,unsigned int Map);
 void LineBlnd16_C3(void *Point1,void *Point2,int col);
 void LineMapBlnd16_C3(void *Point1,void *Point2,int col,unsigned int Map);
 
-void InBar16_C3(int minX,int minY,int maxX,int maxY,int rectCcol); // fast filled rectangle with coordinates inside the current View (no checking or clipping)
+void InBar16_C3(int minX,int minY,int maxX,int maxY,int barCol);
+void Bar16_C3(void *Pt1,void *Pt2,int bcol);  // use InBar16 / clipped
+void InBarBlnd16_C3(int minX,int minY,int maxX,int maxY,int blendCol);
+void BarBlnd16_C3(void *Pt1,void *Pt2,int bcol);  // use InBarBlnd16  / clipped
 
 // brute copy pixels data from DgSurf src to dst without any verification of BitsPixel or size
 void SurfMaskCopyBlnd16_C3(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);
@@ -261,7 +270,10 @@ void LineMap16_C4(void *Point1,void *Point2,int col,unsigned int Map);
 void LineBlnd16_C4(void *Point1,void *Point2,int col);
 void LineMapBlnd16_C4(void *Point1,void *Point2,int col,unsigned int Map);
 
-void InBar16_C4(int minX,int minY,int maxX,int maxY,int rectCcol); // fast filled rectangle with coordinates inside the current View (no checking or clipping)
+void InBar16_C4(int minX,int minY,int maxX,int maxY,int barCol);
+void Bar16_C4(void *Pt1,void *Pt2,int bcol);  // use InBar16 / clipped
+void InBarBlnd16_C4(int minX,int minY,int maxX,int maxY,int blendCol);
+void BarBlnd16_C4(void *Pt1,void *Pt2,int bcol);  // use InBarBlnd16  / clipped
 
 // brute copy pixels data from DgSurf src to dst without any verification of BitsPixel or size
 void SurfMaskCopyBlnd16_C4(DgSurf *S16Dst, DgSurf *S16Src,int colBlnd);

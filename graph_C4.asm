@@ -25,7 +25,10 @@
 %define DgGetCurSurf                DgGetCurSurf_C4
 %define DgClear16                   DgClear16_C4
 %define ClearSurf16                 ClearSurf16_C4
+%define Bar16                       Bar16_C4
 %define InBar16                     InBar16_C4
+%define BarBlnd16                   BarBlnd16_C4
+%define InBarBlnd16                 InBarBlnd16_C4
 %define DgPutPixel16                DgPutPixel16_C4
 %define DgCPutPixel16               DgCPutPixel16_C4
 %define DgGetPixel16                DgGetPixel16_C4
@@ -93,13 +96,15 @@
     JMP Poly16_C4.PasDrawPoly
 %endmacro
 
-
 %define @FILLRET                    @FILLRET_C4
 %define Line16.DoLine16             Line16_C4.DoLine16
 %define LineMap16.DoLine16          LineMap16_C4.DoLine16
 %define LineBlnd16.DoLine16         LineBlnd16_C4.DoLine16
 %define LineMapBlnd16.DoLine16      LineMapBlnd16_C4.DoLine16
 %define InBar16.CommonInBar16       InBar16_C4.CommonInBar16
+%define InBar16.EndInBar            InBar16_C4.EndInBar
+%define InBarBlnd16.EndInBarBlnd    InBarBlnd16_C4.EndInBarBlnd
+%define InBarBlnd16.CommonInBar16   InBarBlnd16_C4.CommonInBar16
 %define Poly16.PasDrawPoly          Poly16_C4.PasDrawPoly
 
 %include "graph.asm"

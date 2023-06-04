@@ -436,7 +436,7 @@ InFillSOLID_BLND16:
         JZ          .EndInBlend ; nothing 0 is the source
         AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
         XOR         AL,BlendMask ; 31-blendsrc
-        MOV         EBP,EAX
+        MOVD        xmm7,EAX
         XOR         AL,BlendMask ; 31-blendsrc
         INC         AL
         SHR         DX,5 ; right shift red 5bits
@@ -451,7 +451,6 @@ InFillSOLID_BLND16:
         PSHUFLW     xmm5,xmm5,0
         MOV         EBX,[DebYPoly]   ; -
         LEA         EDX,[EBX*4]  ; -
-        MOVD        xmm7,EBP
         SUB         EBX,[FinYPoly]   ; -
         PSHUFLW     xmm7,xmm7,0
         NEG         EBX      ; -
@@ -491,7 +490,7 @@ ClipFillSOLID_BLND16:
         JZ          .FinClipSOLID ; nothing 0 is the source
         AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
         XOR         AL,BlendMask ; 31-blendsrc
-        MOV         EBP,EAX
+        MOVD        xmm7,EAX
         XOR         AL,BlendMask ; 31-blendsrc
         INC         AL
         SHR         DX,5 ; right shift red 5bits
@@ -501,7 +500,6 @@ ClipFillSOLID_BLND16:
         MOVD        xmm3,EBX
         MOVD        xmm4,ECX
         MOVD        xmm5,EDX
-        MOVD        xmm7,EBP
         PSHUFLW     xmm3,xmm3,0
         PSHUFLW     xmm4,xmm4,0
         PSHUFLW     xmm5,xmm5,0

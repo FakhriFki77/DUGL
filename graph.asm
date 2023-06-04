@@ -27,7 +27,7 @@
 
 ; GLOBAL Functions
 GLOBAL  DgSetCurSurf, DgSetSrcSurf, DgGetCurSurf
-GLOBAL  DgClear16, ClearSurf16, InBar16, DgPutPixel16, DgCPutPixel16, DgGetPixel16, DgCGetPixel16
+GLOBAL  DgClear16, ClearSurf16, InBar16, Bar16, InBarBlnd16, BarBlnd16, DgPutPixel16, DgCPutPixel16, DgGetPixel16, DgCGetPixel16
 
 GLOBAL  line16, Line16, linemap16, LineMap16, lineblnd16, LineBlnd16, linemapblnd16, LineMapBlnd16
 GLOBAL  Poly16, RePoly16, PutSurf16, PutMaskSurf16, PutSurfBlnd16, PutMaskSurfBlnd16, PutSurfTrans16, PutMaskSurfTrans16
@@ -226,6 +226,44 @@ ClearSurf16:
             PEXTRD      ECX,xmm1,0 ; MaxX
             PEXTRD      EBX,xmm1,2 ; MinX
             SUB         ESI,EDI ; = (MaxY - MinY)
+            JMP         InBar16.CommonInBar16
+
+Bar16:
+    ARG Bar16P1Ptr, 4, Bar16P2Ptr, 4, Bar16Col, 4
+
+            PUSH        ESI
+            PUSH        EBX
+            PUSH        EDI
+
+            MOV         ESI,[EBP+Bar16P1Ptr]
+            MOV         EDI,[EBP+Bar16P2Ptr]
+            MOVQ        xmm7,[MaxX]
+            MOVQ        xmm3,[ESI]
+            MOVQ        xmm1,[EDI]
+            MOVQ        xmm6,[MinX]
+            MOVQ        xmm2,xmm3
+            PMINSD      xmm3,xmm1 ; xmm3 = BarMinX | BarMinY
+            PMAXSD      xmm2,xmm1 ; xmm2 = BarMaxX | BarMaxY
+            MOVQ        xmm4,xmm6 ; MinX | MinY
+            MOVQ        xmm5,xmm3 ; BarMinX | BarMinY
+            PCMPGTD     xmm4,xmm2 ; Min > BarMax
+            PCMPGTD     xmm5,xmm7 ; BarMin > Max
+            PMOVMSKB    EBX,xmm4
+            PMOVMSKB    ECX,xmm5
+            OR          ECX,EBX ; any condition true, exit
+            JNZ         InBar16.EndInBar
+
+            ; clip coordinates
+            PMINSD      xmm2,xmm7 ; xmm2 = BarMaxX | BarMaxY
+            PMAXSD      xmm3,xmm6 ; xmm3 = BarMinX | BarMinY
+            PEXTRD      ESI,xmm2,1 ; = BarMaxY
+            MOVD        xmm0,[EBP+Bar16Col]
+            PEXTRD      EDI,xmm3,1 ; = BarMinY
+            MOVD        EBX,xmm3 ; = BarMinX
+            PSHUFLW     xmm0,xmm0, 0 ; xmm0 = clr16 | clr16 | clr16 | clr16
+            MOVD        ECX,xmm2 ; = BarMaxX
+            PUNPCKLQDQ  xmm0,xmm0
+            SUB         ESI,EDI ; = (MaxY - MinY)
             JMP         SHORT InBar16.CommonInBar16
 
 InBar16:
@@ -271,6 +309,118 @@ InBar16:
             POP         ESI
 
     RETURN
+
+
+BarBlnd16:
+    ARG BarBlnd16P1Ptr, 4, BarBlnd16P2Ptr, 4, BarBlnd16Col, 4
+
+            PUSH        ESI
+            PUSH        EBX
+            PUSH        EDI
+
+            MOV         ESI,[EBP+BarBlnd16P1Ptr]
+            MOV         EDI,[EBP+BarBlnd16P2Ptr]
+            MOVQ        xmm7,[MaxX]
+            MOVQ        xmm3,[ESI]
+            MOVQ        xmm1,[EDI]
+            MOVQ        xmm6,[MinX]
+            MOVQ        xmm2,xmm3
+            PMINSD      xmm3,xmm1 ; xmm3 = BarMinX | BarMinY
+            PMAXSD      xmm2,xmm1 ; xmm2 = BarMaxX | BarMaxY
+            MOVQ        xmm4,xmm6 ; MinX | MinY
+            MOVQ        xmm5,xmm3 ; BarMinX | BarMinY
+            PCMPGTD     xmm4,xmm2 ; Min > BarMax
+            PCMPGTD     xmm5,xmm7 ; BarMin > Max
+            PMOVMSKB    EBX,xmm4
+            PMOVMSKB    ECX,xmm5
+            OR          ECX,EBX ; any condition true, exit
+            JNZ         InBarBlnd16.EndInBarBlnd
+
+            ; clip coordinates
+            PMINSD      xmm2,xmm7 ; xmm2 = BarMaxX | BarMaxY
+            PMAXSD      xmm3,xmm6 ; xmm3 = BarMinX | BarMinY
+            PEXTRD      ESI,xmm2,1 ; = BarMaxY
+            PEXTRD      EDI,xmm3,1 ; = BarMinY
+            MOVD        EBX,xmm3 ; = BarMinX
+            MOVD        ECX,xmm2 ; = BarMaxX
+            SUB         ESI,EDI ; = (MaxY - MinY)
+            MOV         EAX,[EBP+BarBlnd16Col]
+            JMP         SHORT InBarBlnd16.CommonInBar16
+
+
+InBarBlnd16:
+    ARG InBBlnd16MinX, 4, InBBlnd16MinY, 4, InBBlnd16MaxX, 4, InBBlnd16MaxY, 4, InBBlnd16Col, 4;;
+
+            PUSH        ESI
+            PUSH        EBX
+            PUSH        EDI
+
+            MOV         EAX,[EBP+InBBlnd16Col]
+            MOV         EDI,[EBP+InBBlnd16MinY]
+            MOV         ESI,[EBP+InBBlnd16MaxY]
+            MOV         ECX,[EBP+InBBlnd16MaxX]
+            SUB         ESI,EDI ; = (MaxY - MinY)
+            MOV         EBX,[EBP+InBBlnd16MinX]
+.CommonInBar16:
+            JLE         .EndInBarBlnd ; MinY >= MaxY ? exit
+
+            IMUL        EDI,[NegScanLine]
+            LEA         EBP,[ESI+1]
+            SUB         ECX,EBX
+            ADD         EDI,[vlfb]
+            INC         ECX
+            LEA         EDI,[EDI+EBX*2]
+            MOV         ESI,ECX ; ESI = dest hline size
+
+            ; precompute color blending
+            MOV         EBX,EAX ;
+            MOV         ECX,EAX ;
+            MOV         EDX,EAX ;
+            AND         EBX,[QBlue16Mask] ; EBX = Bclr16 | Bclr16
+            SHR         EAX,24
+            AND         ECX,[QGreen16Mask] ; ECX = Gclr16 | Gclr16
+            AND         AL,BlendMask ; remove any ineeded bits
+            JZ          .EndInBarBlnd ; nothing 0 is the source
+            AND         EDX,[QRed16Mask] ; EDX = Rclr16 | Rclr16
+            XOR         AL,BlendMask ; 31-blendsrc
+            MOVD        xmm7,EAX
+            XOR         AL,BlendMask ; 31-blendsrc
+            INC         AL
+            SHR         DX,5 ; right shift red 5bits
+            IMUL        BX,AX
+            IMUL        CX,AX
+            IMUL        DX,AX
+            MOVD        xmm3,EBX
+            MOVD        xmm4,ECX
+            MOVD        xmm5,EDX
+            PSHUFLW     xmm3,xmm3,0
+            PSHUFLW     xmm4,xmm4,0
+            PSHUFLW     xmm5,xmm5,0
+            PSHUFLW     xmm7,xmm7,0
+            PUNPCKLQDQ  xmm3,xmm3
+            PUNPCKLQDQ  xmm4,xmm4
+            PUNPCKLQDQ  xmm5,xmm5
+            PUNPCKLQDQ  xmm7,xmm7
+
+            MOV         EBX,EDI ; EBX = start Hline dest
+            MOV         EDX,ESI ; save hline length in EDX
+            XOR         ECX,ECX ; should be zero for @SolidBlndHLine16
+.BcBar:
+            MOV         EDI,EBX ; start hline adress
+            MOV         ESI,EDX ; dest hline size
+
+            @SolidBlndHLine16
+
+            ADD         EBX,[NegScanLine] ; next hline
+            DEC         EBP
+            JNZ         .BcBar
+
+.EndInBarBlnd:
+           POP         EDI
+           POP         EBX
+           POP         ESI
+
+   RETURN
 
 ; == xxxResizeViewSurf16 =====================================
 

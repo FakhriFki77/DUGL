@@ -99,6 +99,9 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->LineBlnd16 = LineBlnd16_C2;
         dgCore->LineMapBlnd16 = LineMapBlnd16_C2;
         dgCore->InBar16 = InBar16_C2;
+        dgCore->Bar16 = Bar16_C2;
+        dgCore->InBarBlnd16 = InBarBlnd16_C2;
+        dgCore->BarBlnd16 = BarBlnd16_C2;
         dgCore->SurfMaskCopyBlnd16 = SurfMaskCopyBlnd16_C2;
         dgCore->SurfMaskCopyTrans16 = SurfMaskCopyTrans16_C2;
         dgCore->ResizeViewSurf16 = ResizeViewSurf16_C2;
@@ -142,6 +145,9 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->LineBlnd16 = LineBlnd16_C3;
         dgCore->LineMapBlnd16 = LineMapBlnd16_C3;
         dgCore->InBar16 = InBar16_C3;
+        dgCore->Bar16 = Bar16_C3;
+        dgCore->InBarBlnd16 = InBarBlnd16_C3;
+        dgCore->BarBlnd16 = BarBlnd16_C3;
         dgCore->SurfMaskCopyBlnd16 = SurfMaskCopyBlnd16_C3;
         dgCore->SurfMaskCopyTrans16 = SurfMaskCopyTrans16_C3;
         dgCore->ResizeViewSurf16 = ResizeViewSurf16_C3;
@@ -185,6 +191,9 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->LineBlnd16 = LineBlnd16_C4;
         dgCore->LineMapBlnd16 = LineMapBlnd16_C4;
         dgCore->InBar16 = InBar16_C4;
+        dgCore->Bar16 = Bar16_C4;
+        dgCore->InBarBlnd16 = InBarBlnd16_C4;
+        dgCore->BarBlnd16 = BarBlnd16_C4;
         dgCore->SurfMaskCopyBlnd16 = SurfMaskCopyBlnd16_C4;
         dgCore->SurfMaskCopyTrans16 = SurfMaskCopyTrans16_C4;
         dgCore->ResizeViewSurf16 = ResizeViewSurf16_C4;
