@@ -6,14 +6,14 @@ Using heavily a highly optimized x86-32bits assembly to render to 16bits screen,
 
 ### Target platform ###
 
-Theoretically, any platform that **SDL** is able to target and which support running x86-32bits with **SSE4.2+**  (either emulated or real hardware)
+Theoretically, any platform that **SDL** is able to target and which support running x86-32bits with **SSE4.1+**  (tested with core 2 duo E7500)
 Currently both win32 (windows 7/10) and debian (tested on x64 11.6) build/run successfully.
 
 ### History ###
 
 Started on 1999 as a **DOS** (https://en.wikipedia.org/wiki/DOS) game library, using **DJGPP** (https://delorie.com/djgpp/) as gcc C/C++ compiler and **NASM** (https://nasm.us/) as the assembly compiler and targeting Intel **MMX+** CPU and DOS compatible OS and VESA 2.0 for graphic initialization.
 
-On 2020, I decided to port it to be over **SDL** to allow it to go cross-platform and decided to target higher CPU architecture (**SSE4.2+**).
+On 2020, I decided to port it to be over **SDL** to allow it to go cross-platform and decided to target higher CPU architecture (**SSE4.1+**).
 
 ### Features ###
 
