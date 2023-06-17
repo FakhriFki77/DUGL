@@ -1157,9 +1157,10 @@ RePoly16:
 
             PUSH        ESI
             PUSH        EBX
+            MOV         ESI, LastPolyStatus
             PUSH        EDI
 
-            CMP         [LastPolyStatus], BYTE 'N' ; last Poly16 failed to render ?
+            CMP         [ESI], BYTE 'N' ; last Poly16 failed to render ?
             JE          Poly16.PasDrawPoly
 
             MOV         EAX,[EBP+ReTypePoly16]
@@ -1167,12 +1168,12 @@ RePoly16:
             AND         EAX,DEL_POLY_FLAG_DBL_SIDED16
             MOV         ECX,[EBP+ReSSurf16]
             MOV         [clr],EBX
-            CMP         [LastPolyStatus], BYTE 'I' ; last render IN ?
+            CMP         [ESI], BYTE 'I' ; last render IN ?
             MOV         [SSSurf],ECX
             JNE         .CheckClip
             JMP         [InFillPolyProc16+EAX*4]
 .CheckClip:
-            CMP         [LastPolyStatus], BYTE 'C' ; last render CLIPPED ?
+            CMP         [ESI], BYTE 'C' ; last render CLIPPED ?
             JNE         Poly16.PasDrawPoly
             JMP         [ClFillPolyProc16+EAX*4]
 
