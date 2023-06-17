@@ -269,7 +269,7 @@ OutText16:
             MOVSX       EDI,BYTE [EBX+EAX*8+5] ; PlusLgn
             MOV         [ChLarg],EDX
             MOV         [ChPlusX],ESI
-            MOVD        xmm6,[EBX+EAX*8]        ; PtrDat
+            MOVD        xmm0,[EBX+EAX*8]        ; PtrDat
             OR          ESI,ESI
             MOV         [ChPlusLgn],EDI
             MOV         [ChHaut],ECX
@@ -284,14 +284,22 @@ OutText16:
             LEA         EBX,[EBP+EDX-1] ; MaxX: EBX=MinX+Larg-1
             LEA         ESI,[EDI+ECX-1] ; MaxY: ESI=MinY+Haut-1
 
-            CMP         EBX,[MaxX]
-            JG          .CharClip
-            CMP         ESI,[MaxY]
-            JG          .CharClip
-            CMP         EBP,[MinX]
-            JL          .CharClip
-            CMP         EDI,[MinY]
-            JL          .CharClip
+            MOVD        xmm2,EBX   ; PMaxX
+            MOVD        xmm1,EBP   ; PMinX
+            PINSRD      xmm2,ESI,1 ; PMaxX | PMaxY
+            MOVQ        xmm6,[MinX]
+            PINSRD      xmm1,EDI,1 ; PMinX | PMinY
+            MOVQ        xmm7,[MaxX]
+
+            MOVQ        xmm3,xmm2
+            MOVQ        xmm5,xmm6
+
+            PCMPGTD     xmm3,xmm7 ; Max > PMax
+            PCMPGTD     xmm5,xmm1 ; PMin > Min
+            POR         xmm3,xmm5
+            PMOVMSKB    EAX,xmm3
+            OR          EAX,EAX  ; (CMaxX > MaxX || CMaxY > MaxY || CMinX < MinX || CMinY < MinY) then char is clipped
+            JNZ         .CharClip
 ;****** trace caractere IN *****************************
 .CharIn:
             MOV         ECX,[ScanLine]
@@ -305,7 +313,7 @@ OutText16:
             MOV         EDX,[ChHaut]
             ADD         EDI,[vlfb]
             XOR         EAX,EAX
-            MOVD        ESI,xmm6
+            MOVD        ESI,xmm0
             MOV         EAX,[FntCol]
 .LdNext:
             MOV         EBX,[ESI]
@@ -336,14 +344,14 @@ OutText16:
             JMP         .FinDrChar
 ;****** Trace Caractere Clip ***************************
 .CharClip:
-            CMP         EBX,[MinX]
-            JL          .FinDrChar
-            CMP         ESI,[MinY]
-            JL          .FinDrChar
-            CMP         EBP,[MaxX]
-            JG          .FinDrChar
-            CMP         EDI,[MaxY]
-            JG          .FinDrChar
+            MOVQ        xmm5,xmm6 ; MinX | MinY
+            PCMPGTD     xmm1,xmm7 ; PMin > Max
+            PCMPGTD     xmm5,xmm2 ; Min > PMax
+            POR         xmm1,xmm5
+            PMOVMSKB    EAX,xmm1
+            OR          EAX,EAX ; (CMaxX < MinX) || (CMaxY < MinY) || (CMinX > MaxX) || (CMinY > MaxY) then Char is completely out of the view
+            JNZ         .FinDrChar
+
             ; traitement MaxX********************************************
             CMP         EBX,[MaxX] ; MaxX>MaxX
             MOV         EAX,EBX
@@ -359,7 +367,7 @@ OutText16:
             MOV         [ChApPlus],EAX
 .ApPlus:
             ; traitement MinX********************************************
-            MOV         EAX,[MinX]
+            MOVD        EAX,xmm6 ; [MinX]
             SUB         EAX,EBP
             JLE         .PasAvPlus
             SUB         EDX,EAX
@@ -395,22 +403,22 @@ OutText16:
             SUB         ECX,EAX   ; ECX = Haut-DY
 .PasSupMaxY:
     ; handling MinY********************************************
-            MOV         EAX,[MinY]
+            PEXTRD      EAX,xmm6,1 ;[MinY]
             SUB         EAX,EDI
             JLE         .PasInfMinY
             SUB         ECX,EAX
-            MOV         EDI,[MinY]
+            PEXTRD      EDI,xmm6,1 ;[MinY]
             CMP         DWORD [ChLarg],BYTE 32
             JLE         .Larg1DD
 .Larg2DD:
             IMUL        EAX,BYTE 8
             MOVD        xmm7,EAX
-            PADDD       xmm6,xmm7
+            PADDD       xmm0,xmm7
             JMP         SHORT .PasInfMinY
 .Larg1DD:
             IMUL        EAX,BYTE 4
             MOVD        xmm7,EAX
-            PADDD       xmm6,xmm7
+            PADDD       xmm0,xmm7
 .PasInfMinY:
             MOV         [ChHaut],ECX
             MOV         [ChLarg],EDX
@@ -428,7 +436,7 @@ OutText16:
             LEA         EDI,[EDI+EAX*2]      ; EDI +=2*ChAvDecal
             MOV         EDX,[ChHaut]
             ADD         EDI,[vlfb]
-            MOVD        ESI,xmm6
+            MOVD        ESI,xmm0
 
             MOV         EAX,[FntCol]  ;*************
             ADD         ESI,[ChAvPlus]
@@ -496,10 +504,10 @@ OutText16:
 .DebLigne:
             CMP         BYTE [FntSens], 0
             JE          SHORT .GchDrt
-            MOV         EBX,[MaxX]
+            MOVD        EBX,xmm7 ;[MaxX]
             JMP         SHORT .DrtGch
 .GchDrt:
-            MOV         EBX,[MinX]
+            MOVD        EBX,xmm6 ;[MinX]
 .DrtGch:
             MOV         [FntX],EBX
             JMP         SHORT .Norm
