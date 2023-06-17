@@ -116,7 +116,7 @@ void WinHandler::EnableDelAllFly()
 }
 
 void WinHandler::Draw() {
-   DgSurf SaveSurf;
+   DgSurf SaveSurf __attribute__ ( (aligned (16)));
    DgGetCurSurf(&SaveSurf);
    DgSetCurSurf(S);
    m_GraphCtxt->Clear(BackCol);
@@ -124,7 +124,7 @@ void WinHandler::Draw() {
 }
 
 void WinHandler::Redraw(int x1,int y1,int x2,int y2) {
-   DgSurf SaveSurf;
+   DgSurf SaveSurf __attribute__ ( (aligned (16)));
    NodeWin *ParcNode;
    NodeFly *FlyParcNode;
    DgView V1;
@@ -177,7 +177,7 @@ void WinHandler::Redraw(int x1,int y1,int x2,int y2) {
 }
 
 void WinHandler::DrawSurf(DgSurf *DestSurf) {
-   DgSurf SaveSurf;
+   DgSurf SaveSurf __attribute__ ( (aligned (16)));
    DgGetCurSurf(&SaveSurf);
    DgSetCurSurf(DestSurf);
    m_GraphCtxt->PutSurf(S,DestSurf->MinX,DestSurf->MinY,PUTSURF_NORM);
@@ -315,7 +315,7 @@ void MainWin::Scan() {
 }
 
 void MainWin::Draw() {
-   DgSurf SaveSurf;
+   DgSurf SaveSurf __attribute__ ( (aligned (16)));
    DgView V1;
    Node *ParcNode;
 
@@ -361,7 +361,7 @@ void MainWin::Draw() {
 }
 
 void MainWin::Redraw(int x1,int y1,int x2,int y2) {
-   DgSurf SaveSurf;
+   DgSurf SaveSurf __attribute__ ( (aligned (16)));
    Node *ParcNode;
    DgView V1;
    int PlusX=X+VActiv.OrgX,PlusY=Y+VActiv.OrgY;
@@ -416,7 +416,7 @@ void MainWin::Redraw() {
 }
 
 void MainWin::DrawSurf(DgSurf *DestSurf) {
-   DgSurf SaveSurf;
+   DgSurf SaveSurf __attribute__ ( (aligned (16)));
    DgView SaveView;
    Node *ParcNode;
 
@@ -800,7 +800,7 @@ Node * ContBox::AddChild(Child *child) {
    return (SsChList->Add(child)); }
 
 void ContBox::Draw() {
-   DgSurf SaveSurf;
+   DgSurf SaveSurf __attribute__ ( (aligned (16)));
    DgView V1;
    Node *ParcNode;
    int lgTxt=WidthText(Label.StrPtr);
@@ -1549,7 +1549,7 @@ void GraphBox::Draw() {
 }
 
 void GraphBox::Scan() {
-   DgSurf SaveSurf;
+   DgSurf SaveSurf __attribute__ ( (aligned (16)));
    DgGetCurSurf(&SaveSurf);
 
    Child::Scan();
