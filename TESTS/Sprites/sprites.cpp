@@ -15,6 +15,7 @@
 /*     and using the main thread as the last DWorker for a better usage of CPU cores and avoiding the overhead of waking-up a DWorker, */
 /*     this boosted quad cores rendering performance by up to 30% on QuadCore CPU */
 /* 18 April 2023: Add screenshot capability */
+/* 17 June 2023: Add capability of switching to any of the 6 possible Put functions (PUT, MASK PUT, COL BLND PUT, MASK COL BLND PUT, TRANSP PUT and MASK TRANSP PUT */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,7 +36,6 @@ mySprite Sprites[MAX_SPRITES];
 
 FONT F1;
 unsigned char rouge,bleu,jaune,noir,blanc; // index of needed colors
-
 //int ScrResH = 640, ScrResV = 480;
 int ScrResH = 800, ScrResV = 600;
 //int ScrResH = 1024, ScrResV = 768;
@@ -47,6 +47,8 @@ bool dualCoreRender = false;
 bool quadCoreRender = false;
 bool PauseMove = false;
 bool takeScreenShot=false;
+int PutFuncIdx = 1; // MASK_PUT
+char *PutFuncNames[] = { "PUT", "MASK_PUT", "COL_BLND_PUT", "COL_BLND_MASK_PUT", "TRANSP_PUT", "TRANSP_MASK_PUT" };
 // used view *******
 int TextViewHeight = 50;
 int rendViewHeight = ScrResV - TextViewHeight;
@@ -68,7 +70,9 @@ typedef struct {
     DGCORE rendCore;
 } rendContext;
 
-// render DWorker's
+// render DWorker's/function
+// render all View, no dworker
+void RenderAllView();
 // required for dual core rendering
 unsigned int renderRighViewtWorkerID = 0;
 void RenderLeftViewFunc(void *, int );
@@ -188,9 +192,7 @@ int main(int argc,char *argv[]) {
             // clear sprites View
             ClearSurf16(0);
             // draw all the available sprites
-            for (int i=0; i< NbSprites; i++) {
-                PutMaskSurf16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
-            }
+            RenderAllView();
         } else if (dualCoreRender) {
             // start Render RightView DWorker
             RunDWorker(renderRighViewtWorkerID, false);
@@ -216,13 +218,15 @@ int main(int argc,char *argv[]) {
         SetTextCol(RGB16(255,255,255));
         char text[100];
 
-        OutText16ModeFormat(AJ_MID, text, 100, "Sprites %04i, fps %i, '%s' Rendering, '%s'\n\n",NbSprites,
+        OutText16ModeFormat(AJ_MID, text, 100, "Sprites %04i, fps %i, '%s' Rendering, Rend Func '%s', '%s'\n\n",NbSprites,
                             (int)((avgFps>0.0)?(1.0f/(avgFps)):-1),
                             (!dualCoreRender && !quadCoreRender)?"Single Core":((dualCoreRender)?"Dual Core":"Quad Core"),
+                            PutFuncNames[PutFuncIdx],
                             (!PauseMove)?"Moving..":"Paused"
                             );
+
         SetTextCol(RGB16(255,255,0));
-        OutText16Mode("Esc to Exit | Space to Toggle Pause | Tab to switch from Single/Dual/Quad Core rendering", AJ_SRC);
+        OutText16Mode("Esc <Exit> | Space <Toggle Pause> | Tab <switch count render Cores> | F7 <switch render Func> ", AJ_SRC);
 
         // get key
         unsigned char keyCode;
@@ -247,6 +251,9 @@ int main(int argc,char *argv[]) {
                 dualCoreRender = false;
                 quadCoreRender = false;
             }
+            break;
+        case KB_KEY_F7:
+            PutFuncIdx = (PutFuncIdx+1) % 6;
             break;
         }
 
@@ -280,6 +287,37 @@ int main(int argc,char *argv[]) {
     return 0;
 }
 
+// render sprites on current view (all view)
+void RenderAllView() {
+    switch(PutFuncIdx) {
+        case 0:
+            for (int i=0; i< NbSprites; i++)
+                PutSurf16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
+            break;
+        case 1:
+            for (int i=0; i< NbSprites; i++)
+                PutMaskSurf16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
+            break;
+        case 2:
+            for (int i=0; i< NbSprites; i++)
+                PutSurfBlnd16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ, RGB16(0,255,255) | (10 << 24));
+            break;
+        case 3:
+            for (int i=0; i< NbSprites; i++)
+                PutMaskSurfBlnd16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ, RGB16(0,255,255) | (10 << 24));
+            break;
+        case 4:
+            for (int i=0; i< NbSprites; i++)
+                PutSurfTrans16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ, 15);
+            break;
+        case 5:
+            for (int i=0; i< NbSprites; i++)
+                PutMaskSurfTrans16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ, 15);
+            break;
+
+    }
+}
+
 // dual core render
 
 void RenderLeftViewFunc(void *, int ) {
@@ -287,10 +325,8 @@ void RenderLeftViewFunc(void *, int ) {
     SetSurfView(&CurSurf, &SpritesLeftView);
     ClearSurf16(0x0);
 
-    // draw all the available sprites
-    for (int i=0; i< NbSprites; i++) {
-        PutMaskSurf16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
-    }
+    // reuse at it render using core 1
+    RenderAllView();
 }
 
 void RenderRightViewFunc(void *, int ) {
@@ -299,8 +335,32 @@ void RenderRightViewFunc(void *, int ) {
     ClearSurf16_C2(0);
 
     // draw all the available sprites
-    for (int i=0; i< NbSprites; i++) {
-        PutMaskSurf16_C2(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
+    switch(PutFuncIdx) {
+        case 0:
+            for (int i=0; i< NbSprites; i++)
+                PutSurf16_C2(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
+            break;
+        case 1:
+            for (int i=0; i< NbSprites; i++)
+                PutMaskSurf16_C2(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
+            break;
+        case 2:
+            for (int i=0; i< NbSprites; i++)
+                PutSurfBlnd16_C2(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ, RGB16(0,255,255) | (10 << 24));
+            break;
+        case 3:
+            for (int i=0; i< NbSprites; i++)
+                PutMaskSurfBlnd16_C2(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ, RGB16(0,255,255) | (10 << 24));
+            break;
+        case 4:
+            for (int i=0; i< NbSprites; i++)
+                PutSurfTrans16_C2(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ, 15);
+            break;
+        case 5:
+            for (int i=0; i< NbSprites; i++)
+                PutMaskSurfTrans16_C2(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ, 15);
+            break;
+
     }
 }
 
@@ -314,8 +374,30 @@ void RenderViewFunc(void *myRendContext, int ) {
     SetSurfView(rc->rendCore.CurSurf, rc->rendView);
     rc->rendCore.ClearSurf16(0x0);
 
-    // draw all the available sprites
-    for (int i=0; i< NbSprites; i++) {
-        rc->rendCore.PutMaskSurf16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
+    switch(PutFuncIdx) {
+        case 0:
+            for (int i=0; i< NbSprites; i++)
+                rc->rendCore.PutSurf16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
+            break;
+        case 1:
+            for (int i=0; i< NbSprites; i++)
+                rc->rendCore.PutMaskSurf16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ);
+            break;
+        case 2:
+            for (int i=0; i< NbSprites; i++)
+                rc->rendCore.PutSurfBlnd16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ, RGB16(0,255,255) | (10 << 24));
+            break;
+        case 3:
+            for (int i=0; i< NbSprites; i++)
+                rc->rendCore.PutMaskSurfBlnd16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ, RGB16(0,255,255) | (10 << 24));
+            break;
+        case 4:
+            for (int i=0; i< NbSprites; i++)
+                rc->rendCore.PutSurfTrans16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ, 15);
+            break;
+        case 5:
+            for (int i=0; i< NbSprites; i++)
+                rc->rendCore.PutMaskSurfTrans16(Sprites[i].sprite, Sprites[i].x, Sprites[i].y, (Sprites[i].xspeed<0) ? PUTSURF_NORM : PUTSURF_INV_HZ, 15);
+            break;
     }
 }
