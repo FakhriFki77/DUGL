@@ -966,6 +966,7 @@ void InsertCopiedCar() {
     HzSBHeight->SetVal((int)copiedInfCar.Ht);
     HzSBWidth->SetVal((int)copiedInfCar.Lg);
     VtSBPlusLn->SetVal((int)copiedInfCar.PlusLgn);
+    needRedrawGraphBoxs = true;
 }
 
 void ClearCurCar() {
