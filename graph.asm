@@ -43,14 +43,13 @@ GLOBAL  BitsPixel, ScanLine,Mask,NegScanLine
 
 ; EXTERN GLOBAL VARS
 EXTERN  QBlue16Mask, QGreen16Mask, QRed16Mask, WBGR16Mask
-EXTERN  PntInitCPTDbrd, NegDecPosInc
+EXTERN  PntInitCPTDbrd, DGDQ0_1_2_3, DGDQInitCPTDbrd, NegDecPosInc, MaxPolyDeltaDim
 EXTERN  MaskB_RGB16, MaskG_RGB16, MaskR_RGB16, RGB16_PntNeg, Mask2B_RGB16, Mask2G_RGB16, Mask2R_RGB16
 EXTERN  RGBDebMask_GGG, RGBDebMask_IGG, RGBDebMask_GIG, RGBDebMask_IIG, RGBDebMask_GGI, RGBDebMask_IGI, RGBDebMask_GII, RGBDebMask_III
 EXTERN  RGBFinMask_GGG, RGBFinMask_IGG, RGBFinMask_GIG, RGBFinMask_IIG, RGBFinMask_GGI, RGBFinMask_IGI, RGBFinMask_GII, RGBFinMask_III
 
 ; GLOBAL Constants
 MaxDblSidePolyPts     EQU 128
-MaxDeltaDim           EQU 1<< (31-Prec)
 
 BITS 32
 
@@ -1178,7 +1177,6 @@ RePoly16:
             JMP         [ClFillPolyProc16+EAX*4]
 
 
-
 Poly16:
     ARG PtrListPt16, 4, SSurf16, 4, TypePoly16, 4, ColPoly16, 4
 
@@ -1249,25 +1247,25 @@ Poly16:
 .NoBcMnMxXY:
             PEXTRD      EBX,xmm2,1 ; maxy
             PEXTRD      EDX,xmm1,1 ; miny
+            MOVD        EAX,xmm2 ; maxx
+            MOVD        ECX,xmm1 ; minx
             CMP         EBX,EDX  ; ignore single hline polygones
-            JE          .PasDrawPoly
-            MOVQ        xmm7,[MaxX]
-            MOVQ        xmm6,[MinX]
             MOVD        mm6,ESI
+            JE          .PasDrawPoly
 
 ;-----------------------------------------
 
 ; poly clipped ? in View ? out View ?
             ;JMP      .PolyClip
-            MOVQ        xmm4,xmm2 ; PMaxX | PMaxY
-            MOVQ        xmm5,xmm6 ; MinX | MinY
-            PCMPGTD     xmm4,xmm7 ; PMax > Max
-            PCMPGTD     xmm5,xmm1 ; Min > PMin
-            PMOVMSKB    EAX,xmm4
-            PMOVMSKB    ECX,xmm5
-            OR          ECX,EAX
-            JNZ         .PolyClip
 
+            CMP         EAX,[MaxX]
+            JG          .PolyClip
+            CMP         ECX,[MinX]
+            JL          .PolyClip
+            CMP         EBX,[MaxY]
+            JG          .PolyClip
+            CMP         EDX,[MinY]
+            JL          .PolyClip
 ; render Poly not Clipped  **************************************************
 
             MOV         ECX,[OrgY]  ; calcule DebYPoly, FinYPoly
@@ -1281,33 +1279,29 @@ Poly16:
             MOV         [FinYPoly],EBX
 ; calcule les bornes horizontal du poly
             MOV         EDX,EDI ; = NbPPoly - 1
-            @InCalculerContour16
+            @InComputeHLines16
             MOVD        ESI,mm6
             MOV         EAX,[PType]
             MOV         [LastPolyStatus], BYTE 'I'; In render
             JMP         [InFillPolyProc16+EAX*4]
-            ;JMP        .PasDrawPoly
 .PolyClip:
 ; outside view ? now draw !
-            MOVQ        xmm4,xmm1 ; PMinX | PMinY
-            ;MOVQ        xmm5,xmm6 ; MinX | MinY
-            PCMPGTD     xmm6,xmm2 ; Min > PMax
-            PCMPGTD     xmm4,xmm7 ; PMin > Max
-            PMOVMSKB    ECX,xmm6
-            PMOVMSKB    EAX,xmm4
-            OR          ECX,EAX
-            JNZ         .PasDrawPoly
 
+            CMP         EAX,[MinX]
+            JL          .PasDrawPoly
+            CMP         EBX,[MinY]
+            JL          .PasDrawPoly
+            CMP         ECX,[MaxX]
+            JG          .PasDrawPoly
+            CMP         EDX,[MaxY]
+            JG          .PasDrawPoly
 ; Drop too big poly
     ; drop too BIG poly
-            MOVD        EAX,xmm2 ; maxx
-            MOVD        ECX,xmm1 ; minx
             SUB         ECX,EAX  ; deltaY
             SUB         EDX,EBX  ; deltaX
             CMP         ECX,MaxDeltaDim
             JGE         .PasDrawPoly
             CMP         EDX,MaxDeltaDim
-            LEA         ECX,[ECX+EAX] ; restor MaxY
             JGE         .PasDrawPoly
             ADD         EDX,EBX ; restor MaxX
 
@@ -1325,10 +1319,10 @@ Poly16:
             MOVQ        xmm4,[EAX] ; read XP2 | YP2
             MOV         [DebYPoly],EDX
             MOV         [FinYPoly],EBX
-            MOVQ        [XP1],mm0
             MOVQ        [XP2],xmm4 ; write XP2 | YP2
+            MOVQ        [XP1],mm0 ; write XP1 | YP1
             MOV         EDX,EDI ; EDX compteur de point = NbPPoly-1
-            @ClipCalculerContour ; use same as 8bpp as it compute xdeb and xfin for eax hzline
+            @ClipCalculerContour ; use same as 8bpp as it compute xdeb and xfin for each hzline
 
             CMP         DWORD [DebYPoly],BYTE (-1)
             JE          SHORT .PasDrawPoly
@@ -1522,11 +1516,13 @@ QGreen16Blend     RESD  4
 QRed16Blend       RESD  4
 DQ16Mask          RESD  4 ;------------------------
 
+
 ReversedPtrListPt   RESD  MaxDblSidePolyPts
 
 SECTION .data   ALIGN=32
 
 
+AdrPolyFinDeb     DD  TPolyAdFin, TPolyAdDeb, 0, 0
 ;* 16bpp poly proc****
 InFillPolyProc16:
     DD  InFillSOLID16, InFillTEXT16, InFillMASK_TEXT16, dummyFill16, dummyFill16 ; InFillFLAT_DEG,InFillDEG
