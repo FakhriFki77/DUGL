@@ -297,9 +297,9 @@ OutText16:
             PCMPGTD     xmm3,xmm7 ; Max > PMax
             PCMPGTD     xmm5,xmm1 ; PMin > Min
             POR         xmm3,xmm5
-            PMOVMSKB    EAX,xmm3
-            OR          EAX,EAX  ; (CMaxX > MaxX || CMaxY > MaxY || CMinX < MinX || CMinY < MinY) then char is clipped
-            JNZ         .CharClip
+            PMOVMSKB    ECX,xmm3  ; (CMaxX > MaxX || CMaxY > MaxY || CMinX < MinX || CMinY < MinY) then char is clipped
+            JECXZ       .CharIn
+            JMP         .CharClip
 ;****** trace caractere IN *****************************
 .CharIn:
             MOV         ECX,[ScanLine]
@@ -348,10 +348,10 @@ OutText16:
             PCMPGTD     xmm1,xmm7 ; PMin > Max
             PCMPGTD     xmm5,xmm2 ; Min > PMax
             POR         xmm1,xmm5
-            PMOVMSKB    EAX,xmm1
-            OR          EAX,EAX ; (CMaxX < MinX) || (CMaxY < MinY) || (CMinX > MaxX) || (CMinY > MaxY) then Char is completely out of the view
-            JNZ         .FinDrChar
-
+            PMOVMSKB    ECX,xmm1 ; (CMaxX < MinX) || (CMaxY < MinY) || (CMinX > MaxX) || (CMinY > MaxY) then Char is completely out of the view
+            JECXZ       .CtCharClip
+            JMP         .FinDrChar
+.CtCharClip:
             ; traitement MaxX********************************************
             CMP         EBX,[MaxX] ; MaxX>MaxX
             MOV         EAX,EBX
@@ -397,6 +397,7 @@ OutText16:
 .AvPlus:
     ; handling MaxY********************************************
             CMP         ESI,[MaxY] ; MaxY>MaxY
+            MOV         ECX,[ChHaut]
             MOV         EAX,ESI
             JLE         .PasSupMaxY
             SUB         EAX,[MaxY] ; DY = EAX = MaxY-MaxY
