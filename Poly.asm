@@ -27,28 +27,23 @@
 ; IN : XP1, YP1, XP2, YP2, EAX : XP1, ECX : YP1, EBP : YP2
 ; condition XP1<XP2 && YP1<YP2
 %macro  @ClipContourGchX2Sup    0
-        CMP     ECX,[MaxY]  ; [YP1]
-        JG      %%Fin
-        CMP     EBP,[MinY]  ; [YP2]
-        JL      %%Fin
         ; Calcule la pente
         NEG     EAX     ; -[XP1]
         NEG     ECX     ; -[YP1]
         ADD     EAX,[XP2]
         XOR     EDX,EDX
-        INC     EAX
+        ;INC     EAX
         ADD     ECX,EBP         ; ECX = YP2-YP1
         SHL     EAX,Prec
         DIV     ECX         ; Pente dans EAX
         ; Adjust <YP1>  =>& XP1
-        MOV     EBP,[MinY]
+        MOV     EBP,EDI ; = [MinY]
         MOV     ECX,[YP1]
         XOR     EDX,EDX     ; EDX = CptDbrd
-        MOV     EBX,EBP
         SUB     EBP,ECX      ; [MinY]-[YP1]
         JLE     SHORT %%PasAjYP1
-        MOV     [YP1],EBX    ; [YP1] = [MinY]
         IMUL    EBP,EAX      ; EBP = DeltaY*Pente
+        MOV     [YP1],EDI    ; [YP1] = [MinY]
         MOV     EDX,EBP
         AND     EDX,(1 << Prec) - 1
         SHR     EBP, Prec
@@ -60,8 +55,8 @@
         JMP     SHORT %%Fin
 %%PasPolyOut:
 %%PasAjYP1: ; Ajustement de <YP2>  =>& XP2
+        MOV     EBP,EBX ; [MaxY]
         MOV     ECX,[YP2]
-        MOV     EBP,[MaxY]
         MOV     EBX,[YP1]
         CMP     ECX,EBP           ;ECX= [YP2]>[MaxY] ?
         CMOVG   ECX,EBP
@@ -84,36 +79,30 @@
 ; IN : XP1, YP1, XP2, YP2, EAX : XP1, ECX : YP1
 ; condition XP1>XP2 && YP1<YP2
 %macro  @ClipContourGchX1Sup    0
-        CMP     ECX,[MaxY]  ; [YP1]
-        JG      NEAR %%Fin
-        CMP     EBP,[MinY]  ; [YP2]
-        MOV     EBX,[XP2]
-        JL      NEAR %%Fin
         ; Calcule la pente
-        SUB     EAX,EBX     ; [XP1]-[XP2]
+        SUB     EAX,[XP2]    ; [XP1]-[XP2]
         XOR     EDX,EDX     ; reste = 0
         NEG     ECX     ; -[YP1]
-        INC     EAX
+        ;INC     EAX
         ADD     ECX,EBP     ; = YP2-YP1 compteur dans ECX
         SHL     EAX,Prec
         DIV     ECX     ; Pente dans EAX
         ; Ajustement de <YP1>  =>& XP1
-        MOV     EBP,[MinY]
+        MOV     EBP,EDI ; = [MinY]
         MOV     ECX,[YP1]
         XOR     EDX,EDX
-        MOV     EBX,EBP
         SUB     EBP,ECX   ; [MinY]-[YP1]
         JLE     SHORT %%PasAjYP1
         IMUL    EBP,EAX
-        MOV     [YP1],EBX
+        MOV     [YP1],EDI ; = [MinY]
         ADD     EDX,EBP
         MOV     EBP,EDX
         AND     EDX,(1 << Prec) - 1  ; calcule reste
         SHR     EBP,Prec
         SUB     [XP1],EBP
 %%PasAjYP1:     ; Ajustement de <YP2>  =>& XP2
+        MOV     EBP,EBX ; =[MaxY]
         MOV     EBX,[YP2]
-        MOV     EBP,[MaxY]
         MOV     ECX,EBX
         SUB     EBX,EBP         ; [YP2]-[MaxY]
         JLE     SHORT %%PasAjYP2
@@ -150,33 +139,27 @@
 ; IN : XP1, YP1, XP2, YP2, EAX : XP1, ECX : YP1
 ; condition XP1<XP2 && YP1>YP2
 %macro  @ClipContourDrtX2Sup    0
-        CMP     ECX,[MinY]
-        JL      NEAR %%Fin
-        CMP     EBP,[MaxY]
-        MOV     EBX,[XP2]
-        JG      NEAR %%Fin
         ; Calcule la pente
         NEG     EAX     ; -[XP1]
         SUB     ECX,EBP     ; [YP1]-[YP2]
-        ADD     EAX,EBX       ; EAX = XP2-XP1
-        INC     EAX
+        ADD     EAX,[XP2]   ; EAX = XP2-XP1
+        ;INC     EAX
         XOR     EDX,EDX
         SHL     EAX,Prec
         DIV     ECX         ; Pente dans EAX
         ; Adjust <YP1>  =>& XP1
         MOV     ECX,[YP1]
-        MOV     EBP,[MaxY]
         XOR     EDX,EDX
-        SUB     ECX,EBP  ; [YP1]-[MaxY]
+        SUB     ECX,EBX  ; [YP1]-[MaxY]
         JLE     SHORT %%PasAjYP1
         IMUL    ECX,EAX
-        MOV     [YP1],EBP
+        MOV     [YP1],EBX
         MOV     EDX,ECX
         AND     EDX,(1 << Prec) - 1
         SHR     ECX,Prec
         ADD     [XP1],ECX
 %%PasAjYP1:     ; Ajustement de <YP2>  =>& XP2
-        MOV     EBP,[MinY]
+        MOV     EBP,EDI ; = [MinY]
         MOV     ECX,[YP2]
         MOV     EBX,EBP
         MOV     EDI,[XP2]
@@ -214,26 +197,20 @@
 ; IN : XP1, YP1, XP2, YP2, EAX : XP1, ECX : YP1
 ; condition XP1>XP2 && YP1>YP2
 %macro  @ClipContourDrtX1Sup    0
-        CMP     ECX,[MinY]  ; [YP1]
-        JL      NEAR %%Fin
-        CMP     EBP,[MaxY]
-        JG      NEAR %%Fin
-
         ; Calcule la pente
         SUB     EAX,[XP2]       ; [XP1]-[XP2]
-        INC     EAX
+        ;INC     EAX
         XOR     EDX,EDX
         SUB     ECX,EBP       ; [YP1]-[YP2]
         SHL     EAX,Prec
         DIV     ECX         ; Pente dans EAX
         ; Ajustement de <YP1>  =>& XP1
-        MOV     EBP,[MaxY]
         MOV     ECX,[YP1]
         XOR     EDX,EDX
-        SUB     ECX,EBP         ;[YP1]-[MaxY]
+        SUB     ECX,EBX         ;[YP1]-[MaxY]
         JLE     SHORT %%PasAjYP1
         IMUL    ECX,EAX
-        MOV     [YP1],EBP
+        MOV     [YP1],EBX ; = [MaxY]
         SHR     ECX,Prec
         SUB     [XP1],ECX
         MOV     ECX,[XP1]
@@ -243,7 +220,7 @@
         JMP     SHORT %%Fin
 %%PasPolyOut:
 %%PasAjYP1:     ; Ajdust <YP2>  =>& XP2
-        MOV     EBP,[MinY]
+        MOV     EBP,EDI ; [MinY]
         MOV     ECX,[YP2]
         MOV     EBX,EBP
         MOV     EDI,[XP2]
@@ -284,21 +261,31 @@
 %%ClipBcCalCont:
         MOV     EBP,[YP2]
         MOV     ECX,[YP1]
+        MOV     EDI,[MinY]
+        MOV     EBX,[MaxY]
         MOVD    mm2,EDX     ; save EDX counter
         CMP     ECX,EBP
-        JE      NEAR %%DYZero
+        JE      %%DYZero
         MOV     EAX,[XP1]
-        JG      NEAR %%ContDrt; si YP1<YP2 alors drt sinon gch
+        JG      %%ContDrt; si YP1<YP2 alors drt sinon gch
+        CMP     ECX,EBX  ; [YP1]
+        JG      %%FinContr
+        CMP     EBP,EDI  ; [YP2]
+        JL      %%FinContr
         CMP     EAX,[XP2]
-        JG      NEAR %%CntGchX1Sup
+        JG      %%CntGchX1Sup
         @ClipContourGchX2Sup        ; YP1<YP2  &&  XP1<XP2
         JMP     %%FinContr
 %%CntGchX1Sup:
         @ClipContourGchX1Sup        ; YP1<YP2  &&  XP1>XP2
         JMP     %%FinContr
 %%ContDrt:
+        CMP     ECX,EDI
+        JL      %%FinContr
+        CMP     EBP,EBX
+        JG      %%FinContr
         CMP     EAX,[XP2]
-        JG      NEAR %%CntDrtX1Sup
+        JG      %%CntDrtX1Sup
         @ClipContourDrtX2Sup        ; YP1>YP2  &&  XP1<XP2
         JMP     %%FinContr
 %%CntDrtX1Sup:
@@ -309,7 +296,7 @@
         JE      %%FinCalcContr
         MOVD    EDX,mm2     ; restaure le compteur EDX
         DEC     EDX
-        JS      NEAR %%FinCalcContr ; EDX < 0
+        JS      %%FinCalcContr ; EDX < 0
         ;MOV        ESI,[PPtrListPt]     ; ESI = PtrListPt
         MOVQ    xmm3,xmm4
         MOV     EAX,[ESI+EDX*4] ; EAX=PtrPt[EDX]
