@@ -101,7 +101,7 @@ ClipFillSOLID16:
 
 ALIGN 32
 InFillTEXT16:
-        @InCalcTextCnt
+        @InComputeUVLines
         MOV         ESI,[SSSurf] ; sauvegarde la surf Source
         MOV         EBX,[DebYPoly] ; -
         MOV         EDI,SrcSurf
@@ -208,7 +208,8 @@ ClipFillTEXT16:
 ALIGN 32
 InFillMASK_TEXT16:
 
-        @InCalcTextCnt
+        @InComputeUVLines
+
         MOV         ESI,[SSSurf] ; sauvegarde la surf Source
         MOV         EBX,[DebYPoly] ; -
         MOV         EDI,SrcSurf
@@ -554,7 +555,7 @@ InFillTEXT_BLND16:
         MOV         EDI,SrcSurf
         CopySurfDA  ; copy the source texture surface
 
-        @InCalcTextCnt
+        @InComputeUVLines
 ; prepare blending
         MOV         EAX,[clr] ;
         MOV         EBX,EAX ;
@@ -739,8 +740,8 @@ InFillMASK_TEXT_BLND16:
         MOV         ESI,[SSSurf] ; sauvegarde la surf Source
         MOV         EDI,SrcSurf
         CopySurfDA  ; copy the source texture surface
+        @InComputeUVLines
 
-        @InCalcTextCnt
 ; prepare blending
         MOV         EAX,[clr] ;
         PSHUFLW     xmm7,[SMask],0
@@ -929,7 +930,7 @@ ClipFillMASK_TEXT_BLND16:
 
 ALIGN 32
 InFillTEXT_TRANS16:
-        @InCalcTextCnt
+        @InComputeUVLines
         MOV         ESI,[SSSurf] ; save pointer to source surf
         MOV         EBX,[DebYPoly] ; -
         MOV         EAX,[clr] ;
@@ -1063,7 +1064,8 @@ ClipFillTEXT_TRANS16:
 ALIGN 32
 InFillMASK_TEXT_TRANS16:
 
-        @InCalcTextCnt
+        ;@InCalcTextCnt
+        @InComputeUVLines
         MOV         ESI,[SSSurf] ; save pointer to source surf
         MOV         EBX,[DebYPoly] ; -
         MOV         EAX,[clr] ;

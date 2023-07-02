@@ -30,6 +30,9 @@ GLOBAL  GetMaxResVSetSurf, BlndCol16
 GLOBAL  DgSurfCGetPixel16, DgSurfCPutPixel16
 GLOBAL  SurfCopy, SurfMaskCopy16, SurfCopyBlnd16, SurfCopyTrans16
 
+; GLOBAL Internal functions
+GLOBAL  InHLineU1EqGreater, InHLineU2Greater
+
 ; GLOBAL Vars
 GLOBAL  QBlue16Mask, QGreen16Mask, QRed16Mask, WBGR16Mask
 
@@ -616,6 +619,112 @@ DgSurfCPutPixel16:
 .Clip:
 
     RETURN
+
+; U,V Hlines computing internal functions
+; INPUT: (EAX, EDI)=(U1,U2), (ECX,EBP)=(YP1,YP2), EBX: start Dest addr
+InHLineU1EqGreater:
+                JE              SHORT .DUZero
+                ;SUB             EAX,EDI ; [U1]-[U2]
+                SUB             ECX,EBP ; [YP1]-[YP2]
+                SHL             EAX,Prec
+                CDQ
+                IDIV            ECX
+                MOVD            xmm3,EAX
+                MOVD            xmm4,EAX
+                MOVD            xmm5,EDI
+                PSHUFD          xmm3,xmm3,0 ; = PntU | PntU | PntU | PntU
+                PSHUFD          xmm4,xmm4,0 ; = PntU | PntU | PntU | PntU
+                PSHUFD          xmm5,xmm5,0 ; = U2 | U2 | U2 | U2
+                PMULLD          xmm3,xmm7 ; * (0|1|2|3) = 0 | PntU | PntU*2 | PntU*3
+                PSLLD           xmm4,2 ; ; = PntU*4 | PntU*4 | PntU*4 | PntU*4
+                MOVDQA          xmm0,xmm3
+                PSRAD           xmm0,Prec ; Prec = DU | DU | DU | DU
+.LpHLine:
+                CMP             ECX,BYTE 2
+                PADDD           xmm0,xmm5 ;
+                JLE             SHORT .LastBytes
+                PADDD           xmm3,xmm4 ; Progress PntU
+                MOVDQU          [EBX],xmm0
+                SUB             ECX,BYTE 4
+                LEA             EBX,[EBX+16]
+                JS              SHORT .endHLine
+                MOVDQA          xmm0,xmm3
+                PSRAD           xmm0,Prec
+                JMP             SHORT .LpHLine
+
+.DUZero:
+                SUB             ECX,EBP ; [YP1] - [YP2]
+                MOVD            xmm0,EDI ; = U2
+                PSHUFD          xmm0,xmm0,0 ; = U2 | U2 | U2 | U2
+.LpDUZ:
+                CMP             ECX,BYTE 2
+                JLE             SHORT .LastBytes
+                MOVDQU          [EBX],xmm0
+                SUB             ECX,BYTE 4
+                LEA             EBX,[EBX+16]
+                JS              SHORT .endHLine
+                JMP             SHORT .LpDUZ
+.LastBytes:
+                JE              SHORT .Last3Bytes
+                CMP             ECX,BYTE 1
+                JE              SHORT .Last2Bytes
+.Last1Byte:
+                MOVD            [EBX],xmm0
+                JMP             SHORT .endHLine
+.Last2Bytes:
+                MOVQ            [EBX],xmm0
+                JMP             SHORT .endHLine
+.Last3Bytes:
+                MOVQ            [EBX],xmm0
+                PEXTRD          [EBX+8],xmm0,2
+.endHLine:
+        RET
+
+; INPUT: (EAX, EDI)=(U1,U2), (ECX,EBP)=(YP1,YP2), EBX: start Dest addr
+InHLineU2Greater:
+                ;SUB             EAX,EDI ; [U1]-[U2]
+                SHL             EAX,Prec
+                SUB             ECX,EBP ; [YP1]-[YP2]
+                CDQ
+                IDIV            ECX
+                MOVD            xmm3,EAX
+                MOVD            xmm4,EAX
+                MOVD            xmm5,EDI
+                PSHUFD          xmm3,xmm3,0 ; = PntU | PntU | PntU | PntU
+                PSHUFD          xmm4,xmm4,0 ; = PntU | PntU | PntU | PntU
+                PMULLD          xmm3,xmm7 ; * (0|1|2|3) = 0 | PntU | PntU*2 | PntU*3
+                PSHUFD          xmm5,xmm5,0 ; = U2 | U2 | U2 | U2
+                PADDD           xmm3,xmm6 ; += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1)
+                PSLLD           xmm4,2 ; ; = PntU*4 | PntU*4 | PntU*4 | PntU*4
+                MOVDQA          xmm0,xmm3
+                PSRAD           xmm0,Prec
+.LpHLine:
+                CMP             ECX,BYTE 2
+                PADDD           xmm0,xmm5
+                JLE             SHORT .LastBytes
+                MOVDQU          [EBX],xmm0
+                PADDD           xmm3,xmm4 ; Progress PntU: += PntU*4 |||
+                SUB             ECX,BYTE 4
+                LEA             EBX,[EBX+16]
+                JS              SHORT .endHLine
+                MOVDQA          xmm0,xmm3
+                PSRAD           xmm0,Prec
+                JMP             SHORT .LpHLine
+.LastBytes:
+                JE              SHORT .Last3Bytes
+                CMP             ECX,BYTE 1
+                JE              SHORT .Last2Bytes
+.Last1Byte:
+                MOVD            [EBX],xmm0
+                JMP             SHORT .endHLine
+.Last2Bytes:
+                MOVQ            [EBX],xmm0
+                JMP             SHORT .endHLine
+.Last3Bytes:
+                MOVQ            [EBX],xmm0
+                PEXTRD          [EBX+8],xmm0,2
+.endHLine:
+        RET
 
 
 SECTION .data   ALIGN=32
