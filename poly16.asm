@@ -29,8 +29,9 @@
 ; EDX : Count Polygone point - 1
 ; ********************************************************************************************************
 
-%macro  @InHLineX1EqGreater16 0
-                JE              SHORT %%DXZero
+%macro  @InHLineCompute16 0
+                JE              %%DXZero
+                JL              SHORT %%X2Greater
                 SUB             ECX,EBP ; [YP1]-[YP2]
                 SHL             EAX,Prec
                 LEA             ESI,[ESI+EDI*2] ; += [XP2] * 2 as 16bpp
@@ -44,6 +45,7 @@
                 PSHUFD          xmm4,xmm4,0 ; = PntX | PntX | PntX | PntX
                 PSHUFD          xmm5,xmm5,0 ; = AdrX2 | AdrX2 | AdrX2 | AdrX2
                 PMULLD          xmm3,xmm7 ; * (0|1|2|3) = 0 | PntX | PntX*2 | PntX*3
+%%HLineCommon:
                 PSLLD           xmm4,2 ; ; = PntX*4 | PntX*4 | PntX*4 | PntX*4
                 MOVDQA          xmm0,xmm3
                 MOVD            ESI,xmm6
@@ -53,16 +55,33 @@
                 CMP             ECX,BYTE 2
                 PSLLD           xmm0,1
                 PADDD           xmm0,xmm5
-                JLE             SHORT %%LastBytes
+                JLE             %%LastBytes
                 MOVDQU          [ESI+EBX],xmm0
                 PADDD           xmm3,xmm4 ; Progress Pnt
                 SUB             ECX,BYTE 4
                 LEA             EBX,[EBX+16]
-                JS              SHORT %%endHLine
+                JS              %%endHLine
                 MOVDQA          xmm0,xmm3
                 PADDD           xmm5,xmm1 ; Progress Addr
                 PSRAD           xmm0,Prec ; Prec  => X * 2
                 JMP             SHORT %%LpHLine
+
+%%X2Greater:
+                SUB             ECX,EBP ; [YP1]-[YP2]
+                SHL             EAX,Prec
+                LEA             ESI,[ESI+EDI*2] ; += [XP2] * 2 as 16bpp
+                CDQ
+                IDIV            ECX
+                ADD             ESI,[vlfb] ; ESI = full adress (XP2,YP2)
+                MOVD            xmm3,EAX
+                MOVD            xmm4,EAX
+                PSHUFD          xmm3,xmm3,0 ; = PntX | PntX | PntX | PntX
+                MOVD            xmm5,ESI
+                PSHUFD          xmm4,xmm4,0 ; = PntX | PntX | PntX | PntX
+                PMULLD          xmm3,xmm7 ; * (0|1|2|3) = 0 | PntX | PntX*2 | PntX*3
+                PSHUFD          xmm5,xmm5,0 ; = AdrX2 | AdrX2 | AdrX2 | AdrX2
+                PADDD           xmm3,[DGDQInitCPTDbrd] ; += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1)
+                JMP             %%HLineCommon
 
 %%DXZero:
                 LEA             ESI,[ESI+EDI*2] ; += [XP2] * 2
@@ -81,55 +100,6 @@
                 JS              SHORT %%endHLine
                 PADDD           xmm0,xmm1
                 JMP             SHORT %%LpDXZ
-%%LastBytes:
-                JE              SHORT %%Last3Bytes
-                CMP             ECX,BYTE 1
-                JE              SHORT %%Last2Bytes
-%%Last1Byte:
-                MOVD            [ESI+EBX],xmm0
-                JMP             SHORT %%endHLine
-%%Last2Bytes:
-                MOVQ            [ESI+EBX],xmm0
-                JMP             SHORT %%endHLine
-%%Last3Bytes:   MOVQ            [ESI+EBX],xmm0
-                PEXTRD          [ESI+EBX+8],xmm0,2
-%%endHLine:
-%endmacro
-
-%macro  @InHLineX2Greater16 0
-                SUB             ECX,EBP ; [YP1]-[YP2]
-                SHL             EAX,Prec
-                LEA             ESI,[ESI+EDI*2] ; += [XP2] * 2 as 16bpp
-                CDQ
-                IDIV            ECX
-                ADD             ESI,[vlfb] ; ESI = full adress (XP2,YP2)
-                MOVD            xmm3,EAX
-                MOVD            xmm4,EAX
-                PSHUFD          xmm3,xmm3,0 ; = PntX | PntX | PntX | PntX
-                MOVD            xmm5,ESI
-                PSHUFD          xmm4,xmm4,0 ; = PntX | PntX | PntX | PntX
-                PMULLD          xmm3,xmm7 ; * (0|1|2|3) = 0 | PntX | PntX*2 | PntX*3
-                PSHUFD          xmm5,xmm5,0 ; = AdrX2 | AdrX2 | AdrX2 | AdrX2
-                PADDD           xmm3,[DGDQInitCPTDbrd] ; += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1)
-                PSLLD           xmm4,2 ; ; = PntX*4 | PntX*4 | PntX*4 | PntX*4
-                MOVDQA          xmm0,xmm3
-                MOVD            ESI,xmm6
-                PSRAD           xmm0,Prec
-                PADDD           xmm5,xmm2 ; = AdrX2 | AdrX2+NegScan | AdrX2+NegScan*2 | AdrX2+NegScan*3
-%%LpHLine:
-                CMP             ECX,BYTE 2
-                PSLLD           xmm0,1   ; X * 2
-                PADDD           xmm0,xmm5
-                JLE             SHORT %%LastBytes
-                MOVDQU          [ESI+EBX],xmm0
-                PADDD           xmm3,xmm4 ; Progress PntX: += PntX*4
-                SUB             ECX,BYTE 4
-                LEA             EBX,[EBX+16]
-                JS              SHORT %%endHLine
-                MOVDQA          xmm0,xmm3
-                PADDD           xmm5,xmm1 ; Progress Addr: +=NegScan*4
-                PSRAD           xmm0,Prec
-                JMP             SHORT %%LpHLine
 %%LastBytes:
                 JE              SHORT %%Last3Bytes
                 CMP             ECX,BYTE 1
@@ -164,7 +134,7 @@
                 JE              %%EndHLine ; DY = 0, skip this line
                 MOVD            EAX,mm0 ; = [XP1]
                 MOVD            EDI,mm1 ; = [XP2]
-                JG              %%HRight; if YP1<YP2 then right else left
+                JG              SHORT %%HRight; if YP1<YP2 then right else left
 %%HLeft:
                 ; swap P1, P2 and change Adress of writing into xmm6
                 XCHG            ECX,EBP
@@ -175,11 +145,7 @@
                 IMUL            ESI,EBP ; [YP2] * [NegScanLine]
                 SUB             EAX,EDI
                 LEA             EBX,[EBX*4]
-                JL              %%HRightX2Greater
-                @InHLineX1EqGreater16     ; YP1>YP2  &&  XP1>=XP2
-                JMP             %%EndHLine
-%%HRightX2Greater:
-                @InHLineX2Greater16       ; YP1>YP2  &&  XP1<XP2
+                @InHLineCompute16
 %%EndHLine:
                 MOVD            EDX,mm7     ; restore EDX counter
                 MOVD            ESI,mm6     ; ESI = PtrListPt

@@ -343,12 +343,7 @@
                 LEA             EBX,[EBX+EBP] ; EBX = [YP2]+[OrgY] : Index
                 SUB             EAX,EDI ; D(U/V)
                 LEA             EBX,[ESI+EBX*4] ; final dest adress
-                JL              SHORT %%HRightX2GreaterU
-                CALL            InHLineU1EqGreater
-                JMP             SHORT %%EndHLineU
-%%HRightX2GreaterU:
-                CALL            InHLineU2Greater
-%%EndHLineU:
+                CALL            InHLineUVCompute
 
 ; handle V *****
                 MOVD            ECX,mm1   ;  = [YP1]
@@ -368,12 +363,7 @@
                 LEA             EBX,[EBX+EBP] ; EBX = [YP2]+[OrgY] : Index
                 SUB             EAX,EDI ; D(U/V)
                 LEA             EBX,[ESI+EBX*4] ; final dest adress
-                JL              SHORT %%HRightX2GreaterV
-                CALL            InHLineU1EqGreater
-
-                JMP             SHORT %%EndHLine
-%%HRightX2GreaterV:
-                CALL            InHLineU2Greater
+                CALL            InHLineUVCompute
 %%EndHLine:
                 MOVD            EDX,mm7     ; restore EDX counter
                 MOVD            ESI,mm6     ; ESI = PtrListPt

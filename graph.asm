@@ -49,7 +49,7 @@ EXTERN  RGBDebMask_GGG, RGBDebMask_IGG, RGBDebMask_GIG, RGBDebMask_IIG, RGBDebMa
 EXTERN  RGBFinMask_GGG, RGBFinMask_IGG, RGBFinMask_GIG, RGBFinMask_IIG, RGBFinMask_GGI, RGBFinMask_IGI, RGBFinMask_GII, RGBFinMask_III
 
 ; EXTERN Internal functions
-EXTERN  InHLineU1EqGreater, InHLineU2Greater
+EXTERN  InHLineUVCompute
 
 
 ; GLOBAL Constants
