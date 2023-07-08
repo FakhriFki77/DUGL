@@ -128,7 +128,6 @@
                 MOVD            ECX,mm2   ;  = [YP1]
                 MOVD            EBP,mm3   ;  = [YP2]
                 PEXTRD          ESI,xmm2,1 ; = [NegScanLine]
-                XOR             EDX,EDX
                 CMP             ECX,EBP  ; YP2
                 MOV             EBX,[OrgY]
                 JE              %%EndHLine ; DY = 0, skip this line
