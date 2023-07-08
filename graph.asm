@@ -49,7 +49,7 @@ EXTERN  RGBDebMask_GGG, RGBDebMask_IGG, RGBDebMask_GIG, RGBDebMask_IIG, RGBDebMa
 EXTERN  RGBFinMask_GGG, RGBFinMask_IGG, RGBFinMask_GIG, RGBFinMask_IIG, RGBFinMask_GGI, RGBFinMask_IGI, RGBFinMask_GII, RGBFinMask_III
 
 ; EXTERN Internal functions
-EXTERN  InHLineUVCompute
+EXTERN  InHLineUVCompute, ClipHLineXCompute
 
 
 ; GLOBAL Constants
@@ -1150,8 +1150,9 @@ MaskBlndResizeViewSurf16:
 ; ====================== POLY16 ==========
 
 
-POLY_FLAG_DBL_SIDED16   EQU 0x80000000
-DEL_POLY_FLAG_DBL_SIDED16 EQU 0x7FFFFFFF
+POLY_FLAG_DBL_SIDED16     EQU 0x80000000
+POLY_FLAG_REND_NLP_NLHL   EQU 0x40000000
+POLY_DEL_FLAGS            EQU 0x3FFFFFFF
 
 ;****************************************************************************
 
@@ -1160,23 +1161,26 @@ RePoly16:
 
             PUSH        ESI
             PUSH        EBX
-            MOV         ESI, LastPolyStatus
+            MOV         EDI, LastPolyStatus
             PUSH        EDI
 
-            CMP         [ESI], BYTE 'N' ; last Poly16 failed to render ?
+            CMP         [EDI], BYTE 'N' ; last Poly16 failed to render ?
             JE          Poly16.PasDrawPoly
-
+            MOV         EDX,[NbPPoly]
             MOV         EAX,[EBP+ReTypePoly16]
+            DEC         EDX
             MOV         EBX,[EBP+ReColPoly16]
-            AND         EAX,DEL_POLY_FLAG_DBL_SIDED16
+            MOVD        mm6,[PPtrListPt]
+            MOVD        mm5,EDX  ; mm5 = NbPPoly - 1
+            AND         EAX,POLY_DEL_FLAGS
             MOV         ECX,[EBP+ReSSurf16]
             MOV         [clr],EBX
-            CMP         [ESI], BYTE 'I' ; last render IN ?
+            CMP         [EDI], BYTE 'I' ; last render IN ?
             MOV         [SSSurf],ECX
             JNE         .CheckClip
             JMP         [InFillPolyProc16+EAX*4]
 .CheckClip:
-            CMP         [ESI], BYTE 'C' ; last render CLIPPED ?
+            CMP         [EDI], BYTE 'C' ; last render CLIPPED ?
             JNE         Poly16.PasDrawPoly
             JMP         [ClFillPolyProc16+EAX*4]
 
@@ -1223,7 +1227,7 @@ Poly16:
     ; Save parameters and free EBP
             MOV         EAX,[EBP+TypePoly16]
             MOV         EBX,[EBP+ColPoly16]
-            AND         EAX,DEL_POLY_FLAG_DBL_SIDED16
+            AND         EAX,POLY_DEL_FLAGS
             MOV         ECX,[EBP+SSurf16]
             MOV         [PType],EAX
             MOV         [clr],EBX
@@ -1317,20 +1321,14 @@ Poly16:
             MOV         EBP,[OrgY]   ; Ajuste [DebYPoly],[FinYPoly]
             CMOVG       EBX,EAX
             CMP         EDX,ECX
-            MOV         EAX,[ESI+EDI*4]
             CMOVL       EDX,ECX
             ADD         EBX,EBP
             ADD         EDX,EBP
-            MOVQ        xmm4,[EAX] ; read XP2 | YP2
-            MOV         [DebYPoly],EDX
             MOV         [FinYPoly],EBX
-            MOVQ        [XP2],xmm4 ; write XP2 | YP2
-            MOVQ        [XP1],mm0 ; write XP1 | YP1
+            MOV         [DebYPoly],EDX
             MOV         EDX,EDI ; EDX compteur de point = NbPPoly-1
-            @ClipCalculerContour ; use same as 8bpp as it compute xdeb and xfin for each hzline
+            @ClipComputeHLines16
 
-            CMP         DWORD [DebYPoly],BYTE (-1)
-            JE          SHORT .PasDrawPoly
             MOV         EAX,[PType]
             MOV         [LastPolyStatus], BYTE 'C' ; Clip render
             JMP         [ClFillPolyProc16+EAX*4]

@@ -31,7 +31,7 @@ GLOBAL  DgSurfCGetPixel16, DgSurfCPutPixel16
 GLOBAL  SurfCopy, SurfMaskCopy16, SurfCopyBlnd16, SurfCopyTrans16
 
 ; GLOBAL Internal functions
-GLOBAL  InHLineUVCompute
+GLOBAL  InHLineUVCompute, ClipHLineXCompute
 
 ; GLOBAL Vars
 GLOBAL  QBlue16Mask, QGreen16Mask, QRed16Mask, WBGR16Mask
@@ -684,6 +684,85 @@ InHLineUVCompute:
                 LEA             EBX,[EBX+16]
                 JS              SHORT .endHLine
                 JMP             SHORT .LpDUZ
+.LastBytes:
+                JE              SHORT .Last3Bytes
+                CMP             ECX,BYTE 1
+                JE              SHORT .Last2Bytes
+.Last1Byte:
+                MOVD            [EBX],xmm0
+                JMP             SHORT .endHLine
+.Last2Bytes:
+                MOVQ            [EBX],xmm0
+                JMP             SHORT .endHLine
+.Last3Bytes:
+                MOVQ            [EBX],xmm0
+                PEXTRD          [EBX+8],xmm0,2
+.endHLine:
+        RET
+
+
+; X clip contour computing internal function
+; INPUT: EAX=PntX, EDI=X2, ECX=DY (step count), EBX: start Dest addr, mm1: steps to jump
+ClipHLineXCompute:
+                JE              .DXZero
+                JL              SHORT .X2Greater
+
+                ; X1 Greater
+                MOVQ2DQ         xmm0,mm1
+                MOVD            xmm3,EAX
+                MOVD            xmm4,EAX
+                MOVD            xmm5,EDI
+                PSHUFD          xmm0,xmm0,0 ; = Steps | Steps | Steps | Steps
+                PSHUFD          xmm3,xmm3,0 ; = PntX | PntX | PntX | PntX
+                PSHUFD          xmm4,xmm4,0 ; = PntX | PntX | PntX | PntX
+                PMULLD          xmm0,xmm3   ; = Steps * PntX | Steps * PntX | Steps * PntX | Steps * PntX
+                PSHUFD          xmm5,xmm5,0 ; = X2 | X2 | X2 | X2
+                PMULLD          xmm3,xmm7 ; * (0|1|2|3) = 0 | PntX | PntX*2 | PntX*3
+.HXCommon:
+                PADDD           xmm3,xmm0 ; += Steps * PntX | += Steps * PntX | += Steps * PntX | += Steps * PntX
+                PSLLD           xmm4,2 ; ; = PntX*4 | PntX*4 | PntX*4 | PntX*4
+                MOVDQA          xmm0,xmm3
+                PSRAD           xmm0,Prec ; Prec = DU | DU | DU | DU
+.LpHLine:
+                CMP             ECX,BYTE 2
+                PADDD           xmm0,xmm5 ;
+                JLE             SHORT .LastBytes
+                PADDD           xmm3,xmm4 ; Progress PntX
+                MOVDQU          [EBX],xmm0
+                SUB             ECX,BYTE 4
+                LEA             EBX,[EBX+16]
+                JS              SHORT .endHLine
+                MOVDQA          xmm0,xmm3
+                PSRAD           xmm0,Prec
+                JMP             SHORT .LpHLine
+
+                ; X2 Greater
+.X2Greater:
+                MOVQ2DQ         xmm0,mm1
+                MOVD            xmm3,EAX
+                MOVD            xmm4,EAX
+                MOVD            xmm5,EDI
+                PSHUFD          xmm0,xmm0,0 ; = Steps | Steps | Steps | Steps
+                PSHUFD          xmm3,xmm3,0 ; = PntX | PntX | PntX | PntX
+                PSHUFD          xmm4,xmm4,0 ; = PntX | PntX | PntX | PntX
+                PMULLD          xmm0,xmm3   ; = Steps * PntX | Steps * PntX | Steps * PntX | Steps * PntX
+                PSHUFD          xmm5,xmm5,0 ; = X2 | X2 | X2 | X2
+                PMULLD          xmm3,xmm7 ; * (0|1|2|3) = 0 | PntX | PntX*2 | PntX*3
+                PADDD           xmm3,xmm6 ; += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1)
+                JMP             SHORT .HXCommon
+
+                ; Delta X zero
+.DXZero:
+                MOVD            xmm0,EDI ; = X2
+                PSHUFD          xmm0,xmm0,0 ; = X2 | X2 | X2 | X2
+.LpDXZ:
+                CMP             ECX,BYTE 2
+                JLE             SHORT .LastBytes
+                MOVDQU          [EBX],xmm0
+                SUB             ECX,BYTE 4
+                LEA             EBX,[EBX+16]
+                JS              SHORT .endHLine
+                JMP             SHORT .LpDXZ
 .LastBytes:
                 JE              SHORT .Last3Bytes
                 CMP             ECX,BYTE 1

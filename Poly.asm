@@ -18,295 +18,113 @@
 ;=============================================================================
 
 
-;**CLIP*****************************************************
-;GLOB DebYPoly : MinY_temporaire, MaxY : MaxY_temporaire
-;     DebYPoly = -1 : Poly hors de l'ecran
-;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-; calcule X debut et X fin du contour
+;compute clipped polygone HLines ******************************
 
-; IN : XP1, YP1, XP2, YP2, EAX : XP1, ECX : YP1, EBP : YP2
-; condition XP1<XP2 && YP1<YP2
-%macro  @ClipContourGchX2Sup    0
-        ; Calcule la pente
-        NEG     EAX     ; -[XP1]
-        NEG     ECX     ; -[YP1]
-        ADD     EAX,[XP2]
-        XOR     EDX,EDX
-        ;INC     EAX
-        ADD     ECX,EBP         ; ECX = YP2-YP1
-        SHL     EAX,Prec
-        DIV     ECX         ; Pente dans EAX
-        ; Adjust <YP1>  =>& XP1
-        MOV     EBP,EDI ; = [MinY]
-        MOV     ECX,[YP1]
-        XOR     EDX,EDX     ; EDX = CptDbrd
-        SUB     EBP,ECX      ; [MinY]-[YP1]
-        JLE     SHORT %%PasAjYP1
-        IMUL    EBP,EAX      ; EBP = DeltaY*Pente
-        MOV     [YP1],EDI    ; [YP1] = [MinY]
-        MOV     EDX,EBP
-        AND     EDX,(1 << Prec) - 1
-        SHR     EBP, Prec
-        ADD     EBP,[XP1]
-        CMP     EBP,[MaxX]
-        MOV     [XP1],EBP
-        JL      SHORT %%PasPolyOut
-        MOV     DWORD [DebYPoly],-1
-        JMP     SHORT %%Fin
-%%PasPolyOut:
-%%PasAjYP1: ; Ajustement de <YP2>  =>& XP2
-        MOV     EBP,EBX ; [MaxY]
-        MOV     ECX,[YP2]
-        MOV     EBX,[YP1]
-        CMP     ECX,EBP           ;ECX= [YP2]>[MaxY] ?
-        CMOVG   ECX,EBP
-        MOV     EDI,[XP1]
-        SUB     ECX,EBX   ; ECX= DeltaY
-        XOR     EBP,EBP
-        ADD     EBX,[OrgY]
-%%BcClcCtDr2:
-        ADD     EBP,EDI
-        DEC     ECX
-        MOV     [TPolyAdDeb+EBX*4],EBP
-        JS      SHORT %%Fin
-        XOR     EBP,EBP
-        ADD     EDX,EAX
-        INC     EBX
-        SHLD    EBP,EDX,32-Prec ; EBP = EDX >> Prec
-        JMP     SHORT %%BcClcCtDr2
-%%Fin:
-%endmacro
-; IN : XP1, YP1, XP2, YP2, EAX : XP1, ECX : YP1
-; condition XP1>XP2 && YP1<YP2
-%macro  @ClipContourGchX1Sup    0
-        ; Calcule la pente
-        SUB     EAX,[XP2]    ; [XP1]-[XP2]
-        XOR     EDX,EDX     ; reste = 0
-        NEG     ECX     ; -[YP1]
-        ;INC     EAX
-        ADD     ECX,EBP     ; = YP2-YP1 compteur dans ECX
-        SHL     EAX,Prec
-        DIV     ECX     ; Pente dans EAX
-        ; Ajustement de <YP1>  =>& XP1
-        MOV     EBP,EDI ; = [MinY]
-        MOV     ECX,[YP1]
-        XOR     EDX,EDX
-        SUB     EBP,ECX   ; [MinY]-[YP1]
-        JLE     SHORT %%PasAjYP1
-        IMUL    EBP,EAX
-        MOV     [YP1],EDI ; = [MinY]
-        ADD     EDX,EBP
-        MOV     EBP,EDX
-        AND     EDX,(1 << Prec) - 1  ; calcule reste
-        SHR     EBP,Prec
-        SUB     [XP1],EBP
-%%PasAjYP1:     ; Ajustement de <YP2>  =>& XP2
-        MOV     EBP,EBX ; =[MaxY]
-        MOV     EBX,[YP2]
-        MOV     ECX,EBX
-        SUB     EBX,EBP         ; [YP2]-[MaxY]
-        JLE     SHORT %%PasAjYP2
-        IMUL    EBX,EAX
-        MOV     ECX,EBP
-        SHR     EBX,Prec
-        ADD     EBX,[XP2]
-        CMP     EBX,[MaxX]
-        JL      SHORT %%PasPolyOut
-        MOV     DWORD [DebYPoly],-1
-        JMP     SHORT %%Fin
-%%PasPolyOut:
-%%PasAjYP2:
-; Pente deja dans EAX
-        MOV     EBX,[YP1]
-        MOV     EDI,[XP1]
-        SUB     ECX,EBX
-        XOR     EBP,EBP
-        ADD     EBX,[OrgY]
-%%BcClcCtDr2:
-        ADD     EBP,EDI
-        DEC     ECX
-        MOV     [TPolyAdDeb+EBX*4],EBP
-        JS      SHORT %%Fin
-        XOR     EBP,EBP
-        ADD     EDX,EAX
-        SHLD    EBP,EDX,32-Prec ; EBP = EDX >> Prec
-        INC     EBX
-        NEG     EBP
-        JMP     SHORT %%BcClcCtDr2
-%%Fin:
-%endmacro
+; in EDX = [NbPPoly]-1; mm6 = PPtrListPt
+%macro  @ClipComputeHLines16    0
+                MOVDQA          xmm7,[DGDQ0_1_2_3]
+                MOVDQA          xmm6,[DGDQInitCPTDbrd]
+                MOVD            ESI,mm6 ; [PPtrListPt]
+                MOV             EBX,[ESI] ; Ptr P(1)
+                MOV             EDI,[ESI+EDX*4] ; Ptr P(N-1)
+                MOVQ            xmm1,[EBX] ; X1 | Y1
+                MOVQ            xmm2,[EDI] ; X2 | Y2
+                MOVD            mm3,[OrgY]
+%%ClipLoopHLines:
+                MOVD            mm7,EDX     ; save EDX counter
+                PXOR            mm1,mm1 ; mm1 = Steps, default zero
+                PEXTRD          ECX,xmm1,1   ;  = [Y1]
+                PEXTRD          EBP,xmm2,1   ;  = [Y2]
+                ;XOR             EDX,EDX
+                CMP             ECX,EBP  ; YP2
+                MOVD            EBX,mm3  ; = [OrgY]
+                JE              %%EndHLine ; DY = 0, skip this line
+                MOV             ESI,TPolyAdFin ; default end/right
 
-; IN : XP1, YP1, XP2, YP2, EAX : XP1, ECX : YP1
-; condition XP1<XP2 && YP1>YP2
-%macro  @ClipContourDrtX2Sup    0
-        ; Calcule la pente
-        NEG     EAX     ; -[XP1]
-        SUB     ECX,EBP     ; [YP1]-[YP2]
-        ADD     EAX,[XP2]   ; EAX = XP2-XP1
-        ;INC     EAX
-        XOR     EDX,EDX
-        SHL     EAX,Prec
-        DIV     ECX         ; Pente dans EAX
-        ; Adjust <YP1>  =>& XP1
-        MOV     ECX,[YP1]
-        XOR     EDX,EDX
-        SUB     ECX,EBX  ; [YP1]-[MaxY]
-        JLE     SHORT %%PasAjYP1
-        IMUL    ECX,EAX
-        MOV     [YP1],EBX
-        MOV     EDX,ECX
-        AND     EDX,(1 << Prec) - 1
-        SHR     ECX,Prec
-        ADD     [XP1],ECX
-%%PasAjYP1:     ; Ajustement de <YP2>  =>& XP2
-        MOV     EBP,EDI ; = [MinY]
-        MOV     ECX,[YP2]
-        MOV     EBX,EBP
-        MOV     EDI,[XP2]
-        SUB     EBP,ECX
-        JLE     SHORT %%PasAjYP2
-        IMUL    EBP,EAX
-        MOV     ECX,EBX
-        SHR     EBP,Prec
-        SUB     EDI,EBP
-        CMP     EDI,[MinX]
-        JG      SHORT %%PasPolyOut
-        MOV     DWORD [DebYPoly],-1
-        JMP     SHORT %%Fin
-%%PasPolyOut:
-%%PasAjYP2:
-        ; Pente deja en EAX
-        MOV     EBX,ECX ; ECX = [YP2]
-        XOR     EBP,EBP
-        NEG     ECX
-        ADD     EBX,[OrgY]
-        ADD     ECX,[YP1]
-%%BcClcCtDr2:
-        ADD     EBP,EDI
-        DEC     ECX
-        MOV     [TPolyAdFin+EBX*4],EBP
-        JS      SHORT %%Fin
-        XOR     EBP,EBP
-        ADD     EDX,EAX
-        SHLD    EBP,EDX,32-Prec ; EBP = EDX >> Prec
-        INC     EBX
-        NEG     EBP
-        JMP     SHORT %%BcClcCtDr2
-%%Fin:
-%endmacro
-; IN : XP1, YP1, XP2, YP2, EAX : XP1, ECX : YP1
-; condition XP1>XP2 && YP1>YP2
-%macro  @ClipContourDrtX1Sup    0
-        ; Calcule la pente
-        SUB     EAX,[XP2]       ; [XP1]-[XP2]
-        ;INC     EAX
-        XOR     EDX,EDX
-        SUB     ECX,EBP       ; [YP1]-[YP2]
-        SHL     EAX,Prec
-        DIV     ECX         ; Pente dans EAX
-        ; Ajustement de <YP1>  =>& XP1
-        MOV     ECX,[YP1]
-        XOR     EDX,EDX
-        SUB     ECX,EBX         ;[YP1]-[MaxY]
-        JLE     SHORT %%PasAjYP1
-        IMUL    ECX,EAX
-        MOV     [YP1],EBX ; = [MaxY]
-        SHR     ECX,Prec
-        SUB     [XP1],ECX
-        MOV     ECX,[XP1]
-        CMP     ECX,[MinX]
-        JG      SHORT %%PasPolyOut
-        MOV     DWORD [DebYPoly],-1
-        JMP     SHORT %%Fin
-%%PasPolyOut:
-%%PasAjYP1:     ; Ajdust <YP2>  =>& XP2
-        MOV     EBP,EDI ; [MinY]
-        MOV     ECX,[YP2]
-        MOV     EBX,EBP
-        MOV     EDI,[XP2]
-        SUB     EBP,ECX
-        JLE     SHORT %%PasAjYP2
-        IMUL    EBP,EAX
-        MOV     EDX,EBP
-        MOV     ECX,EBX
-        SHR     EBP,Prec
-        AND     EDX,(1 << Prec) - 1
-        ADD     EDI,EBP
-%%PasAjYP2:
-        ; Pnt in EAX
-        MOV     EBX,ECX ; ECX = [YP2]
-        XOR     EBP,EBP
-        NEG     ECX
-        ADD     EBX,[OrgY]
-        ADD     ECX,[YP1]
-%%BcClcCtDr2:
-        ADD     EBP,EDI
-        DEC     ECX
-        MOV     [TPolyAdFin+EBX*4],EBP
-        JS      SHORT %%Fin
-        XOR     EBP,EBP
-        ADD     EDX,EAX
-        INC     EBX
-        SHLD    EBP,EDX,32-Prec ; EBP = EDX >> Prec
-        JMP     SHORT %%BcClcCtDr2
-%%Fin:
-%endmacro
-;**************************
-;MACRO DE CALCUL DE CONTOUR
-;**************************
+                MOVD            EAX,xmm1 ; = [X1]
+                MOVD            EDI,xmm2 ; = [X2]
+                JG              %%HRightCompute ; if YP1<YP2 then right else left
+%%HLeft:
+                ; swap P1, P2 and change Adress of writing into ESI
+                MOV             ESI,TPolyAdDeb ; revert to start/left
+                XCHG            ECX,EBP
+                XCHG            EAX,EDI
+; ---- End/Right computing clipping --------------
+%%HRightCompute:
+                ; DX Zero case
+                SUB             EAX,EDI ; DX = X1-X2
+                JZ              %%DXZ
+                ; check completely out line
+                CMP             ECX,[MinY]
+                JL              %%EndHLine
+                CMP             EBP,[MaxY]
+                JG              %%EndHLine
+                ; check clipped
+                CMP             ECX,[MaxY]
+                JG              %%Clip
+                CMP             EBP,[MinY]
+                JL              %%Clip
+%%InRight:       ; in line
+                SHL             EAX,Prec
+                SUB             ECX,EBP ; DY = Y1-Y2
+                CDQ
+                IDIV            ECX
+                OR              EAX,EAX
+                JMP             %%HRight
+%%Clip:         ; clipped line
+                MOVD            mm2,ESI ; save dest array
+                MOV             ESI,ECX ; save Y1
+                SHL             EAX,Prec
+                SUB             ECX,EBP ; Y1 - Y2
+                CDQ
+                IDIV            ECX
+                ; clip Y2
+                MOV             EDX,EBP ; save Y2
+                SUB             EBP,[MinY]
+                JGE             %%NoClipY2
+                NEG             EBP
+                MOV             EDX,[MinY] ; new Y2
+                MOVD            mm1,EBP ; steps
+%%NoClipY2:
+                ; clip Y1
+                CMP             ESI,[MaxY]
+                MOV             EBP,EDX  ; new Y2 if any
+                CMOVG           ESI,[MaxY]
+                SUB             ESI,EBP ; new DY
+                MOV             ECX,ESI ; new delta
+                OR              EAX,EAX ; sign of PntX
+                MOVD            ESI,mm2 ; restore dest array
+%%HRight:
+                LEA             EBX,[EBX+EBP] ; EBX = [YP2]+[OrgY] : Index
+                LEA             EBX,[ESI+EBX*4] ; final dest adress
+                CALL            ClipHLineXCompute
+                JMP             %%EndHLine
+%%DXZ:
+                ; clip Y1, Y2 inside [MinY, MaxY]
+                CMP             EBP,[MinY]
+                CMOVL           EBP,[MinY]
+                CMP             ECX,[MaxY]
+                CMOVG           ECX,[MaxY]
 
-;calcule du contour du polygone lorsqu'il a une partie qui est hors de l'ecran
-%macro  @ClipCalculerContour    0
-;ALIGN 4
-%%ClipBcCalCont:
-        MOV     EBP,[YP2]
-        MOV     ECX,[YP1]
-        MOV     EDI,[MinY]
-        MOV     EBX,[MaxY]
-        MOVD    mm2,EDX     ; save EDX counter
-        CMP     ECX,EBP
-        JE      %%DYZero
-        MOV     EAX,[XP1]
-        JG      %%ContDrt; si YP1<YP2 alors drt sinon gch
-        CMP     ECX,EBX  ; [YP1]
-        JG      %%FinContr
-        CMP     EBP,EDI  ; [YP2]
-        JL      %%FinContr
-        CMP     EAX,[XP2]
-        JG      %%CntGchX1Sup
-        @ClipContourGchX2Sup        ; YP1<YP2  &&  XP1<XP2
-        JMP     %%FinContr
-%%CntGchX1Sup:
-        @ClipContourGchX1Sup        ; YP1<YP2  &&  XP1>XP2
-        JMP     %%FinContr
-%%ContDrt:
-        CMP     ECX,EDI
-        JL      %%FinContr
-        CMP     EBP,EBX
-        JG      %%FinContr
-        CMP     EAX,[XP2]
-        JG      %%CntDrtX1Sup
-        @ClipContourDrtX2Sup        ; YP1>YP2  &&  XP1<XP2
-        JMP     %%FinContr
-%%CntDrtX1Sup:
-        @ClipContourDrtX1Sup        ; YP1>YP2  &&  XP1>XP2
-%%DYZero:
-%%FinContr:
-        CMP     DWORD [DebYPoly],-1
-        JE      %%FinCalcContr
-        MOVD    EDX,mm2     ; restaure le compteur EDX
-        DEC     EDX
-        JS      %%FinCalcContr ; EDX < 0
-        ;MOV        ESI,[PPtrListPt]     ; ESI = PtrListPt
-        MOVQ    xmm3,xmm4
-        MOV     EAX,[ESI+EDX*4] ; EAX=PtrPt[EDX]
-        MOVQ    [XP1],xmm3  ; last xp2,yp2 in XP1 YP1
-        MOVQ    xmm4,[EAX] ; XP2 | YP2
-        MOVQ    [XP2],xmm4
-        JMP     %%ClipBcCalCont
-%%FinCalcContr:
-%endmacro
+                LEA             EBX,[EBX+EBP] ; EBX = [YP2]+[OrgY] : Index
+                SUB             ECX,EBP
+                LEA             EBX,[ESI+EBX*4] ; final dest adress
+                XOR             EAX,EAX ; PntX zero and to enable DXZ in HLine computing
+                CALL            ClipHLineXCompute
+%%EndHLine:
+                MOVD            EDX,mm7     ; restore EDX counter
+                MOVD            ESI,mm6     ; ESI = PtrListPt
+                DEC             EDX
+                JS              SHORT %%endClipHLines ; EDX < 0
+                MOV             EAX,[ESI+EDX*4] ; EAX=PtrPt[EDX]
+                MOVDQA          xmm1,xmm2 ; Old X2|Y2 become new X1|Y1
+                MOVQ            xmm2,[EAX] ; new X2|Y2
 
+                JMP             %%ClipLoopHLines
+
+
+%%endClipHLines:
+%endmacro
 ; Compute HLines (U,V) or (XT, YT) ************************************************
 
 %macro  @InComputeUVLines       0
@@ -325,7 +143,7 @@
                 MOVD            mm7,EDX     ; save EDX counter
                 MOVD            ECX,mm1   ;  = [YP1]
                 MOVD            EBP,mm2   ;  = [YP2]
-                XOR             EDX,EDX
+                ;XOR             EDX,EDX
                 CMP             ECX,EBP  ; YP2
                 MOVD            EBX,mm3  ; = [OrgY]
                 JE              %%EndHLine ; DY = 0, skip this line
@@ -349,7 +167,7 @@
                 MOVD            ECX,mm1   ;  = [YP1]
                 MOVD            EBP,mm2   ;  = [YP2]
                 MOVD            EBX,mm3   ;  = [OrgY]
-                XOR             EDX,EDX
+                ;XOR             EDX,EDX
                 CMP             ECX,EBP  ; YP2
                 MOV             ESI,TexYFin ; default end/right
                 PEXTRD          EAX,xmm1,1 ; = [V1]
