@@ -2217,12 +2217,6 @@ ALIGN 4
 %%FinSHLine:
 %endmacro
 
-;%macro  @AjAdDXZ16  0
-;       MOV     EBX,EDX
-;       SAR     EBX,Prec
-;       SUB     EDX,EBP ;-[PntPlusY]
-;       IMUL        EBX,[SScanLine]
-;%endmacro
 ;********************************************************
 
 %macro  @InTextBlndHLineDYZ16 0
@@ -3563,13 +3557,128 @@ ALIGN 4
 %%FinSHLine:
 %endmacro
 
+%macro  @InTextTransHLineDYZ16 0
+        MOV         EAX,EBP
+        IMUL        ESI,[SNegScanLine] ; - 2
+        SHL         EAX,Prec
+        JECXZ       %%PDivPntPX ;JZ     %%PDivPntPX
+        CDQ
+        IDIV        ECX
+        JMP         SHORT %%DivPntPX
+%%PDivPntPX:
+        ADD         ESI,[Svlfb] ; - 5
+        CMP         ECX,ECX
+        PINSRW      xmm0,[ESI+EBX*2],0 ; - 4 + (XT1*2) as 16bpp
+        JMP         %%LastB
+%%DivPntPX:
+        LEA         ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
+        XOR         EDX,EDX      ; Cpt Dbrd Y
+        ADD         ESI,[Svlfb] ; - 5
+        CMP         EAX,EDX
+        MOV         EBP,EAX  ;[PntPlusX]
+        SETL        DL
+        ;INC         ECX
+        MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
+%%BcStBAv:
+        TEST        EDI,6
+        JZ          %%FPasStBAv
+        @AjAdDYZ16
+        PINSRW      xmm3,[EDI],0
+        PINSRW      xmm0,[ESI+EBX*2],0
+        MOVQ        xmm4,xmm3
+        MOVQ        xmm5,xmm3
+        MOVQ        xmm1,xmm0
+        MOVQ        xmm2,xmm0
+        @TransBlndQ
+        PEXTRW      [EDI],xmm0,0
+        DEC         ECX
+        LEA         EDI,[EDI+2]
+        JZ          %%FinSHLine
+
+        JMP         %%BcStBAv
+%%FPasStBAv:
+        TEST        CX,0xFFFC
+        JZ          %%StBAp
+;ALIGN 4
+%%StoMMX:
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 0
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 1
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 2
+        SUB         CX,BYTE 4
+        @AjAdDYZ16
+        TEST        CX,0xFFFC
+        PINSRW      xmm0,[ESI+EBX*2], 3
+        JZ          %%StoLastQ
+
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 4
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 5
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 6
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 7
+
+        MOVDQU      xmm3,[EDI]
+        MOVDQA      xmm1,xmm0
+        MOVDQA      xmm2,xmm0
+        MOVDQA      xmm4,xmm3
+        MOVDQA      xmm5,xmm3
+        @TransBlndQ
+        SUB         CX,BYTE 4
+        MOVDQU      [EDI],xmm0 ; write the 16 bytes
+
+        TEST        CX,0xFFFC
+        LEA         EDI,[EDI+16]
+        JNZ         %%StoMMX
+        JMP         %%StBAp
+%%StoLastQ:
+        MOVQ        xmm3,[EDI]
+        MOVQ        xmm1,xmm0
+        MOVQ        xmm2,xmm0
+        MOVQ        xmm4,xmm3
+        MOVQ        xmm5,xmm3
+        @TransBlndQ
+        MOVQ        [EDI],xmm0 ; write the 8 bytes
+        LEA         EDI,[EDI+8]
+%%StBAp:
+        AND         CL,3
+        JZ          %%FinSHLine
+%%BcStBAp:
+        @AjAdDYZ16
+        DEC         CL
+        PINSRW      xmm3,[EDI],0
+        PINSRW      xmm0,[ESI+EBX*2],0
+%%LastB:
+        MOVQ        xmm4,xmm3
+        MOVQ        xmm5,xmm3
+        MOVQ        xmm1,xmm0
+        MOVQ        xmm2,xmm0
+        @TransBlndQ
+        PEXTRW      [EDI],xmm0,0
+        LEA         EDI,[EDI+2]
+        JNZ         %%BcStBAp
+%%PasStBAp:
+%%FinSHLine:
+%endmacro
+
+
 %macro  @InTransTextHLine16  0
         PSUBD       xmm1,xmm0 ; DXT | DYT
         PEXTRD      ESI,xmm0, 1 ; = [YT1]
         MOVD        EBX,xmm0 ; = [XT1]
         PEXTRD      EAX,xmm1, 1 ; DYT
         MOVD        EBP,xmm1 ; DXT
+        OR          EAX,EAX
+        JZ          %%DYZ
         @InTextTransHLineNorm16
+        JMP         %%endHLine
+%%DYZ:
+        @InTextTransHLineDYZ16
+%%endHLine:
 %endmacro
 
 %macro  @ClipTransTextHLine16  0
@@ -3896,13 +4005,155 @@ ALIGN 4
 %%FinSHLine:
 %endmacro
 
+%macro  @InMaskTransTextHLineDYZ16 0
+        MOV     EAX,EBP
+        IMUL    ESI,[SNegScanLine] ; - 2
+        SHL     EAX,Prec
+        ;OR     ECX,ECX
+        JECXZ   %%PDivPntPX ;JZ     %%PDivPntPX
+        CDQ
+        IDIV    ECX
+        JMP     SHORT %%DivPntPX
+%%PDivPntPX:
+        ADD     ESI,[Svlfb]  ; - 5
+        MOV     CL,1
+        MOV     AX,[ESI+EBX*2]       ; ; - 4 (+XT1*2) as 16bpp
+        JMP     %%LastB
+%%DivPntPX:
+        LEA     ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
+        ADD     ESI,[Svlfb] ; - 5
+        XOR     EBX,EBX      ; Cpt Dbrd Y
+        OR      EAX,EAX         ; SAR
+        MOV     EBP,EAX  ;[PntPlusX]
+        SETL    BL
+        INC     ECX
+        MOV     EDX,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
+%%BcStBAv:
+        TEST    EDI,6
+        JZ      %%FPasStBAv
+        @AjAdDYZ16
+        MOV     AX,[ESI+EBX*2]
+        CMP     AX,[SMask]
+        JZ      %%NoDWAv
+        PINSRW      xmm3,[EDI],0
+        MOVD        xmm0,EAX
+        MOVQ        xmm4,xmm3
+        MOVQ        xmm5,xmm3
+        MOVQ        xmm1,xmm0
+        MOVQ        xmm2,xmm0
+        @TransBlndQ_QMulSrcBlend
+        PEXTRW      [EDI],xmm0,0
+%%NoDWAv:
+        DEC     ECX
+        LEA     EDI,[EDI+2]
+        JZ      %%FinSHLine
+
+        JMP     %%BcStBAv
+%%FPasStBAv:
+        TEST    CX,0xFFFC
+        JZ      %%StBAp
+;ALIGN 4
+%%StoMMX:
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 0
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 1
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 2
+        @AjAdDYZ16
+        SUB         CX, BYTE 4
+        PINSRW      xmm0,[ESI+EBX*2], 3
+        TEST        CX,0xFFFC
+        JZ          %%StoLastQ
+
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 4
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 5
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 6
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2], 7
+
+        MOVDQU      xmm3,[EDI]
+        MOVDQA      xmm1,xmm0
+        MOVDQA      xmm2,xmm0
+        MOVDQA      xmm7,xmm0
+        MOVDQA      xmm4,xmm3
+        MOVDQA      xmm5,xmm3
+        @TransBlndQ_QMulSrcBlend
+        MOVDQA      xmm1,xmm7
+        MOVDQU      xmm4,[EDI]
+
+        PCMPEQW     xmm7,[DQ16Mask]
+        PCMPEQW     xmm1,[DQ16Mask]
+        PANDN       xmm7,xmm0
+        PAND        xmm4,xmm1
+        POR         xmm7,xmm4
+
+        SUB         CX,BYTE 4
+        MOVDQU      [EDI],xmm7 ; write the Masked 16 bytes
+        TEST        CX,0xFFFC
+        LEA         EDI,[EDI+16]
+        JNZ         %%StoMMX
+        JMP         %%StBAp
+%%StoLastQ:
+        MOVQ        xmm3,[EDI]
+        MOVQ        xmm1,xmm0
+        MOVQ        xmm2,xmm0
+        MOVQ        xmm7,xmm0
+        MOVQ        xmm4,xmm3
+        MOVQ        xmm5,xmm3
+        @TransBlndQ_QMulSrcBlend
+        MOVQ        xmm1,xmm7
+        MOVQ        xmm4,[EDI]
+
+        PCMPEQW     xmm7,[DQ16Mask]
+        PCMPEQW     xmm1,[DQ16Mask]
+        PANDN       xmm7,xmm0
+        PAND        xmm4,xmm1
+        POR         xmm7,xmm4
+        MOVQ        [EDI],xmm7 ; write the 8 bytes
+        LEA         EDI,[EDI+8]
+%%StBAp:
+        AND         CL,3
+        JZ          %%FinSHLine
+%%BcStBAp:
+        @AjAdDYZ16
+        MOV         AX,[ESI+EBX*2]
+%%LastB:
+        CMP         AX,[SMask]
+        JZ          %%NoDWAp
+        PINSRW      xmm3,[EDI],0
+        MOVD        xmm0,EAX
+        MOVQ        xmm4,xmm3
+        MOVQ        xmm5,xmm3
+        MOVQ        xmm1,xmm0
+        MOVQ        xmm2,xmm0
+        @TransBlndQ_QMulSrcBlend
+        PEXTRW      [EDI],xmm0,0
+%%NoDWAp:
+        DEC         CL
+        LEA         EDI,[EDI+2]
+        JNZ         %%BcStBAp
+
+%%FinSHLine:
+%endmacro
+
+
 %macro  @InMaskTransTextHLine16  0
         PSUBD       xmm1,xmm0 ; DXT | DYT
         PEXTRD      ESI,xmm0, 1 ; = [YT1]
         MOVD        EBX,xmm0 ; = [XT1]
         PEXTRD      EAX,xmm1, 1 ; DYT
         MOVD        EBP,xmm1 ; DXT
+        OR          EAX,EAX
+        JZ          %%DYZ
         @InMaskTextTransHLineNorm16
+        JMP         %%EndHLine
+%%DYZ:
+        @InMaskTransTextHLineDYZ16
+%%EndHLine:
 %endmacro
 
 %macro  @ClipMaskTransTextHLineNorm16 0
