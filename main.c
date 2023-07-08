@@ -489,7 +489,7 @@ void SetOrgSurf(DgSurf *S,int LOrgX,int LOrgY) {
 int CreateSurf(DgSurf **S, int ResHz, int ResVt, char BitsPixel) {
     int pixelsize = GetPixelSize(BitsPixel);
 
-    if (pixelsize==0 || ResHz<=1 || ResVt<=1) {
+    if (pixelsize==0 || ResHz<MIN_DGSURF_WIDTH || ResVt<MIN_DGSURF_HEIGHT) {
         dgLastErrID = DG_ERSS_INVALID_DGSURF_FORMAT;
         return 0;
     }
@@ -534,7 +534,7 @@ int CreateSurfBuff(DgSurf **S, int ResHz, int ResVt, char BitsPixel, void *Buff)
     SDL_memset4(*S, 0, sizeof(DgSurf)/4);
     int pixelsize=GetPixelSize(BitsPixel);
 
-    if (pixelsize == 0 || ResHz <= 1 || ResVt <= 1 || Buff == NULL) {
+    if (pixelsize == 0 || ResHz<MIN_DGSURF_WIDTH || ResVt<MIN_DGSURF_HEIGHT || Buff == NULL) {
         free(*S);
         *S = NULL;
         dgLastErrID = DG_ERSS_INVALID_DGSURF_FORMAT;
