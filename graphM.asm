@@ -613,9 +613,9 @@ DgSurfCPutPixel16:
             JL          SHORT .Clip
 
             IMUL        EDX,[EAX+DuglSurf.NegScanLine]
-            MOV         ECX,[EBP+SCPPCOL]
+            MOV         BP,[EBP+SCPPCOL]
             ADD         EDX,[EAX+DuglSurf.vlfb]
-            MOV         [EDX+ECX*2],CX
+            MOV         [EDX+ECX*2],BP
 .Clip:
 
     RETURN
