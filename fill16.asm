@@ -970,6 +970,7 @@ ALIGN 4
         XCHG        EDI,ECX
 .PasSwapAd:
         SUB         ECX,EDI
+        INC         ECX
         SHR         ECX,1
         @InTransTextHLine16
         MOVD        EDX,mm6
@@ -1109,7 +1110,7 @@ ALIGN 4
         XCHG        EDI,ECX
 .PasSwapAd:
         SUB         ECX,EDI
-        ;INC         ECX
+        INC         ECX
         SHR         ECX,1
         @InMaskTransTextHLine16
         MOVD        EDX,mm6

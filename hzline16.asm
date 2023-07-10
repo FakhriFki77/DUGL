@@ -3567,7 +3567,8 @@ ALIGN 4
         JMP         SHORT %%DivPntPX
 %%PDivPntPX:
         ADD         ESI,[Svlfb] ; - 5
-        CMP         ECX,ECX
+        MOV         CL,1
+        PINSRW      xmm3,[EDI],0
         PINSRW      xmm0,[ESI+EBX*2],0 ; - 4 + (XT1*2) as 16bpp
         JMP         %%LastB
 %%DivPntPX:
@@ -3577,7 +3578,7 @@ ALIGN 4
         CMP         EAX,EDX
         MOV         EBP,EAX  ;[PntPlusX]
         SETL        DL
-        ;INC         ECX
+        INC         ECX
         MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
 %%BcStBAv:
         TEST        EDI,6
@@ -3649,7 +3650,6 @@ ALIGN 4
         JZ          %%FinSHLine
 %%BcStBAp:
         @AjAdDYZ16
-        DEC         CL
         PINSRW      xmm3,[EDI],0
         PINSRW      xmm0,[ESI+EBX*2],0
 %%LastB:
@@ -3659,6 +3659,7 @@ ALIGN 4
         MOVQ        xmm2,xmm0
         @TransBlndQ
         PEXTRW      [EDI],xmm0,0
+        DEC         CL
         LEA         EDI,[EDI+2]
         JNZ         %%BcStBAp
 %%PasStBAp:
