@@ -668,7 +668,7 @@ InHLineUVCompute:
                 PSHUFD          xmm4,xmm4,0 ; = PntU | PntU | PntU | PntU
                 PMULLD          xmm3,xmm7 ; * (0|1|2|3) = 0 | PntU | PntU*2 | PntU*3
                 PSHUFD          xmm5,xmm5,0 ; = U2 | U2 | U2 | U2
-                PADDD           xmm3,xmm6 ; += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1)
+                PADDD           xmm3,[DGDQInitCPTDbrd] ; += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1)
                 JMP             SHORT .HUCommon
 
                 ; Delta U zero
@@ -701,13 +701,13 @@ InHLineUVCompute:
         RET
 
 
-; X clip contour computing internal function
-; INPUT: EAX=PntX, EDI=X2, ECX=DY (step count), EBX: start Dest addr, mm1: steps to jump
+; X/U/V clip contour computing internal function
+; INPUT: EAX=PntX/PntU/PntV, EDI=X2/U2/V2, ECX=DY (steps count), EBX: start Dest addr, mm1: steps to jump
 ClipHLineXCompute:
                 JE              .DXZero
                 JL              SHORT .X2Greater
 
-                ; X1 Greater
+                ; X1/U1/V1 Greater
                 MOVQ2DQ         xmm0,mm1
                 MOVD            xmm3,EAX
                 MOVD            xmm4,EAX
@@ -748,7 +748,7 @@ ClipHLineXCompute:
                 PMULLD          xmm0,xmm3   ; = Steps * PntX | Steps * PntX | Steps * PntX | Steps * PntX
                 PSHUFD          xmm5,xmm5,0 ; = X2 | X2 | X2 | X2
                 PMULLD          xmm3,xmm7 ; * (0|1|2|3) = 0 | PntX | PntX*2 | PntX*3
-                PADDD           xmm3,xmm6 ; += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1)
+                PADDD           xmm3,[DGDQInitCPTDbrd] ; += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1) | += ((1<<Prec)-1)
                 JMP             SHORT .HXCommon
 
                 ; Delta X zero

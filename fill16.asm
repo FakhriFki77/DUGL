@@ -819,6 +819,8 @@ InFillMASK_TEXT_BLND16:
 ALIGN 32
 ClipFillMASK_TEXT_BLND16:
 
+        @ClipCalcTextCnt
+
         MOV         ESI,[SSSurf] ; sauvegarde la surf Source
         MOV         EDI,SrcSurf
         CopySurfDA  ; copy the source texture surface
@@ -861,7 +863,6 @@ ClipFillMASK_TEXT_BLND16:
         MOVDQA      [QGreen16Blend],xmm4
         MOVDQA      [QRed16Blend],xmm5
 ; end prepare blend
-        @ClipCalcTextCnt
 
         PSHUFLW     xmm7,[SMask],0
         MOV         EBP,[FinYPoly]

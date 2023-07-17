@@ -1264,7 +1264,7 @@ Poly16:
 ;-----------------------------------------
 
 ; poly clipped ? in View ? out View ?
-            ;JMP      .PolyClip
+            ;JMP        .PolyClip
 
             CMP         EAX,[MaxX]
             JG          .PolyClip
@@ -1326,7 +1326,8 @@ Poly16:
             ADD         EDX,EBP
             MOV         [FinYPoly],EBX
             MOV         [DebYPoly],EDX
-            MOV         EDX,EDI ; EDX compteur de point = NbPPoly-1
+            MOV         EDX,EDI ; EDX = NbPPoly-1
+            MOVD        mm5,EDI
             @ClipComputeHLines16
 
             MOV         EAX,[PType]
@@ -1526,6 +1527,7 @@ SECTION .data   ALIGN=32
 
 
 AdrPolyFinDeb     DD  TPolyAdFin, TPolyAdDeb, 0, 0
+AdrPolyTexFinDeb  DD  TexYFin, TexYDeb, 0, 0
 ;* 16bpp poly proc****
 InFillPolyProc16:
     DD  InFillSOLID16, InFillTEXT16, InFillMASK_TEXT16, dummyFill16, dummyFill16 ; InFillFLAT_DEG,InFillDEG

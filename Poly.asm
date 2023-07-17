@@ -23,7 +23,6 @@
 ; in EDX = [NbPPoly]-1; mm6 = PPtrListPt
 %macro  @ClipComputeHLines16    0
                 MOVDQA          xmm7,[DGDQ0_1_2_3]
-                MOVDQA          xmm6,[DGDQInitCPTDbrd]
                 MOVD            ESI,mm6 ; [PPtrListPt]
                 MOV             EBX,[ESI] ; Ptr P(1)
                 MOV             EDI,[ESI+EDX*4] ; Ptr P(N-1)
@@ -109,7 +108,7 @@
                 LEA             EBX,[EBX+EBP] ; EBX = [YP2]+[OrgY] : Index
                 SUB             ECX,EBP
                 LEA             EBX,[ESI+EBX*4] ; final dest adress
-                XOR             EAX,EAX ; PntX zero and to enable DXZ in HLine computing
+                OR              EAX,EAX ; PntX zero and to enable DXZ in HLine computing
                 CALL            ClipHLineXCompute
 %%EndHLine:
                 MOVD            EDX,mm7     ; restore EDX counter
@@ -125,12 +124,11 @@
 
 %%endClipHLines:
 %endmacro
-; Compute HLines (U,V) or (XT, YT) ************************************************
+; In Compute HLines (U,V) or (XT, YT) ************************************************
 
 %macro  @InComputeUVLines       0
                 MOVD            EDX,mm5 ; [NbPPoly]-1
                 MOVDQA          xmm7,[DGDQ0_1_2_3]
-                MOVDQA          xmm6,[DGDQInitCPTDbrd]
                 MOVD            ESI,mm6 ; [PPtrListPt]
                 MOV             EBX,[ESI] ; Ptr P(1)
                 MOV             EDI,[ESI+EDX*4] ; Ptr P(N-1)
@@ -197,197 +195,130 @@
 %%EndInUVHLines:
 %endmacro
 
-;calcule la position debut et fin dans le texture lorsque le poly est Clipper
-%macro  @ClipCalcTextCntMM  0
-        MOVD        ESI,mm6 ; [PPtrListPt]
-        MOV         EDX,[NbPPoly]
-        MOV         EBX,[ESI]
-        DEC         EDX
-        MOVQ        xmm2,[EBX+12] ; XT1 | YT1 ;MOV      EAX,[EBX+12] ; XT1
+; Clip Compute HLines (U,V) or (XT, YT) ************************************************
 
-        MOV         ECX,[ESI+EDX*4]
-
-        MOV         EAX,[EBX+4] ; -
-        MOVQ        xmm4,[ECX+12] ; XT2 | YT2
-        ;MOVQ       [XT1],xmm2
-        MOV         [YP1],EAX ; -
-        MOV         ECX,[ECX+4]
-        MOVQ        xmm7,xmm4 ; xmm7 = XT2 | YT2
-        MOV         [YP2],ECX
-%%BcClTxtCnt:
-        SUB         ECX,[YP1]
-        PSUBD       xmm4,xmm2 ; = XT2 - XT1 | YT2 - YT1
-        MOVD        xmm0,EDX
-        MOVD        xmm1,ESI
-        JZ          NEAR %%PasClCrLn
-        PSLLD       xmm4,Prec
-        JNS         %%PosDYP
-        NEG         ECX  ; DeltaYP <0 => ECX = | DYP |
-%%PosDYP:
-        MOVD        EAX,xmm4
-        MOVQ        xmm5,xmm4
-        CDQ
-        IDIV        ECX
-        MOVD        xmm4,EAX
-
-        PEXTRD      EAX,xmm5,1
-        CDQ
-        IDIV        ECX
-        XOR         EBP,EBP        ; compteur debordement Y
-        PINSRD      xmm4,EAX,1 ; xmm4 = PntPlusX | PntPlusY
-
-        MOV         EAX,[YP1]
-        XOR         EDX,EDX        ; compteur debordement X
-        CMP         EAX,[YP2]
-
-        JG          NEAR %%CntTxtFin
-;**** Deb Aj Deb **********************
-        MOV         ESI,[YP2]
-        CMP         EAX,[MaxY]
-        JG          NEAR %%PasClCrLn
-        CMP         ESI,[MinY]
-        JL          NEAR %%PasClCrLn
-        CMP         EAX,[MinY]
-        JGE         %%PasAjYP1   ; YP1 >= MinY
-        MOV         EDI,[MinY]  ; EDI = MinY
-        MOVD        EDX,xmm4; [PntPlusX]
-        SUB         EDI,EAX      ; EDI = MinY - YP1
-        IMUL        EDX,EDI
-        PEXTRD      EBP,xmm4,1 ; [PntPlusY]
-        IMUL        EBP,EDI
-        MOV         EAX,[MinY]
-%%PasAjYP1:
-        CMP         ESI,[MaxY]  ; YP2 <= MaxY
-        JLE         %%PasAjYP2
-        MOV         ESI,[MaxY]
-%%PasAjYP2:
-;**** Fin Aj Deb **********************
-        ;--- ajuste Cpt Dbrd X et Y pour SAR
-        PEXTRD      ECX,xmm4,1 ;[PntPlusY]
-        XOR         EBX,EBX
-        OR          ECX,ECX
-        SETL        BL
-        MOVD        EDI,xmm4 ; [PntPlusX]
-        ADD         EBP,[PntInitCPTDbrd+EBX*4]
-
-        OR          EDI,EDI
-        SETL        BL
-        MOV         ECX,ESI     ; ECX = YP2
-        ADD         EDX,[PntInitCPTDbrd+EBX*4]
-    ;-----------------------------------
-        MOV         EDI,TexYDeb
-        MOV         EBX,EAX     ; = YP1
-        MOVD        xmm3,EDX
-        MOV         ESI,TexXDeb
-        SUB         ECX,EAX     ; ECX = YP2-YP1
-        PINSRD      xmm3,EBP,1
-        ADD         EBX,[OrgY]
-;ALIGN 4
-%%BcCntTxtDeb:
-        MOVQ        xmm5,xmm3
-        PSRAD       xmm5,Prec
-        PADDD       xmm5,xmm2
-        PADDD       xmm3,xmm4
-        MOVD        [ESI+EBX*4],xmm5
-        PEXTRD      [EDI+EBX*4],xmm5,1
-        DEC         ECX
-        LEA         EBX,[EBX+1]
-        JNS         %%BcCntTxtDeb
-        JMP         %%FinCntTxtFin
-%%FnCntTxtDeb:
-%%CntTxtFin:
-;**** Deb Aj Fin **********************
-        XOR         EDI,EDI
-        MOV         EAX,[YP2]
-        MOV         ESI,[YP1]
-        CMP         EAX,[MaxY]
-        JG          NEAR %%PasClCrLn
-        CMP         ESI,[MinY]
-        JL          NEAR %%PasClCrLn
-        CMP         EAX,[MinY]
-        JGE         %%FPasAjYP2   ; YP2 >= MinY
-        MOV         EDI,EAX  ; EDI = YP2
-        MOVD        EDX,xmm4 ; [PntPlusX]
-        SUB         EDI,[MinY]      ; EDI = YP2 - MinY
-        PEXTRD      EBP,xmm4,1 ; [PntPlusY]
-        IMUL        EDX,EDI
-        MOV         EAX,[MinY]
-        IMUL        EBP,EDI
-%%FPasAjYP2:
-        CMP         ESI,[MaxY]   ; YP1 <= MaxY
-        JLE         %%FPasAjYP1
-        MOV         ESI,[MaxY]
-%%FPasAjYP1:
-;**** Fin Aj Fin **********************
-        ;--- ajuste Cpt Dbrd X et Y pour SAR
-        PEXTRD      ECX,xmm4,1 ; [PntPlusY]
-        XOR         EBX,EBX
-        OR          ECX,ECX
-        SETG        BL
-        MOVD        EDI,xmm4 ;[PntPlusX]
-        ADD         EBP,[PntInitCPTDbrd+EBX*4]
-
-        OR          EDI,EDI
-        SETG        BL
-        MOVQ        xmm2,xmm7 ; mm2 = XT2, YT2
-        ADD         EDX,[PntInitCPTDbrd+EBX*4]
-        MOV         ECX,ESI  ; ECX = YP1
-;-----------------------------------
-        MOV         EBX,EAX  ; = YP2
-        MOV         EDI,TexYFin
-        MOVD        xmm3,EDX
-        MOV         ESI,TexXFin
-        SUB         ECX,EAX  ; ECX = YP1 - YP2
-        PINSRD      xmm3,EBP,1
-        ADD         EBX,[OrgY]
-;ALIGN 4
-%%BcCntTxtFin:
-        MOVQ        xmm5,xmm3
-        PSRAD       xmm5,Prec
-        PADDD       xmm5,xmm2
-        PSUBD       xmm3,xmm4
-        MOVD        [ESI+EBX*4],xmm5
-        PEXTRD      [EDI+EBX*4],xmm5,1
-        DEC         ECX
-        LEA         EBX,[EBX+1]
-        JNS         %%BcCntTxtFin
-%%FinCntTxtFin:
-%%PasClCrLn:
-        MOVD        EDX,xmm0
-        MOVD        ESI,xmm1
-        DEC         EDX
-        JS          %%FinClTxtCnt
-
-        MOV         EBX,[ESI+EDX*4] ; EBX=PtrPt[EDX]
-        MOVQ        xmm2,xmm7 ; old XT2 | YT2 will be the new XT1 | YT1
-        MOV         EAX,[YP2]
-        MOVQ        xmm4,[EBX+12] ; new XT2 | YT2
-        MOV         [YP1],EAX
-        MOV         ECX,[EBX+4]   ; YP
-        MOVQ        xmm7,xmm4
-        MOV         [YP2],ECX
-
-        JMP     %%BcClTxtCnt
-
-%%FinClTxtCnt:
+; in EDX = [NbPPoly]-1; mm6 = PPtrListPt
+%macro  @ClipComputeUVHLines16    0
+                MOVD            EDX,mm5
+                MOVD            ESI,mm6 ; [PPtrListPt]
+                MOVDQA          xmm7,[DGDQ0_1_2_3]
+                MOV             EBX,[ESI] ; Ptr P(1)
+                MOV             EDI,[ESI+EDX*4] ; Ptr P(N-1)
+                MOVQ            xmm1,[EBX+12] ; XT1 | YT1
+                MOVQ            xmm2,[EDI+12] ; XT2 | YT2
+                PINSRD          xmm1,[EBX+4],2 ;  Y1
+                PINSRD          xmm2,[EDI+4],2 ;  Y2
+                MOVD            mm3,[OrgY]
+%%ClipLoopHLines:
+                MOVD            mm7,EDX     ; save EDX counter
+                PXOR            mm1,mm1 ; mm1 = Steps, default zero
+                PEXTRD          ECX,xmm1,2   ;  = [Y1]
+                PEXTRD          EBP,xmm2,2   ;  = [Y2]
+                ;XOR             EDX,EDX
+                CMP             ECX,EBP  ; YP2
+                MOVD            EBX,mm3  ; = [OrgY]
+                JE              %%EndHLine ; DY = 0, skip this line
+                MOV             ESI,TexXFin ; default end/right
+                MOVDQA          xmm6,xmm2  ; = XT2 | YT2
+                PEXTRD          EDX,xmm1,1 ; = [YT1]
+                MOVD            EAX,xmm1 ; = [XT1]
+                PINSRD          xmm6,EDX,0 ; = YT1 | YT2
+                MOVD            EDI,xmm2 ; = [XT2]
+                PUNPCKLQDQ      xmm6,[AdrPolyTexFinDeb] ; YT1 | YT2 | TexYFin | TexYDeb
+                JG              %%HRightCompute ; if YP1<YP2 then right else left
+%%HLeft:
+                ; swap XT1|XT2 and change Adress of writing into ESI, and swap YT1|YT2 and start adress into xmm6
+                MOV             ESI,TexXDeb ; revert to start/left
+                XCHG            ECX,EBP
+                XCHG            EAX,EDI
+                PSHUFD          xmm6,xmm6, (2<<6) | (3<<4) | (0<<2) | (1) ; = YT2 | YT1 | TexYDeb | TexYFin
+; ---- End/Right computing clipping --------------
+%%HRightCompute:
+                SUB             EAX,EDI ; DX = XT1-XT2
+                ; check completely out line
+                CMP             ECX,[MinY]
+                JL              %%EndHLine
+                CMP             EBP,[MaxY]
+                JG              %%EndHLine
+                ; check clipped
+                CMP             ECX,[MaxY]
+                JG              %%Clip
+                CMP             EBP,[MinY]
+                JL              %%Clip
+%%InRight:       ; in line --------------------
+                SHL             EAX,Prec
+                SUB             ECX,EBP ; DY = Y1-Y2
+                CDQ
+                IDIV            ECX
+                MOVD            mm0,ECX
+                OR              EAX,EAX
+                JMP             %%HRight
+%%Clip:         ; clipped line ----------------
+                MOVD            mm2,ESI ; save dest array
+                MOV             ESI,ECX ; save Y1
+                SHL             EAX,Prec
+                SUB             ECX,EBP ; Y1 - Y2
+                CDQ
+                IDIV            ECX
+                MOVD            mm0,ECX
+                ; clip Y2
+                MOV             EDX,EBP ; save Y2
+                SUB             EBP,[MinY]
+                JGE             %%NoClipY2
+                NEG             EBP
+                MOV             EDX,[MinY] ; new Y2
+                MOVD            mm1,EBP ; steps
+%%NoClipY2:
+                ; clip Y1
+                CMP             ESI,[MaxY]
+                MOV             EBP,EDX  ; new Y2 if any
+                CMOVG           ESI,[MaxY]
+                SUB             ESI,EBP ; new DY
+                MOV             ECX,ESI ; new delta
+                OR              EAX,EAX ; sign of PntX
+                MOVD            ESI,mm2 ; restore dest array
+%%HRight:
+                ; do U or XT hline ---------------------------
+                MOVD            mm2,ECX ; save delta Y
+                ADD             EBP,EBX ; EBP = [YP2]+[OrgY] : Index
+                OR              EAX,EAX
+                LEA             EBX,[ESI+EBP*4] ; final dest adress
+                CALL            ClipHLineXCompute
+                ; do V or YT hline ---------------------------
+                MOVD            EAX,xmm6 ; = YT1
+                PEXTRD          EDI,xmm6,1 ; = YT2
+                PEXTRD          ESI,xmm6,2 ; = startAddress
+                ; compute PntV
+                SUB             EAX,EDI
+                LEA             EBX,[ESI+EBP*4] ; final dest adress
+                JZ              SHORT %%DYTZ
+                MOVD            ECX,mm0
+                SHL             EAX,Prec
+                CDQ
+                IDIV            ECX
+                OR              EAX,EAX
+%%DYTZ:
+                MOVD            ECX,mm2 ; restore DeltaY
+                CALL            ClipHLineXCompute
+%%EndHLine:
+                MOVD            EDX,mm7     ; restore EDX counter
+                MOVD            ESI,mm6     ; ESI = PtrListPt
+                DEC             EDX
+                JS              SHORT %%endClipHLines ; EDX < 0
+                MOV             EAX,[ESI+EDX*4] ; EAX=PtrPt[EDX]
+                MOVDQA          xmm1,xmm2 ; Old XT2|YT2|Y2 become new XT1|YT1|Y1
+                MOVQ            xmm2,[EAX+12] ; new XT2|YT2
+                PINSRD          xmm2,[EAX+4],2 ;  new Y2
+                JMP             %%ClipLoopHLines
+%%endClipHLines:
 %endmacro
 
-%macro @InCalcTextCnt   0
-        ;CALL       InCalcTextCntPRC
-        @InCalcTextCntMM
-%endmacro
-
-;ALIGN 32
-;InCalcTextCntPRC:
-;       @InCalcTextCntMM
-;       RET
 
 %macro @ClipCalcTextCnt 0
         CALL        ClipCalcTextCntPRC
 %endmacro
 
-ALIGN 32
 ClipCalcTextCntPRC:
-        @ClipCalcTextCntMM
+        @ClipComputeUVHLines16
         RET
 

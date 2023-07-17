@@ -155,17 +155,7 @@ ALIGN 4
         SETS        BL
         ADD         ESI,[Svlfb]    ; - 5
         MOV         EBP,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdNormB16
-        MOV         AX,[EBX+ESI]
-        DEC         ECX
-        STOSW
-        JZ          %%FinSHLine
 
-        JMP         SHORT %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
@@ -257,17 +247,7 @@ ALIGN 4
         SETG        DL
         MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
         INC         ECX
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdDXZ16
-        MOV         AX,[ESI+EBX]
-        DEC         ECX
-        STOSW
-        JZ          %%FinSHLine
 
-        JMP         SHORT %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
@@ -294,13 +274,13 @@ ALIGN 4
         PINSRW      xmm0,[ESI+EBX], 7
 
         SUB         CX,BYTE 4
-        MOVDQU      [EDI],xmm0 ; write the 8 bytes
+        MOVDQU      [EDI],xmm0 ; write the 8 pixels
         TEST        CX,0xFFFC
         LEA         EDI,[EDI+16]
         JNZ         %%StoMMX
         JMP         SHORT %%StBAp
 %%StoLastQ:
-        MOVQ        [EDI],xmm0 ; write the 8 bytes
+        MOVQ        [EDI],xmm0 ; write the 4 pixels
         LEA         EDI,[EDI+8]
 %%StBAp:
         AND         CL,3
@@ -346,17 +326,7 @@ ALIGN 4
         SETL        DL
         MOV         EBP,EAX  ;[PntPlusX]
         MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdDYZ16
-        MOV         AX,[ESI+EBX*2]
-        DEC         ECX
-        STOSW
-        JZ          %%FinSHLine
 
-        JMP         SHORT %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
@@ -497,17 +467,7 @@ ALIGN 4
         CMP         DWORD [PntPlusX], BYTE 0
         SETS        AL
         ADD         EDX,[PntInitCPTDbrd+EAX*4]
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdNormB16
-        MOV         AX,[ESI+EBX]
-        DEC         ECX
-        STOSW
-        JZ          %%FinSHLine
 
-        JMP         SHORT %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
@@ -579,17 +539,7 @@ ALIGN 4
         JLE         SHORT %%PosPntPlusY
         LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusY:
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdDXZ16
-        MOV         AX,[ESI+EBX]
-        DEC         ECX
-        STOSW
-        JZ          %%FinSHLine
 
-        JMP         SHORT %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
@@ -626,7 +576,8 @@ ALIGN 4
 %%StBAp:
         AND         CL,3
         JZ          %%FinSHLine
-%%BcStBAp:  @AjAdDXZ16
+%%BcStBAp:
+        @AjAdDXZ16
         MOV         AX,[ESI+EBX]
         DEC         CL
         STOSW
@@ -662,17 +613,7 @@ ALIGN 4
         JGE         SHORT %%PosPntPlusX
         LEA         EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusX:
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdDYZ16
-        MOV         AX,[ESI+EBX*2]
-        DEC         ECX
-        STOSW
-        JZ          %%FinSHLine
 
-        JMP         SHORT %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
@@ -787,21 +728,6 @@ ALIGN 4
         INC         ECX
         MOV         EBP,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
 
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdNormB16
-        MOV         AX,[EBX+ESI]
-        CMP         AX,[SMask]
-        JZ          SHORT %%NoPutBAv
-        MOV         [EDI],AX
-%%NoPutBAv:
-        DEC         ECX
-        LEA         EDI,[EDI+2]
-        JZ          %%FinSHLine
-
-        JMP         SHORT %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
@@ -896,21 +822,7 @@ ALIGN 4
         SETG        DL
         INC         ECX
         MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdDXZ16
-        MOV         AX,[ESI+EBX]
-        CMP         AX,[SMask]
-        JZ          SHORT %%NoPutBAv
-        MOV         [EDI],AX
-%%NoPutBAv:
-        DEC         ECX
-        LEA         EDI,[EDI+2]
-        JZ          %%FinSHLine
 
-        JMP         SHORT %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
@@ -1007,21 +919,7 @@ ALIGN 4
         SETL        DL
         INC         ECX
         MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdDYZ16
-        MOV         AX,[ESI+EBX*2]
-        CMP         AX,[SMask]
-        JZ          SHORT %%NoPutBAv
-        MOV         [EDI],AX
-%%NoPutBAv:
-        DEC         ECX
-        LEA         EDI,[EDI+2]
-        JZ          %%FinSHLine
 
-        JMP         SHORT %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
@@ -1945,7 +1843,7 @@ ALIGN 4
         ADD         ESI,[Svlfb]    ; - 5
         MOV         CL,1
         PINSRW      xmm0,[ESI+EBX*2],0
-        JMP         %%LastB
+        JMP         %%DoLast3W
 %%DivPntPXPY:
         ;--- ajuste Cpt Dbrd X et Y pour SAR
         ADD         ESI,[Svlfb]    ; - 5
@@ -1959,19 +1857,6 @@ ALIGN 4
         INC         ECX
         MOV         EBP,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
 
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdNormB16
-        DEC         ECX
-        PINSRW      xmm0,[EBX+ESI],0
-        @InSolidTextBlndW
-        PEXTRW      [EDI],xmm2,0
-        LEA         EDI,[EDI+2]
-        JZ          %%FinSHLine
-
-        JMP         %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
@@ -2011,16 +1896,41 @@ ALIGN 4
 %%StBAp:
         AND         CL,3
         JZ          %%FinSHLine
-%%BcStBAp:
+        CMP         CL,2
+        JG          %%DoLastPre3W
+        JL          %%DoLastPre1W
+%%DoLastPre2W:
         @AjAdNormB16
-        PINSRW      xmm0,[EBX+ESI],0
-%%LastB:
-        @InSolidTextBlndW
-        DEC         CL
-        PEXTRW      [EDI],xmm2,0
-        LEA         EDI,[EDI+2]
-        JNZ         %%BcStBAp
-%%PasStBAp:
+        PINSRW      xmm0,[ESI+EBX],0
+        @AjAdNormB16
+        PINSRW      xmm0,[ESI+EBX],1
+        JMP         %%DoLast3W
+%%DoLastPre1W:
+        @AjAdNormB16
+        PINSRW      xmm0,[ESI+EBX],0
+        JMP         %%DoLast3W
+%%DoLastPre3W:
+        @AjAdNormB16
+        PINSRW      xmm0,[ESI+EBX],0
+        @AjAdNormB16
+        PINSRW      xmm0,[ESI+EBX],1
+        @AjAdNormB16
+        PINSRW      xmm0,[ESI+EBX],2
+%%DoLast3W:
+        CMP         CL,2
+        @InSolidTextBlndQ
+        JG          SHORT %%DoLastPost3W
+        JL          SHORT %%DoLastPost1W
+%%DoLastPost2W:
+        MOVD        [EDI],xmm0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost1W:
+        PEXTRW      [EDI],xmm0,0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost3W:
+        MOVD        [EDI],xmm0
+        PEXTRW      [EDI+4],xmm0,2
+
 %%FinSHLine:
 %endmacro
 
@@ -2140,9 +2050,10 @@ ALIGN 4
         JMP         SHORT %%DivPntPX
 %%PDivPntPX:
         ADD         ESI,[Svlfb]  ; - 5
-        CMP         ECX,ECX
+        MOV         CL,1
         PINSRW      xmm0,[ESI+EBX*2],0
-        JMP         %%LastB
+        JMP         %%FinSHLine
+        JMP         %%DoLast3W
 %%DivPntPX:
         LEA         ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
         XOR         EDX,EDX      ; Cpt Dbrd Y
@@ -2152,19 +2063,7 @@ ALIGN 4
         SETG        DL
         INC         ECX
         MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdDXZ16
-        DEC         ECX
-        PINSRW      xmm0,[ESI+EBX],0
-        @InSolidTextBlndW
-        PEXTRW      [EDI],xmm2,0
-        LEA         EDI,[EDI+2]
-        JZ          %%FinSHLine
 
-        JMP         %%BcStBAv
-%%FPasStBAv:
         TEST            CX,0xFFFC
         JZ              %%StBAp
 ;ALIGN 4
@@ -2202,18 +2101,43 @@ ALIGN 4
         MOVQ        [EDI],xmm0 ; write the 8 bytes
         LEA         EDI,[EDI+8]
 %%StBAp:
-        AND           CL,3
+        AND         CL,3
         JZ          %%FinSHLine
-%%BcStBAp:
+        CMP         CL,2
+        JG          %%DoLastPre3W
+        JL          %%DoLastPre1W
+%%DoLastPre2W:
         @AjAdDXZ16
-        DEC         CL
         PINSRW      xmm0,[ESI+EBX],0
-%%LastB:
-        @InSolidTextBlndW
-        PEXTRW      [EDI],xmm2,0
-        LEA         EDI,[EDI+2]
-        JNZ         %%BcStBAp
-%%PasStBAp:
+        @AjAdDXZ16
+        PINSRW      xmm0,[ESI+EBX],1
+        JMP         %%DoLast3W
+%%DoLastPre1W:
+        @AjAdDXZ16
+        PINSRW      xmm0,[ESI+EBX],0
+        JMP         %%DoLast3W
+%%DoLastPre3W:
+        @AjAdDXZ16
+        PINSRW      xmm0,[ESI+EBX],0
+        @AjAdDXZ16
+        PINSRW      xmm0,[ESI+EBX],1
+        @AjAdDXZ16
+        PINSRW      xmm0,[ESI+EBX],2
+%%DoLast3W:
+        CMP         CL,2
+        @InSolidTextBlndQ
+        JG          SHORT %%DoLastPost3W
+        JL          SHORT %%DoLastPost1W
+%%DoLastPost2W:
+        MOVD        [EDI],xmm0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost1W:
+        PEXTRW      [EDI],xmm0,0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost3W:
+        MOVD        [EDI],xmm0
+        PEXTRW      [EDI+4],xmm0,2
+
 %%FinSHLine:
 %endmacro
 
@@ -2229,9 +2153,9 @@ ALIGN 4
         JMP         SHORT %%DivPntPX
 %%PDivPntPX:
         ADD         ESI,[Svlfb] ; - 5
-        CMP         ECX,ECX
+        MOV         CL,1
         PINSRW      xmm0,[ESI+EBX*2],0 ; - 4 + (XT1*2) as 16bpp
-        JMP         %%LastB
+        JMP         %%DoLast3W
 %%DivPntPX:
         LEA         ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
         XOR         EDX,EDX      ; Cpt Dbrd Y
@@ -2241,19 +2165,7 @@ ALIGN 4
         SETL        DL
         INC         ECX
         MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdDYZ16
-        DEC         ECX
-        PINSRW      xmm0,[ESI+EBX*2],0
-        @InSolidTextBlndW
-        PEXTRW      [EDI],xmm2,0
-        LEA         EDI,[EDI+2]
-        JZ          %%FinSHLine
 
-        JMP         %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
@@ -2293,17 +2205,40 @@ ALIGN 4
 %%StBAp:
         AND         CL,3
         JZ          %%FinSHLine
-%%BcStBAp:
+        CMP         CL,2
+        JG          %%DoLastPre3W
+        JL          %%DoLastPre1W
+%%DoLastPre2W:
         @AjAdDYZ16
-        DEC         CL
-        ;MOV            AX,[ESI+EBX*2]
         PINSRW      xmm0,[ESI+EBX*2],0
-%%LastB:
-        @InSolidTextBlndW
-        PEXTRW      [EDI],xmm2,0
-        LEA         EDI,[EDI+2]
-        JNZ         %%BcStBAp
-%%PasStBAp:
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2],1
+        JMP         %%DoLast3W
+%%DoLastPre1W:
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2],0
+        JMP         %%DoLast3W
+%%DoLastPre3W:
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2],0
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2],1
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2],2
+%%DoLast3W:
+        CMP         CL,2
+        @InSolidTextBlndQ
+        JG          SHORT %%DoLastPost3W
+        JL          SHORT %%DoLastPost1W
+%%DoLastPost2W:
+        MOVD        [EDI],xmm0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost1W:
+        PEXTRW      [EDI],xmm0,0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost3W:
+        MOVD        [EDI],xmm0
+        PEXTRW      [EDI+4],xmm0,2
 %%FinSHLine:
 %endmacro
 
@@ -2373,19 +2308,7 @@ ALIGN 4
         CMP     DWORD [PntPlusX], BYTE 0
         SETS    AL
         ADD     EDX,[PntInitCPTDbrd+EAX*4]
-%%BcStBAv:
-        TEST    EDI,6
-        JZ      %%FPasStBAv
-        @AjAdNormB16
-        DEC     ECX
-        PINSRW  xmm0,[ESI+EBX],0
-        @SolidTextBlndW_xmm0
-        PEXTRW  [EDI],xmm2,0
-        LEA     EDI,[EDI+2]
-        JZ      %%FinSHLine
 
-        JMP     %%BcStBAv
-%%FPasStBAv:
         TEST    CX,0xFFFC
         JZ      %%StBAp
 ;ALIGN 4
@@ -2424,15 +2347,41 @@ ALIGN 4
 %%StBAp:
         AND         CL,3
         JZ          %%FinSHLine
-%%BcStBAp:
+        CMP         CL,2
+        JG          %%DoLastPre3W
+        JL          %%DoLastPre1W
+%%DoLastPre2W:
         @AjAdNormB16
-        DEC         CL
         PINSRW      xmm0,[ESI+EBX],0
-        @SolidTextBlndW_xmm0
-        PEXTRW  [EDI],xmm2,0
-        LEA     EDI,[EDI+2]
-        JNZ     %%BcStBAp
-%%PasStBAp:
+        @AjAdNormB16
+        PINSRW      xmm0,[ESI+EBX],1
+        JMP         %%DoLast3W
+%%DoLastPre1W:
+        @AjAdNormB16
+        PINSRW      xmm0,[ESI+EBX],0
+        JMP         %%DoLast3W
+%%DoLastPre3W:
+        @AjAdNormB16
+        PINSRW      xmm0,[ESI+EBX],0
+        @AjAdNormB16
+        PINSRW      xmm0,[ESI+EBX],1
+        @AjAdNormB16
+        PINSRW      xmm0,[ESI+EBX],2
+%%DoLast3W:
+        CMP         CL,2
+        @SolidTextBlndQ
+        JG          SHORT %%DoLastPost3W
+        JL          SHORT %%DoLastPost1W
+%%DoLastPost2W:
+        MOVD        [EDI],xmm0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost1W:
+        PEXTRW      [EDI],xmm0,0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost3W:
+        MOVD        [EDI],xmm0
+        PEXTRW      [EDI+4],xmm0,2
+
 %%FinSHLine:
 %endmacro
 
@@ -2460,19 +2409,7 @@ ALIGN 4
         JLE     SHORT %%PosPntPlusY
         LEA     EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusY:
-%%BcStBAv:
-        TEST        EDI,6
-        JZ      %%FPasStBAv
-        @AjAdDXZ16
-        DEC     ECX
-        PINSRW  xmm0,[ESI+EBX],0
-        @SolidTextBlndW_xmm0
-        PEXTRW  [EDI],xmm2,0
-        LEA     EDI,[EDI+2]
-        JZ      %%FinSHLine
 
-        JMP     %%BcStBAv
-%%FPasStBAv:
         TEST    CX,0xFFFC
         JZ      %%StBAp
 ;ALIGN 4
@@ -2513,15 +2450,41 @@ ALIGN 4
 %%StBAp:
         AND         CL,3
         JZ          %%FinSHLine
-%%BcStBAp:
+        CMP         CL,2
+        JG          %%DoLastPre3W
+        JL          %%DoLastPre1W
+%%DoLastPre2W:
         @AjAdDXZ16
-        DEC     CL
-        PINSRW  xmm0,[ESI+EBX],0
-        @SolidTextBlndW_xmm0
-        PEXTRW  [EDI],xmm2,0
-        LEA     EDI,[EDI+2]
-        JNZ     %%BcStBAp
-%%PasStBAp:
+        PINSRW      xmm0,[ESI+EBX],0
+        @AjAdDXZ16
+        PINSRW      xmm0,[ESI+EBX],1
+        JMP         %%DoLast3W
+%%DoLastPre1W:
+        @AjAdDXZ16
+        PINSRW      xmm0,[ESI+EBX],0
+        JMP         %%DoLast3W
+%%DoLastPre3W:
+        @AjAdDXZ16
+        PINSRW      xmm0,[ESI+EBX],0
+        @AjAdDXZ16
+        PINSRW      xmm0,[ESI+EBX],1
+        @AjAdDXZ16
+        PINSRW      xmm0,[ESI+EBX],2
+%%DoLast3W:
+        CMP         CL,2
+        @SolidTextBlndQ
+        JG          SHORT %%DoLastPost3W
+        JL          SHORT %%DoLastPost1W
+%%DoLastPost2W:
+        MOVD        [EDI],xmm0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost1W:
+        PEXTRW      [EDI],xmm0,0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost3W:
+        MOVD        [EDI],xmm0
+        PEXTRW      [EDI+4],xmm0,2
+
 %%FinSHLine:
 %endmacro
 
@@ -2551,19 +2514,7 @@ ALIGN 4
         JGE     SHORT %%PosPntPlusX
         LEA     EDX,[EDX+((1<<Prec)-1)] ; EDX += 2**N-1
 %%PosPntPlusX:
-%%BcStBAv:
-        TEST    EDI,6
-        JZ      %%FPasStBAv
-        @AjAdDYZ16
-        DEC     ECX
-        PINSRW  xmm0,[ESI+EBX*2],0
-        @SolidTextBlndW_xmm0
-        PEXTRW  [EDI],xmm2,0
-        LEA     EDI,[EDI+2]
-        JZ      %%FinSHLine
 
-        JMP     %%BcStBAv
-%%FPasStBAv:
         TEST    CX,0xFFFC
         JZ      %%StBAp
 ;ALIGN 4
@@ -2602,15 +2553,41 @@ ALIGN 4
 %%StBAp:
         AND         CL,3
         JZ          %%FinSHLine
-%%BcStBAp:
+        CMP         CL,2
+        JG          %%DoLastPre3W
+        JL          %%DoLastPre1W
+%%DoLastPre2W:
         @AjAdDYZ16
-        DEC         CL
         PINSRW      xmm0,[ESI+EBX*2],0
-        @SolidTextBlndW_xmm0
-        PEXTRW      [EDI],xmm2,0
-        LEA         EDI,[EDI+2]
-        JNZ     %%BcStBAp
-%%PasStBAp:
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2],1
+        JMP         %%DoLast3W
+%%DoLastPre1W:
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2],0
+        JMP         %%DoLast3W
+%%DoLastPre3W:
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2],0
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2],1
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2],2
+%%DoLast3W:
+        CMP         CL,2
+        @SolidTextBlndQ
+        JG          SHORT %%DoLastPost3W
+        JL          SHORT %%DoLastPost1W
+%%DoLastPost2W:
+        MOVD        [EDI],xmm0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost1W:
+        PEXTRW      [EDI],xmm0,0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost3W:
+        MOVD        [EDI],xmm0
+        PEXTRW      [EDI+4],xmm0,2
+
 %%FinSHLine:
 %endmacro
 
@@ -2680,22 +2657,6 @@ ALIGN 4
         INC             ECX
         MOV             EBP,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
 
-%%BcStBAv:
-        TEST            EDI,6
-        JZ              %%FPasStBAv
-        @AjAdNormB16
-        MOV             AX,[EBX+ESI]
-        CMP             AX,[SMask]
-        JZ              %%NoDWAv
-        @SolidTextBlndW
-        PEXTRW          [EDI],xmm2,0
-%%NoDWAv:
-        DEC             ECX
-        LEA             EDI,[EDI+2]
-        JZ              %%FinSHLine
-
-        JMP             %%BcStBAv
-%%FPasStBAv:
         TEST            CX,0xFFFC
         JZ              %%StBAp
 ;ALIGN 4
@@ -2796,22 +2757,7 @@ ALIGN 4
         SETG            BL
         INC             ECX
         MOV             EDX,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
-%%BcStBAv:
-        TEST            CL,3
-        JZ              %%FPasStBAv
-        @AjAdDXZ16
-        MOV             AX,[ESI+EBX]
-        CMP             AX,[SMask]
-        JZ              %%NoDW
-        @SolidTextBlndW
-        PEXTRW          [EDI],xmm2,0
-%%NoDW:
-        DEC             ECX
-        LEA             EDI,[EDI+2]
-        JZ              %%FinSHLine
 
-        JMP             %%BcStBAv
-%%FPasStBAv:
         TEST            CX,0xFFFC
         JZ              %%StBAp
 ;ALIGN 4
@@ -2919,22 +2865,7 @@ ALIGN 4
         SETL    BL
         INC     ECX
         MOV     EDX,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
-%%BcStBAv:
-        TEST    EDI,6
-        JZ      %%FPasStBAv
-        @AjAdDYZ16
-        MOV     AX,[ESI+EBX*2]
-        CMP     AX,[SMask]
-        JZ      %%NoDWAv
-        @SolidTextBlndW
-        PEXTRW  [EDI],xmm2,0
-%%NoDWAv:
-        DEC     ECX
-        LEA     EDI,[EDI+2]
-        JZ      %%FinSHLine
 
-        JMP     %%BcStBAv
-%%FPasStBAv:
         TEST    CX,0xFFFC
         JZ      %%StBAp
 ;ALIGN 4
@@ -3429,10 +3360,10 @@ ALIGN 4
         JMP         SHORT %%DivPntPXPY
 %%PDivPntPXPY:
         ADD         ESI,[Svlfb]
-        CMP         CL,CL ; set FLAG ZERO
+        MOV         CL,1 ; set FLAG ZERO
         PINSRW      xmm3,[EDI],0
         PINSRW      xmm0,[ESI+EBX*2],0
-        JMP         %%LastB
+        JMP         %%DoLast3W
 %%DivPntPXPY:
         ;--- ajuste Cpt Dbrd X et Y pour SAR
         XOR         EBX,EBX
@@ -3446,50 +3377,9 @@ ALIGN 4
         SETL        BL
         ADD         ESI,[Svlfb]    ; - 5
         MOV         EBP,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdNormB16
-        PINSRW      xmm3,[EDI],0
-        PINSRW      xmm0,[ESI+EBX],0
-        MOVQ        xmm4,xmm3
-        MOVQ        xmm5,xmm3
-        MOVQ        xmm1,xmm0
-        MOVQ        xmm2,xmm0
-        @TransBlndQ
-        DEC         ECX
-        PEXTRW      [EDI],xmm0,0
-        LEA         EDI,[EDI+2]
-        JZ          %%FinSHLine
 
-        JMP         %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
-
-        TEST        EDI, 8
-        JZ          %%PasStQAv
-        @AjAdNormQ16
-        PINSRW      xmm0,[ESI+EBX], 0
-        @AjAdNormQ16
-        PINSRW      xmm0,[ESI+EBX], 1
-        @AjAdNormQ16
-        PINSRW      xmm0,[ESI+EBX], 2
-        SUB         CX,BYTE 4
-        @AjAdNormQ16
-        TEST        CX,0xFFFC
-        PINSRW      xmm0,[ESI+EBX], 3
-        JZ          %%StoLastQ
-
-        MOVQ        xmm3,[EDI]
-        MOVQ        xmm1,xmm0
-        MOVQ        xmm2,xmm0
-        MOVQ        xmm4,xmm3
-        MOVQ        xmm5,xmm3
-        @TransBlndQ
-        MOVQ        [EDI],xmm0 ; write the 8 bytes
-        LEA         EDI,[EDI+8]
-%%PasStQAv:
 
 ;ALIGN 4
 %%StoMMX:
@@ -3514,14 +3404,14 @@ ALIGN 4
         @AjAdNormQ16
         PINSRW      xmm0,[ESI+EBX], 7
 
-        MOVDQA      xmm3,[EDI]
+        MOVDQU      xmm3,[EDI]
         MOVDQA      xmm1,xmm0
         MOVDQA      xmm2,xmm0
         MOVDQA      xmm4,xmm3
         MOVDQA      xmm5,xmm3
         @TransBlndQ
         SUB         CX,BYTE 4
-        MOVDQA      [EDI],xmm0 ; write the 16 bytes
+        MOVDQU      [EDI],xmm0 ; write the 16 bytes
 
         TEST        CX,0xFFFC
         LEA         EDI,[EDI+16]
@@ -3539,21 +3429,51 @@ ALIGN 4
 %%StBAp:
         AND         CL,3
         JZ          %%FinSHLine
-%%BcStBAp:
+
+        CMP         CL,2
+        JG          %%DoLastPre3W
+        JL          %%DoLastPre1W
+%%DoLastPre2W:
+        @AjAdNormB16
+        MOVD        xmm3,[EDI]
+        PINSRW      xmm0,[ESI+EBX],0
+        @AjAdNormB16
+        PINSRW      xmm3,[EDI+4],2
+        PINSRW      xmm0,[ESI+EBX],1
+        JMP         %%DoLast3W
+%%DoLastPre1W:
         @AjAdNormB16
         PINSRW      xmm3,[EDI],0
         PINSRW      xmm0,[ESI+EBX],0
-        DEC         CL
-%%LastB:
+        JMP         %%DoLast3W
+%%DoLastPre3W:
+        @AjAdNormB16
+        MOVD        xmm3,[EDI]
+        PINSRW      xmm0,[ESI+EBX],0
+        @AjAdNormB16
+        PINSRW      xmm3,[EDI+4],2
+        PINSRW      xmm0,[ESI+EBX],1
+        @AjAdNormB16
+        PINSRW      xmm0,[ESI+EBX],2
+%%DoLast3W:
         MOVQ        xmm4,xmm3
         MOVQ        xmm5,xmm3
         MOVQ        xmm1,xmm0
         MOVQ        xmm2,xmm0
+        CMP         CL,2
         @TransBlndQ
+        JG          SHORT %%DoLastPost3W
+        JL          SHORT %%DoLastPost1W
+%%DoLastPost2W:
+        MOVD        [EDI],xmm0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost1W:
         PEXTRW      [EDI],xmm0,0
-        LEA         EDI,[EDI+2]
-        JNZ         %%BcStBAp
-%%PasStBAp:
+        JMP         SHORT %%FinSHLine
+%%DoLastPost3W:
+        MOVD        [EDI],xmm0
+        PEXTRW      [EDI+4],xmm0,2
+
 %%FinSHLine:
 %endmacro
 
@@ -3570,7 +3490,7 @@ ALIGN 4
         MOV         CL,1
         PINSRW      xmm3,[EDI],0
         PINSRW      xmm0,[ESI+EBX*2],0 ; - 4 + (XT1*2) as 16bpp
-        JMP         %%LastB
+        JMP         %%DoLast3W
 %%DivPntPX:
         LEA         ESI,[ESI+EBX*2]   ; - 4 + (XT1*2) as 16bpp
         XOR         EDX,EDX      ; Cpt Dbrd Y
@@ -3580,24 +3500,6 @@ ALIGN 4
         SETL        DL
         INC         ECX
         MOV         EDX,[PntInitCPTDbrd+EDX*4] ; Cpt Dbr Y
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdDYZ16
-        PINSRW      xmm3,[EDI],0
-        PINSRW      xmm0,[ESI+EBX*2],0
-        MOVQ        xmm4,xmm3
-        MOVQ        xmm5,xmm3
-        MOVQ        xmm1,xmm0
-        MOVQ        xmm2,xmm0
-        @TransBlndQ
-        PEXTRW      [EDI],xmm0,0
-        DEC         ECX
-        LEA         EDI,[EDI+2]
-        JZ          %%FinSHLine
-
-        JMP         %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
@@ -3648,21 +3550,49 @@ ALIGN 4
 %%StBAp:
         AND         CL,3
         JZ          %%FinSHLine
-%%BcStBAp:
+        CMP         CL,2
+        JG          %%DoLastPre3W
+        JL          %%DoLastPre1W
+%%DoLastPre2W:
+        @AjAdDYZ16
+        MOVD        xmm3,[EDI]
+        PINSRW      xmm0,[ESI+EBX*2],0
+        @AjAdDYZ16
+        PINSRW      xmm3,[EDI+4],2
+        PINSRW      xmm0,[ESI+EBX*2],1
+        JMP         %%DoLast3W
+%%DoLastPre1W:
         @AjAdDYZ16
         PINSRW      xmm3,[EDI],0
         PINSRW      xmm0,[ESI+EBX*2],0
-%%LastB:
+        JMP         %%DoLast3W
+%%DoLastPre3W:
+        @AjAdDYZ16
+        MOVD        xmm3,[EDI]
+        PINSRW      xmm0,[ESI+EBX*2],0
+        @AjAdDYZ16
+        PINSRW      xmm3,[EDI+4],2
+        PINSRW      xmm0,[ESI+EBX*2],1
+        @AjAdDYZ16
+        PINSRW      xmm0,[ESI+EBX*2],2
+%%DoLast3W:
         MOVQ        xmm4,xmm3
         MOVQ        xmm5,xmm3
         MOVQ        xmm1,xmm0
         MOVQ        xmm2,xmm0
+        CMP         CL,2
         @TransBlndQ
+        JG          SHORT %%DoLastPost3W
+        JL          SHORT %%DoLastPost1W
+%%DoLastPost2W:
+        MOVD        [EDI],xmm0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost1W:
         PEXTRW      [EDI],xmm0,0
-        DEC         CL
-        LEA         EDI,[EDI+2]
-        JNZ         %%BcStBAp
-%%PasStBAp:
+        JMP         SHORT %%FinSHLine
+%%DoLastPost3W:
+        MOVD        [EDI],xmm0
+        PEXTRW      [EDI+4],xmm0,2
 %%FinSHLine:
 %endmacro
 
@@ -3731,24 +3661,6 @@ ALIGN 4
         CMP         DWORD [PntPlusX], BYTE 0
         SETS        AL
         ADD         EDX,[PntInitCPTDbrd+EAX*4]
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdNormB16
-        PINSRW      xmm3,[EDI],0
-        PINSRW      xmm0,[ESI+EBX],0
-        MOVQ        xmm4,xmm3
-        MOVQ        xmm5,xmm3
-        MOVQ        xmm1,xmm0
-        MOVQ        xmm2,xmm0
-        @TransBlndQ
-        DEC         ECX
-        PEXTRW      [EDI],xmm0,0
-        LEA         EDI,[EDI+2]
-        JZ          %%FinSHLine
-
-        JMP         %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
@@ -3799,20 +3711,49 @@ ALIGN 4
 %%StBAp:
         AND         CL,3
         JZ          %%FinSHLine
-%%BcStBAp:
+        CMP         CL,2
+        JG          %%DoLastPre3W
+        JL          %%DoLastPre1W
+%%DoLastPre2W:
+        @AjAdNormB16
+        MOVD        xmm3,[EDI]
+        PINSRW      xmm0,[ESI+EBX],0
+        @AjAdNormB16
+        PINSRW      xmm3,[EDI+4],2
+        PINSRW      xmm0,[ESI+EBX],1
+        JMP         %%DoLast3W
+%%DoLastPre1W:
         @AjAdNormB16
         PINSRW      xmm3,[EDI],0
         PINSRW      xmm0,[ESI+EBX],0
+        JMP         %%DoLast3W
+%%DoLastPre3W:
+        @AjAdNormB16
+        MOVD        xmm3,[EDI]
+        PINSRW      xmm0,[ESI+EBX],0
+        @AjAdNormB16
+        PINSRW      xmm3,[EDI+4],2
+        PINSRW      xmm0,[ESI+EBX],1
+        @AjAdNormB16
+        PINSRW      xmm0,[ESI+EBX],2
+%%DoLast3W:
         MOVQ        xmm4,xmm3
         MOVQ        xmm5,xmm3
         MOVQ        xmm1,xmm0
         MOVQ        xmm2,xmm0
+        CMP         CL,2
         @TransBlndQ
-        DEC     CL
+        JG          SHORT %%DoLastPost3W
+        JL          SHORT %%DoLastPost1W
+%%DoLastPost2W:
+        MOVD        [EDI],xmm0
+        JMP         SHORT %%FinSHLine
+%%DoLastPost1W:
         PEXTRW      [EDI],xmm0,0
-        LEA         EDI,[EDI+2]
-        JNZ         %%BcStBAp
-%%PasStBAp:
+        JMP         SHORT %%FinSHLine
+%%DoLastPost3W:
+        MOVD        [EDI],xmm0
+        PEXTRW      [EDI+4],xmm0,2
 %%FinSHLine:
 %endmacro
 
@@ -3860,63 +3801,8 @@ ALIGN 4
         SETL        BL
         ADD         ESI,[Svlfb]    ; - 5
         MOV         EBP,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdNormB16
-        MOV         AX,[ESI+EBX]
-        CMP         AX,[SMask]
-        JE          .NoStBAv
-        PINSRW      xmm3,[EDI],0
-        MOVD        xmm0,EAX
-        MOVQ        xmm4,xmm3
-        MOVQ        xmm5,xmm3
-        MOVQ        xmm1,xmm0
-        MOVQ        xmm2,xmm0
-        @TransBlndQ_QMulSrcBlend
-        PEXTRW      [EDI],xmm0,0
-.NoStBAv:
-        DEC         ECX
-        LEA         EDI,[EDI+2]
-        JZ          %%FinSHLine
-
-        JMP         %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
-
-        TEST        EDI, 8
-        JZ          %%PasStQAv
-        @AjAdNormQ16
-        PINSRW      xmm0,[ESI+EBX], 0
-        @AjAdNormQ16
-        PINSRW      xmm0,[ESI+EBX], 1
-        @AjAdNormQ16
-        PINSRW      xmm0,[ESI+EBX], 2
-        SUB         CX,BYTE 4
-        @AjAdNormQ16
-        TEST        CX,0xFFFC
-        PINSRW      xmm0,[ESI+EBX], 3
-        JZ          %%StoLastQ
-
-        MOVQ        xmm3,[EDI]
-        MOVQ        xmm1,xmm0
-        MOVQ        xmm2,xmm0
-        MOVQ        xmm7,xmm0
-        MOVQ        xmm4,xmm3
-        MOVQ        xmm5,xmm3
-        @TransBlndQ_QMulSrcBlend
-        MOVQ        xmm1,xmm7
-        MOVQ        xmm4,[EDI]
-
-        PCMPEQW     xmm7,[DQ16Mask]
-        PCMPEQW     xmm1,[DQ16Mask]
-        PANDN       xmm7,xmm0
-        PAND        xmm4,xmm1
-        POR         xmm7,xmm4
-        MOVQ        [EDI],xmm7 ; write the 8 bytes
-        LEA         EDI,[EDI+8]
-%%PasStQAv:
 
 ;ALIGN 4
 %%StoMMX:
@@ -3941,7 +3827,7 @@ ALIGN 4
         @AjAdNormQ16
         PINSRW      xmm0,[ESI+EBX], 7
 
-        MOVDQA      xmm3,[EDI]
+        MOVDQU      xmm3,[EDI]
         MOVDQA      xmm1,xmm0
         MOVDQA      xmm2,xmm0
         MOVDQA      xmm7,xmm0
@@ -3950,14 +3836,14 @@ ALIGN 4
         @TransBlndQ_QMulSrcBlend
         SUB         CX,BYTE 4
         MOVDQA      xmm1,xmm7
-        MOVDQA      xmm4,[EDI]
+        MOVDQU      xmm4,[EDI]
 
         PCMPEQW     xmm7,[DQ16Mask]
         PCMPEQW     xmm1,[DQ16Mask]
         PANDN       xmm7,xmm0
         PAND        xmm4,xmm1
         POR         xmm7,xmm4
-        MOVDQA      [EDI],xmm7 ; write the Masked 16 bytes
+        MOVDQU      [EDI],xmm7 ; write the Masked 16 bytes
 
         TEST        CX,0xFFFC
         LEA         EDI,[EDI+16]
@@ -4029,28 +3915,6 @@ ALIGN 4
         SETL    BL
         INC     ECX
         MOV     EDX,[PntInitCPTDbrd+EBX*4] ; Cpt Dbr Y
-%%BcStBAv:
-        TEST    EDI,6
-        JZ      %%FPasStBAv
-        @AjAdDYZ16
-        MOV     AX,[ESI+EBX*2]
-        CMP     AX,[SMask]
-        JZ      %%NoDWAv
-        PINSRW      xmm3,[EDI],0
-        MOVD        xmm0,EAX
-        MOVQ        xmm4,xmm3
-        MOVQ        xmm5,xmm3
-        MOVQ        xmm1,xmm0
-        MOVQ        xmm2,xmm0
-        @TransBlndQ_QMulSrcBlend
-        PEXTRW      [EDI],xmm0,0
-%%NoDWAv:
-        DEC     ECX
-        LEA     EDI,[EDI+2]
-        JZ      %%FinSHLine
-
-        JMP     %%BcStBAv
-%%FPasStBAv:
         TEST    CX,0xFFFC
         JZ      %%StBAp
 ;ALIGN 4
@@ -4198,28 +4062,6 @@ ALIGN 4
         CMP         DWORD [PntPlusX], BYTE 0
         SETS        AL
         ADD         EDX,[PntInitCPTDbrd+EAX*4]
-%%BcStBAv:
-        TEST        EDI,6
-        JZ          %%FPasStBAv
-        @AjAdNormB16
-        MOV         AX,[ESI+EBX]
-        CMP         AX,[SMask]
-        JE          %%NoStBAv
-        PINSRW      xmm3,[EDI],0
-        MOVD        xmm0,EAX
-        MOVQ        xmm4,xmm3
-        MOVQ        xmm5,xmm3
-        MOVQ        xmm1,xmm0
-        MOVQ        xmm2,xmm0
-        @TransBlndQ_QMulSrcBlend
-        PEXTRW      [EDI],xmm0,0
-%%NoStBAv:
-        DEC         ECX
-        LEA         EDI,[EDI+2]
-        JZ          %%FinSHLine
-
-        JMP         %%BcStBAv
-%%FPasStBAv:
         TEST        CX,0xFFFC
         JZ          %%StBAp
 ;ALIGN 4
