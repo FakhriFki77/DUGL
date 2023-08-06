@@ -80,6 +80,14 @@ void DgQuit() {
             mutexEvents = NULL;
         }
     }
+    // if timer installed uninstall it
+    if (DgTimerFreq > 0) {
+        DgUninstallTimer();
+    }
+    // if full screen enabled - revert to original screen state
+    if (dgEnableFullScreen) {
+        DgToggleFullScreen(false);
+    }
     DestroyDWorkers();
     if (DgWindow != NULL) {
         SDL_DestroyWindow(DgWindow);
