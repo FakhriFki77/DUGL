@@ -3,6 +3,8 @@
 /*  Simple/unoptimized 3d engine, with z-sorting polygones, moving camera, shadow casting on ground, 3d obj loader .. */
 /*  History : */
 /*  10 April 2023 : first release */
+/*  6 Aout 2023 : Rework event/rendering loop and synching + implement gouroud shading + implement dual core rendering (left|right) view  */
+/*                implement full screen toggling + resize handling + several tweaks and performance increase ... */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,10 +14,11 @@
 #include "DCamera3D.h"
 
 // screen resolution
+//int ScrResH=320,ScrResV=240;
 //int ScrResH=640,ScrResV=480;
 int ScrResH=800,ScrResV=600;
 //int ScrResH=1024,ScrResV=768;
-//int ScrResH=1280,ScrResV=1024;
+//int ScrResH=1920,ScrResV=1080;
 
 // 3d DATA
 
@@ -35,10 +38,10 @@ float speedRotLightZ = 0.0f;
 DAABBox *pAABBox = NULL;
 DAAMinBBox *pAAMinBBox = NULL;
 
-int MAX_VERTICES_COUNT = 500000;
-int MAX_INDEXES_SIZE = 4000000;
+int MAX_VERTICES_COUNT = 5000000;
+int MAX_INDEXES_SIZE = 40000000;
 int MAX_FACE_INDEXES = 12;
-int MAX_FACES_COUNT = 1000000;
+int MAX_FACES_COUNT = 2000000;
 
 int countVertices = 0;
 int countUV = 0;
@@ -57,13 +60,48 @@ int **vfaces = nullptr;
 int *vlight = nullptr;
 int **vnfaces = nullptr;
 int **uvfaces = nullptr;
+float *vLightNormals = nullptr;
+int *vLightUPos = nullptr;
 int countFaces = 0;
 
-// multi-core (workers) smooth functions
+int faceCol = RGB16(0,255,128);
+int shadowCol = RGB16(1,1,1);
+// tree transformation arrays
+DVEC4 *varrayTreeRes = NULL;
+DVEC4 *varrayTreeProj = NULL;
+DVEC2i *varrayiTree = NULL;
+
+// multi-core (workers) smooth functions ///////////////////
+void SmoothWorker1C_1(void *, int wid);
+
+void SmoothWorker2C_1(void *, int wid);
+void SmoothWorker2C_2(void *, int wid);
+
 void SmoothWorker1(void *, int wid);
 void SmoothWorker2(void *, int wid);
 void SmoothWorker3(void *, int wid);
 void SmoothWorker4(void *, int wid);
+
+void SmoothWorker6C_1(void *, int wid);
+void SmoothWorker6C_2(void *, int wid);
+void SmoothWorker6C_3(void *, int wid);
+void SmoothWorker6C_4(void *, int wid);
+void SmoothWorker6C_5(void *, int wid);
+void SmoothWorker6C_6(void *, int wid);
+
+// multi-core (workers) render functions ////////////
+
+// full view
+void RenderWorker1C_1(void *, int wid);
+// left, right
+void RenderWorker2C_1(void *, int wid);
+void RenderWorker2C_2(void *, int wid);
+
+// resize worker smooth to screen (HQ rendering)
+void ResizeWorker1C_1(void *, int wid);
+// left, right
+void ResizeWorker2C_1(void *, int wid);
+void ResizeWorker2C_2(void *, int wid);
 
 // ground mapping
 
@@ -83,18 +121,36 @@ typedef struct {
 } DFace;
 
 DFace **dfaces = NULL;
+DFace *DFaces = NULL;
 int countDFaces = 0;
 
 // rendering
-DgView curView;
 float smoothSurfRatio = 1.8f;
 DgSurf *blurSurf16;
 DgSurf *srcBlurSurf16;
+DgSurf *gouroudLightSurf;
 
-// smoothing workers
+// smoothing workers count / ID
+unsigned int smoothingCores  = 4;
+
+unsigned int smoothWorker2C_2ID = 0;
+
 unsigned int smoothWorker2ID = 0;
 unsigned int smoothWorker3ID = 0;
 unsigned int smoothWorker4ID = 0;
+
+unsigned int smoothWorker6C_2ID = 0;
+unsigned int smoothWorker6C_3ID = 0;
+unsigned int smoothWorker6C_4ID = 0;
+unsigned int smoothWorker6C_5ID = 0;
+unsigned int smoothWorker6C_6ID = 0;
+
+// render workers count / ID
+unsigned int renderCores  = 1;
+
+unsigned int renderWorker2C_2ID = 0;
+
+unsigned int resizeWorker2C_2ID = 0;
 
 // ressources
 DgSurf *Tree2Surf16=NULL;
@@ -128,6 +184,29 @@ int ListPtTree[] =
    { 4, (int)&TreePts[0], (int)&TreePts[1],
 		(int)&TreePts[2], (int)&TreePts[3] };
 
+PolyPt TreePts_C2[4] =
+   { { 0, 0, 0, 0, 0 },   { 0, 0, 0, 0, 50 },
+	 { 0, 0, 0, 50, 50 },   { 0, 0, 0, 50, 0 } };
+
+int ListPtTree_C2[] =
+   { 4, (int)&TreePts_C2[0], (int)&TreePts_C2[1],
+		(int)&TreePts_C2[2], (int)&TreePts_C2[3] };
+
+PolyPt TreePts_C3[4] =
+   { { 0, 0, 0, 0, 0 },   { 0, 0, 0, 0, 50 },
+	 { 0, 0, 0, 50, 50 },   { 0, 0, 0, 50, 0 } };
+
+int ListPtTree_C3[] =
+   { 4, (int)&TreePts_C3[0], (int)&TreePts_C3[1],
+		(int)&TreePts_C3[2], (int)&TreePts_C3[3] };
+
+PolyPt TreePts_C4[4] =
+   { { 0, 0, 0, 0, 0 },   { 0, 0, 0, 0, 50 },
+	 { 0, 0, 0, 50, 50 },   { 0, 0, 0, 50, 0 } };
+
+int ListPtTree_C4[] =
+   { 4, (int)&TreePts_C4[0], (int)&TreePts_C4[1],
+		(int)&TreePts_C4[2], (int)&TreePts_C4[3] };
 
 //******************
 // FONT
@@ -137,8 +216,11 @@ bool SynchScreen=false;
 bool pauseShadow=false;
 bool groundTextured=true;
 bool highQRendering=false;
+bool fullScreen=false;
 bool exitApp=false;
 bool takeScreenShot=false;
+bool refreshWindow=false;
+bool refreshLightening = false;
 bool requestRenderMutex=false;
 // synch buffers
 char EventsLoopSynchBuff[SIZE_SYNCH_BUFF];
@@ -147,6 +229,9 @@ char RenderSynchBuff[SIZE_SYNCH_BUFF];
 unsigned int renderWorkerID = 0;
 void *renderMutex = NULL;
 void RenderWorkerFunc(void *, int );
+// window event
+void ShadowWinPreResize(int w, int h);
+void ShadowWinResize(int w, int h);
 // fps counter
 float avgFps, lastFps;
 float accTime = 0.0f;
@@ -162,28 +247,33 @@ int main (int argc, char ** argv)
     renderWorkerID = CreateDWorker(RenderWorkerFunc, nullptr);
     renderMutex = CreateDMutex();
     // create smoothing DWorkers
+    smoothWorker2C_2ID = CreateDWorker(SmoothWorker2C_2, nullptr);
+
     smoothWorker2ID = CreateDWorker(SmoothWorker2, nullptr);
     smoothWorker3ID = CreateDWorker(SmoothWorker3, nullptr);
     smoothWorker4ID = CreateDWorker(SmoothWorker4, nullptr);
+
+    smoothWorker6C_2ID = CreateDWorker(SmoothWorker6C_2, nullptr);
+    smoothWorker6C_3ID = CreateDWorker(SmoothWorker6C_3, nullptr);
+    smoothWorker6C_4ID = CreateDWorker(SmoothWorker6C_4, nullptr);
+    smoothWorker6C_5ID = CreateDWorker(SmoothWorker6C_5, nullptr);
+    smoothWorker6C_6ID = CreateDWorker(SmoothWorker6C_6, nullptr);
+
+    // create render(ground/shadow) DWorkers
+    renderWorker2C_2ID = CreateDWorker(RenderWorker2C_2, nullptr);
+    // resize DWorkers
+    resizeWorker2C_2ID = CreateDWorker(ResizeWorker2C_2, nullptr);
 
     if (LoadGIF16(&Tree2Surf16,"../Asset/PICS/TREE2.gif")==0) {
         printf("error loading TREE2.gif\n");
         exit(-1);
     }
     if (LoadPNG16(&Ground1Surf16,"../Asset/PICS/groundhd.png")==0) {
+    //if (LoadJPG16(&Ground1Surf16,"../Asset/PICS/EarthMap.jpg")==0) {
+    //if (LoadPNG16(&Ground1Surf16,"../Asset/PICS/asphalt1.png")==0) {
         printf("error loading groundhd.gif\n");
         exit(-1);
     }
-    // create High Quality rendering intermediate render Surf
-    if (CreateSurf(&blurSurf16, (int)(ScrResH*smoothSurfRatio)&0xfffffffe, (int)(ScrResV*smoothSurfRatio)&0xfffffffe, 16)==0) {
-        printf("no mem\n"); exit(-1);
-    }
-    SetOrgSurf(blurSurf16,blurSurf16->ResH/2,blurSurf16->ResV/2);
-
-    if (CreateSurf(&srcBlurSurf16, (int)(ScrResH*smoothSurfRatio)&0xfffffffe, (int)(ScrResV*smoothSurfRatio)&0xfffffffe, 16)==0) {
-        printf("no mem\n"); exit(-1);
-    }
-    SetOrgSurf(srcBlurSurf16,srcBlurSurf16->ResH/2,srcBlurSurf16->ResV/2);
 
 
 	// allocate 3D memory
@@ -199,6 +289,8 @@ int main (int argc, char ** argv)
     vnfaces = (int**)malloc(MAX_FACES_COUNT*sizeof(int*));
     uvfaces = (int**)malloc(MAX_FACES_COUNT*sizeof(int*));
     vlight = (int*)malloc(MAX_FACES_COUNT*sizeof(int));
+    vLightNormals = (float*)malloc(MAX_VERTICES_COUNT*sizeof(float));
+    vLightUPos = (int*)malloc(MAX_VERTICES_COUNT*sizeof(int));
     pAABBox = (DAABBox*)CreateDVEC4Array(8);
     pAAMinBBox = (DAAMinBBox*)CreateDVEC4Array(2);
     matView = CreateDMatrix4();
@@ -223,21 +315,22 @@ int main (int argc, char ** argv)
     if (countVertices > 0 && countFaces > 0) {
         printf("flat.obj loaded successfully: %i vertices, %i faces, %i normals \n", countVertices, countFaces, countNormals);
         countDFaces = countFaces;
+        DFaces = (DFace*)malloc(sizeof(DFace)*countFaces+1024);
         dfaces = (DFace**)malloc(sizeof(DFace*)*countFaces);
         for (idt = 0; idt < countFaces; idt++)
-            dfaces[idt] = (DFace*)malloc(sizeof(DFace));
+            dfaces[idt] = &DFaces[idt];
 
         for (idt = 0; idt < countFaces; idt++) {
-            dfaces[idt]->vface = vfaces[idt];
-            dfaces[idt]->nface = vnfaces[idt];
-            dfaces[idt]->countVertices = (vfaces[idt] != NULL) ? vfaces[idt][0] : 0;
-            dfaces[idt]->idx = idt;
-            dfaces[idt]->shadowed = false;
+            DFaces[idt].vface = vfaces[idt];
+            DFaces[idt].nface = vnfaces[idt];
+            DFaces[idt].countVertices = (vfaces[idt] != NULL) ? vfaces[idt][0] : 0;
+            DFaces[idt].idx = idt;
+            DFaces[idt].shadowed = false;
 
-            if (dfaces[idt]->countVertices > 0) {
-                dfaces[idt]->shadowUVi = (DVEC2i*)CreateDVEC2Array(dfaces[idt]->countVertices);
+            if (DFaces[idt].countVertices > 0) {
+                DFaces[idt].shadowUVi = (DVEC2i*)CreateDVEC2Array(DFaces[idt].countVertices);
             } else {
-                dfaces[idt]->shadowUVi =  NULL;
+                DFaces[idt].shadowUVi =  NULL;
             }
         }
         // fetch boundaries of 3d model
@@ -337,7 +430,6 @@ int main (int argc, char ** argv)
     vuviarrayShadEB[3].x = Tree2SurfShadE16->MinX;
     vuviarrayShadEB[3].y = Tree2SurfShadE16->MaxY;
 
-
     // adjust camera parameters according to screen and model boundaries
     camera.SetFrustum(60, (float)(ScrResH)/(float)(ScrResV), 1.0f, 1000.0f);
     camera.SetPosition((pAAMinBBox->min.x+pAAMinBBox->max.x)/2.0, (pAAMinBBox->min.y+pAAMinBBox->max.y)/2.0f+15.0f, pAAMinBBox->max.z + (pAAMinBBox->max.z - pAAMinBBox->min.z) / 2.0f );//(pAAMinBBox->min.z+pAAMinBBox->max.z)/2.0);
@@ -356,12 +448,46 @@ int main (int argc, char ** argv)
 
     SetFONT(&F1);
 
+    DgSetPreferredFullScreenMode(ScrResH, ScrResV, 0);
     // init video mode
-    if (!DgInitMainWindowX("Shadow", ScrResH, ScrResV, 16, -1, -1, false, false, false))
+    if (!DgInitMainWindowX("Shadow", ScrResH, ScrResV, 16, -1, -1, fullScreen, false, true))
     {
         DgQuit();
         exit(-1);
     }
+
+    // create High Quality rendering intermediate render Surf
+    DgWindowResized = 0;
+    ScrResH = RendSurf->ResH;
+    ScrResV = RendSurf->ResV;
+    if (CreateSurf(&blurSurf16, (int)(ScrResH*smoothSurfRatio)&0xfffffffe, (int)(ScrResV*smoothSurfRatio)&0xfffffffe, 16)==0) {
+        printf("no mem\n"); exit(-1);
+    }
+    SetOrgSurf(blurSurf16,blurSurf16->ResH/2,blurSurf16->ResV/2);
+
+    if (CreateSurf(&srcBlurSurf16, (int)(ScrResH*smoothSurfRatio)&0xfffffffe, (int)(ScrResV*smoothSurfRatio)&0xfffffffe, 16)==0) {
+        printf("no mem\n"); exit(-1);
+    }
+    SetOrgSurf(srcBlurSurf16,srcBlurSurf16->ResH/2,srcBlurSurf16->ResV/2);
+    // create gouroud lightening Surf
+    int grdMaxCols = 64;
+    //int grdStartR = 32, grdStartG = 32, grdStartB = 32;
+    int grdStartR = 0, grdStartG = 0, grdStartB = 0;
+    int grdEndR = 232, grdEndG = 232, grdEndB = 232;
+    float grdStepR = float(grdEndR-grdStartR) / float(grdMaxCols);
+    float grdStepG= float(grdEndG-grdStartG) / float(grdMaxCols);
+    float grdStepB = float(grdEndB-grdStartB) / float(grdMaxCols);
+    if (CreateSurf(&gouroudLightSurf, grdMaxCols, 1, 16)==0) {
+        printf("no mem\n"); exit(-1);
+    }
+    for (int grdI=0; grdI < grdMaxCols; grdI++) {
+        DgSurfCPutPixel16(gouroudLightSurf, grdI, 0, RGB16(int(grdStepR*grdI+grdStartR), int(grdStepG*grdI+grdStartG), int(grdStepB*grdI+grdStartB)));
+    }
+
+
+    // set Main window properties
+    DgSetMainWindowMinSize(320, 200);
+    DgSetMainWindowResizeCallBack(ShadowWinPreResize, ShadowWinResize, renderMutex, &requestRenderMutex);
 
     // install timer and keyborad handler
     DgInstallTimer(500);
@@ -388,7 +514,11 @@ int main (int argc, char ** argv)
     DgUpdateWindow();
 
     // init synchro
-    InitSynch(EventsLoopSynchBuff, NULL, 250); // speed of events scan per second, this will be too the max fps detectable
+    unsigned int LastDgTime = DgTime;
+    unsigned int DgTimeToHandle = DgTime;
+    unsigned int deltaDgTime = 0;
+    float revDgTimeFreq = 1.0f / (float)DgTimerFreq;
+    InitSynch(EventsLoopSynchBuff, NULL, 500); // speed of events scan per second, better same timer frequency else progress could be lost at high fps
     InitSynch(RenderSynchBuff, NULL, 60); // screen frequency
 	// lunch render DWorker
 	RunDWorker(renderWorkerID, false);
@@ -396,106 +526,157 @@ int main (int argc, char ** argv)
 	// main loop
 	for (int j=0;;j++) {
 		// synchronise event loop
-		// WaitSynch should be used as Synch will cause scan events by milions or bilions time per sec !
-		WaitSynch(EventsLoopSynchBuff, NULL);
+		if (Synch(EventsLoopSynchBuff, NULL) > 0) {
+            float avgProgress = SynchLastTime(EventsLoopSynchBuff);
 
-		float avgProgress=SynchLastTime(EventsLoopSynchBuff);
+            // get key
+            unsigned char keyCode;
+            unsigned int keyFLAG;
 
-		// get key
-		unsigned char keyCode;
-		unsigned int keyFLAG;
+            GetKey(&keyCode, &keyFLAG);
+            switch (keyCode) {
+                case KB_KEY_ESC: // F5 vertical synch e/d
+                    exitApp = true;
+                    break;
+                case KB_KEY_F5: // F5 vertical synch e/d
+                    SynchScreen=!SynchScreen;
+                    break;
+                case KB_KEY_F6: // F6 switch between solid/textured ground
+                    groundTextured=!groundTextured;
+                    refreshLightening = true;
+                    break;
+                case KB_KEY_SPACE: // Space to pause
+                    pauseShadow=!pauseShadow;
+                    break;
+                case KB_KEY_TAB: // switch smoothing Cores count
+                    takeScreenShot = ((keyFLAG&(KB_SHIFT_PR|KB_CTRL_PR)) > 0);
+                    if (!takeScreenShot) {
+                        if (smoothingCores == 1)
+                            smoothingCores = 2;
+                        else if (smoothingCores == 2)
+                            smoothingCores = 4;
+                        else if (smoothingCores == 4)
+                            smoothingCores = 6;
+                        else if (smoothingCores == 6)
+                            smoothingCores = 1;
+                    }
+                    break;
+                case KB_KEY_LEFT_CTRL: // switch render Cores count
+                    if (renderCores == 1)
+                        renderCores = 2;
+                    else if (renderCores == 2)
+                        renderCores = 1;
+                    break;
+                case KB_KEY_F7 : // F7 High quality rendering
+                    // avoid enabling HQ rendering on the middle of render loop to do not create flickering
+                    if(!TryLockDMutex(renderMutex)) {
+                        for (requestRenderMutex = true;requestRenderMutex;) DelayMs(1);
+                        LockDMutex(renderMutex);
+                    }
+                    highQRendering=!highQRendering;
+                    UnlockDMutex(renderMutex);
+                    break;
+                case KB_KEY_F10 : // toggle full screen
+                    if(!TryLockDMutex(renderMutex)) {
+                        for (requestRenderMutex = true;requestRenderMutex;) DelayMs(1);
+                        LockDMutex(renderMutex);
+                    }
+                    fullScreen = !fullScreen;
+                    DgToggleFullScreen(fullScreen);
+                    SetOrgSurf(RendSurf, RendSurf->ResH/2, RendSurf->ResV/2);
+                    UnlockDMutex(renderMutex);
 
-		GetKey(&keyCode, &keyFLAG);
-		switch (keyCode) {
-			case KB_KEY_ESC: // F5 vertical synch e/d
-				exitApp = true;
-				break;
-			case KB_KEY_F5: // F5 vertical synch e/d
-				SynchScreen=!SynchScreen;
-				break;
-			case KB_KEY_F6: // F6 switch between solid/textured ground
-			    groundTextured=!groundTextured;
-				break;
-			case KB_KEY_SPACE: // Space to pause
-				pauseShadow=!pauseShadow;
-				break;
-			case KB_KEY_F7 : // F7 High quality rendering
-			    highQRendering=!highQRendering;
-				break;
-			case KB_KEY_TAB: // ctrl + shift + TAB = screenshot
-				takeScreenShot = ((keyFLAG&(KB_SHIFT_PR|KB_CTRL_PR)) > 0);
-				break;
+                    break;
 
-		}
-
-        if (IsKeyDown(KB_KEY_UP)) { // up
-             /*if (move_zcam) {
-                zcam = start_zcam - (TreesSpeed * ((float)(DgTime - start_DgTime) / (float)(DgTimerFreq)));
-             }*/
-			if((KbFLAG & KB_CTRL_PR))
-				camera.MoveUpDown(MoveSpeed * avgProgress);
-			else
-				camera.MoveForwardBackward(MoveSpeed * avgProgress);
-
-        }
-        if (IsKeyDown(KB_KEY_DOWN)) { // down
-             /*if (move_zcam) {
-                zcam = start_zcam + (TreesSpeed * ((float)(DgTime - start_DgTime) / (float)(DgTimerFreq)));
-             }*/
-			if((KbFLAG & KB_CTRL_PR))
-				camera.MoveUpDown(-MoveSpeed * avgProgress);
-			else
-				camera.MoveForwardBackward(-MoveSpeed * avgProgress);
-        }
-
-        if (IsKeyDown(KB_KEY_LEFT)) { // left
-             //camera.RotateCamera
-             camera.Rotate(0.0f, -RotSpeed*avgProgress, 0.0f);
-             //if (xtargetcam > -150.0f) xtargetcam -= TreesSpeed*avgFps;
-        }
-        if (IsKeyDown(KB_KEY_RIGHT)) {  // right
-            camera.Rotate(0.0f, RotSpeed*avgProgress, 0.0f);
-        }
-
-		// anim light
-		if (!pauseShadow) {
-            GetRotDMatrix4(matAnimLight, speedRotLightX*avgProgress, speedRotLightY*avgProgress, speedRotLightZ*avgProgress);
-            DMatrix4MulDVEC4Array(matAnimLight, lightDir, 1);
-            NormalizeDVEC4(lightDir);
-            *lightVecPos = *lightPos;
-            plusVEC->x = lightDir->x*7.0f;
-            plusVEC->y = lightDir->y*7.0f;
-            plusVEC->z = lightDir->z*7.0f;
-            AddDVEC4(lightVecPos, plusVEC);
-		}
-
-        // detect close Request
-        if (DgWindowRequestClose == 1) {
-            // Set ExitApp to true to allow render DWorker to exit and finish
-            exitApp = true;
-        }
-
-		// esc exit
-        if (exitApp) {
-			break;
-        }
-		// need screen shot
-		if (takeScreenShot) {
-            // first try to lock renderMutex,
-            // if fail, wait until rendering DWorker set requestRenderMutex to false, and execute a DelayMs(10) to free the renderMutex
-            if(!TryLockDMutex(renderMutex)) {
-                for (requestRenderMutex = true;requestRenderMutex;) DelayMs(1);
-                LockDMutex(renderMutex);
             }
-			SaveBMP16(RendSurf,(char*)"Shadow.bmp");
-			takeScreenShot = false;
-			UnlockDMutex(renderMutex);
-		}
 
-		DgCheckEvents();
+            if (IsKeyDown(KB_KEY_UP)) { // up
+                 /*if (move_zcam) {
+                    zcam = start_zcam - (TreesSpeed * ((float)(DgTime - start_DgTime) / (float)(DgTimerFreq)));
+                 }*/
+                if((KbFLAG & KB_CTRL_PR))
+                    camera.MoveUpDown(MoveSpeed * avgProgress);
+                else
+                    camera.MoveForwardBackward(MoveSpeed * avgProgress);
+
+            }
+            if (IsKeyDown(KB_KEY_DOWN)) { // down
+                 /*if (move_zcam) {
+                    zcam = start_zcam + (TreesSpeed * ((float)(DgTime - start_DgTime) / (float)(DgTimerFreq)));
+                 }*/
+                if((KbFLAG & KB_CTRL_PR))
+                    camera.MoveUpDown(-MoveSpeed * avgProgress);
+                else
+                    camera.MoveForwardBackward(-MoveSpeed * avgProgress);
+            }
+
+            if (IsKeyDown(KB_KEY_LEFT)) { // left
+                 //camera.RotateCamera
+                 camera.Rotate(0.0f, -RotSpeed*avgProgress, 0.0f);
+                 //if (xtargetcam > -150.0f) xtargetcam -= TreesSpeed*avgFps;
+            }
+            if (IsKeyDown(KB_KEY_RIGHT)) {  // right
+                camera.Rotate(0.0f, RotSpeed*avgProgress, 0.0f);
+            }
+
+            // anim light
+            if (!pauseShadow) {
+                GetRotDMatrix4(matAnimLight, speedRotLightX*avgProgress, speedRotLightY*avgProgress, speedRotLightZ*avgProgress);
+                DMatrix4MulDVEC4Array(matAnimLight, lightDir, 1);
+                NormalizeDVEC4(lightDir);
+                *lightVecPos = *lightPos;
+                plusVEC->x = lightDir->x*7.0f;
+                plusVEC->y = lightDir->y*7.0f;
+                plusVEC->z = lightDir->z*7.0f;
+                AddDVEC4(lightVecPos, plusVEC);
+            }
+
+            // detect close Request
+            if (DgWindowRequestClose == 1) {
+                // Set ExitApp to true to allow render DWorker to exit and finish
+                exitApp = true;
+            }
+
+            // esc exit
+            if (exitApp) {
+                break;
+            }
+            // need screen shot
+            if (takeScreenShot) {
+                // first try to lock renderMutex,
+                // if fail, wait until rendering DWorker set requestRenderMutex to false, and execute a DelayMs(10) to free the renderMutex
+                if(!TryLockDMutex(renderMutex)) {
+                    for (requestRenderMutex = true;requestRenderMutex;) DelayMs(1);
+                    LockDMutex(renderMutex);
+                }
+                SaveBMP16(RendSurf,(char*)"Shadow.bmp");
+                takeScreenShot = false;
+                UnlockDMutex(renderMutex);
+            }
+
+            DgCheckEvents();
+
+        } else if (!refreshWindow && SynchScreen) {
+            DelayMs(1);
+        }
+
+		if (refreshWindow) {
+            // synchronise
+            if (SynchScreen)
+                WaitSynch(RenderSynchBuff, NULL);
+            else
+                Synch(RenderSynchBuff,NULL);
+
+            DgUpdateWindow();
+            refreshWindow = false;
+		}
 	}
 
-	//WaitDWorker(renderWorkerID); // wait render DWorker finish before exiting
+	// wait render DWorker finish before exiting
+	while(exitApp) {
+        DelayMs(1);
+	}
+
 	DestroyDWorker(renderWorkerID);
 	renderWorkerID = 0;
     DestroyDMutex(renderMutex);
@@ -518,16 +699,19 @@ int compareDFace (const void * a, const void * b)
 
 void RenderWorkerFunc(void *, int ) {
 
-	static float minFps = 0.0f;
-	static float maxFps = 0.0f;
+	float accFps = 0.0f;
+	int accCountFps = 0;
+	int finalCountFps = 0;
+
 	unsigned int frames = 0;
+	DgView curView;
 	DVEC4 *lightCamPos = (DVEC4*)CreateDVEC4Array(4);
 	DVEC4 *lightCamProj = &lightCamPos[2];
 	DVEC2i *lightToScreen = (DVEC2i*)CreateDVEC2Array(2);
-
 	DVEC4 *FacePlane = (DVEC4*)CreateDVEC4();
 	DVEC4 *LastFacePlane = (DVEC4*)CreateDVEC4();
     DVEC4 *lighIntersect = (DVEC4*)CreateDVEC4Array(4);
+
 
 	bool   newFacePlane = true;
 	bool   lastIntersectLight = false;
@@ -548,45 +732,38 @@ void RenderWorkerFunc(void *, int ) {
 	DVEC4 *varrayProj = (DVEC4*)CreateDVEC4Array(4);
 	DVEC2i *varrayiShadow = (DVEC2i*)CreateDVEC2Array(4);
 
+	varrayTreeRes = (DVEC4*)CreateDVEC4Array(4);
+	varrayTreeProj = (DVEC4*)CreateDVEC4Array(4);
+	varrayiTree = (DVEC2i*)CreateDVEC2Array(4);
+
 	AddDVEC4(lightVecPos, plusVEC);
 
 	for(;!exitApp;) {
 
-		// synchronise
-		if (SynchScreen)
-			WaitSynch(RenderSynchBuff, NULL);
-		else
-			Synch(RenderSynchBuff,NULL);
 
 		// synch screen display
 		avgFps=SynchAverageTime(RenderSynchBuff);
 		lastFps=SynchLastTime(RenderSynchBuff);
-
-		if (minFps == 0.0f && maxFps == 0.0f) {
-			minFps = avgFps;
-			maxFps = avgFps;
-		} else {
-			if (avgFps > minFps) minFps = avgFps;
-			if (avgFps < maxFps) maxFps = avgFps;
+		if ((accFps+avgFps) <= 1.0f) {
+            accCountFps ++;
 		}
+		accFps+=avgFps;
 
 		// time synchro ignored for simplicity
 		//float moveTime = accTime;
 		//accTime = 0.0f;
 		LockDMutex(renderMutex); // render lock
 
-		if (highQRendering) {
+        if (highQRendering) {
             DgSetCurSurf(srcBlurSurf16);
-		} else {
+        } else {
             DgSetCurSurf(RendSurf);
-		}
+        }
+
         GetSurfView(&CurSurf, &curView);
         GetViewDMatrix4(matView, &curView, 0.0f, 1.0f, 0.0f, 1.0f);
-        camera.SetFrustum(60, (float)(CurSurf.ResH)/(float)(CurSurf.ResV), 1.0f, 1000.0f);
+        //camera.SetFrustum(60, (float)(CurSurf.ResH)/(float)(CurSurf.ResV), 1.0f, 1000.0f);
 
-
-		// clear all the Surf
-		DgClear16(0x1e|0x380);
 
 		// transform
 		// rotate/move according to camera position/orientation
@@ -607,181 +784,168 @@ void RenderWorkerFunc(void *, int ) {
         int idx3 = 0;
         int idx4 = 0;
 
-        int faceCol = RGB16(0,255,128);
-        int shadowCol = RGB16(1,1,1);
-        int rendCol = 0;
+        //int rendCol = 0;
         float dotLightNormal = 0.0f;
-        float dotLightNormal2 = 0.0f;
-        float dotLightNormal3 = 0.0f;
 
         float dotShadEBLight = 0.0f;
 
         DotDVEC4(lightDir, shadEPlane, &dotShadEBLight);
-        for (int idt = 0; idt < countDFaces; idt++) {
-            ptrFace = dfaces[idt]->vface;
-            if (ptrFace == nullptr || dfaces[idt]->countVertices == 0)
-                continue;
+        // compute each face lightening / shadow uv
+        // do not recompute if light orientation is paused
+        if (!pauseShadow || refreshLightening) {
+            refreshLightening = false;
+            for (int idt = 0; idt < countDFaces; idt++) {
+                ptrFace = DFaces[idt].vface;
+                if (ptrFace == nullptr || DFaces[idt].countVertices == 0)
+                    continue;
 
-            idx1 = ptrFace[1];
-            idx2 = ptrFace[2];
-            idx3 = ptrFace[3];
-            bool uvPositive = false;
+                idx1 = ptrFace[1];
+                idx2 = ptrFace[2];
+                idx3 = ptrFace[3];
+                bool uvPositive = false;
 
-            // compute face lightening
+                // compute face lightening
 
-            ptrNFace = dfaces[idt]->nface;
-            if (ptrNFace == nullptr) {
-                rendCol = BlndCol16(faceCol, shadowCol, 22);
-            } else {
-                // compute lightening according to normal of the first vertex of the poly
-                if (*DotDVEC4(&vnarray[ptrNFace[1]], lightDir, &dotLightNormal) < 0.0f &&
-                    *DotDVEC4(&vnarray[ptrNFace[2]], lightDir, &dotLightNormal2) < 0.0f &&
-                    *DotDVEC4(&vnarray[ptrNFace[3]], lightDir, &dotLightNormal3) < 0.0f) {
-                    dotLightNormal = (dotLightNormal + dotLightNormal2 + dotLightNormal3) / 3.0f;
-                    if (!groundTextured) {
-                        // compute new poly color
-                        rendCol = BlndCol16(faceCol, shadowCol, (int)(20.0f + 18.0f * dotLightNormal));
-                    } else {
-                        rendCol = shadowCol | ((int)(20.0f + 18.0f * dotLightNormal)<<24);
-                    }
-                }
-                else
-                    if (!groundTextured) {
-                        rendCol = BlndCol16(faceCol, shadowCol, 22);
-                    } else {
-                        rendCol = shadowCol | ((int)(22.0f)<<24);
-                    }
-            }
-
-            // compute shadow intersection
-            GetPlaneDVEC4(&varray[idx1], &varray[idx2], &varray[idx3], FacePlane);
-            if (idt == 0) {
-                *LastFacePlane = *FacePlane;
-                newFacePlane = true;
-            } else {
-                if (EqualDVEC4(LastFacePlane, FacePlane)) {
-                    newFacePlane = false;
+                ptrNFace = DFaces[idt].nface;
+                if (ptrNFace == nullptr) {
+                    DFaces[idt].rendCol = BlndCol16(faceCol, shadowCol, 22);
                 } else {
+                    DotDVEC4(&vnarray[ptrNFace[1]], lightDir, &vLightNormals[idx1]);
+                    DotDVEC4(&vnarray[ptrNFace[2]], lightDir, &vLightNormals[idx2]);
+                    DotDVEC4(&vnarray[ptrNFace[3]], lightDir, &vLightNormals[idx3]);
+
+                    // compute lightening according to normal of the first vertex of the poly
+                    if (vLightNormals[idx1] < 0.0f && vLightNormals[idx2] < 0.0f && vLightNormals[idx3] < 0.0f) {
+                        dotLightNormal = (vLightNormals[idx1] + vLightNormals[idx2] + vLightNormals[idx3]) / 3.0f;
+                        if (!groundTextured) {
+                            // compute new poly color
+                            DFaces[idt].rendCol = BlndCol16(faceCol, shadowCol, (int)(20.0f + 18.0f * dotLightNormal));
+                        } else {
+                            DFaces[idt].rendCol = shadowCol | ((int)(18.0 + 18.0f * dotLightNormal)<<24);
+                        }
+                    }
+                    else {
+                        if (!groundTextured) {
+                            DFaces[idt].rendCol = BlndCol16(faceCol, shadowCol, 22);
+                        } else {
+                            DFaces[idt].rendCol = shadowCol | ((int)(18.0f)<<24);
+                        }
+                    }
+                    vLightUPos[idx1] = (vLightNormals[idx1] < 0.0f) ? (int)(vLightNormals[idx1]*-35.0f) : 0;
+                    vLightUPos[idx2] = (vLightNormals[idx2] < 0.0f) ? (int)(vLightNormals[idx2]*-35.0f) : 0;
+                    vLightUPos[idx3] = (vLightNormals[idx3] < 0.0f) ? (int)(vLightNormals[idx3]*-35.0f) : 0;
+                }
+
+                // compute shadow intersection
+                GetPlaneDVEC4(&varray[idx1], &varray[idx2], &varray[idx3], FacePlane);
+                if (idt == 0) {
                     *LastFacePlane = *FacePlane;
                     newFacePlane = true;
-                }
-            }
-
-            dfaces[idt]->shadowed = true;
-            // avoid too thin shadow
-            if (dotShadEBLight > 0.25 || dotShadEBLight < -0.25) {
-
-                if (newFacePlane) {
-                    lastIntersectLight = true;
-                    for (int iv=0; iv < 4; iv++) {
-                        if (!IntersectRayPlaneRes(FacePlane, &varrayShadEB[iv], lightDir, &lighIntersect[iv])) {
-                            dfaces[idt]->shadowed = false;
-                            lastIntersectLight = false;
-                            break;
-                        }
-                    }
-                    // compute poly shadow uv
-                    SubDVEC4Res(&lighIntersect[1], &lighIntersect[0], uShadow); // xt
-                    SubDVEC4Res(&lighIntersect[3], &lighIntersect[0], vShadow); // yt
-                    DotDVEC4(uShadow, uShadow, &lengthU);
-                    DotDVEC4(vShadow, vShadow, &lengthV);
-                    DotDVEC4(uShadow, vShadow, &dotUV);
-                    detUV = lengthU * lengthV - (dotUV * dotUV);
                 } else {
-                    dfaces[idt]->shadowed = lastIntersectLight;
+                    if (EqualDVEC4(LastFacePlane, FacePlane)) {
+                        newFacePlane = false;
+                    } else {
+                        *LastFacePlane = *FacePlane;
+                        newFacePlane = true;
+                    }
                 }
-                // compute u v texture coordinate
-                if (dfaces[idt]->shadowed) {
 
-                    for (int iv=0; iv < dfaces[idt]->countVertices; iv++) {
-                        DotDVEC4(SubDVEC4Res(&varray[ptrFace[iv+1]], &lighIntersect[0], vertShadowDirU), uShadow, &dotU);
-                        DotDVEC4(vertShadowDirU, vShadow, &dotV);
-                        uVert = (lengthV * dotU - dotUV * dotV) / detUV;
-                        vVert = (lengthU * dotV - dotUV * dotU) / detUV;
+                DFaces[idt].shadowed = true;
+                // avoid too thin shadow
+                if (dotShadEBLight > 0.25 || dotShadEBLight < -0.25) {
 
-                        if (uVert >= 1.0f || uVert <= -0.0f || vVert >= 1.0f || vVert <= -0.0f) {
-                            dfaces[idt]->shadowed = false;
-                            break;
-                        } else {
-                            dfaces[idt]->shadowUVi[iv].x = uVert * Tree2SurfShadE16->MaxX;
-                            dfaces[idt]->shadowUVi[iv].y = vVert * Tree2SurfShadE16->MaxY;
+                    if (newFacePlane) {
+                        lastIntersectLight = true;
+                        for (int iv=0; iv < 4; iv++) {
+                            if (!IntersectRayPlaneRes(FacePlane, &varrayShadEB[iv], lightDir, &lighIntersect[iv])) {
+                                DFaces[idt].shadowed = false;
+                                lastIntersectLight = false;
+                                break;
+                            }
+                        }
+                        // compute poly shadow uv
+                        SubDVEC4Res(&lighIntersect[1], &lighIntersect[0], uShadow); // xt
+                        SubDVEC4Res(&lighIntersect[3], &lighIntersect[0], vShadow); // yt
+                        DotDVEC4(uShadow, uShadow, &lengthU);
+                        DotDVEC4(vShadow, vShadow, &lengthV);
+                        DotDVEC4(uShadow, vShadow, &dotUV);
+                        detUV = lengthU * lengthV - (dotUV * dotUV);
+                    } else {
+                        DFaces[idt].shadowed = lastIntersectLight;
+                    }
+                    // compute u v texture coordinate
+                    if (DFaces[idt].shadowed) {
+
+                        for (int iv=0; iv < DFaces[idt].countVertices; iv++) {
+                            DotDVEC4(SubDVEC4Res(&varray[ptrFace[iv+1]], &lighIntersect[0], vertShadowDirU), uShadow, &dotU);
+                            DotDVEC4(vertShadowDirU, vShadow, &dotV);
+                            uVert = (lengthV * dotU - dotUV * dotV) / detUV;
+                            vVert = (lengthU * dotV - dotUV * dotU) / detUV;
+
+                            if (uVert >= 1.0f || uVert <= -0.0f || vVert >= 1.0f || vVert <= -0.0f) {
+                                DFaces[idt].shadowed = false;
+                                break;
+                            } else {
+                                DFaces[idt].shadowUVi[iv].x = uVert * Tree2SurfShadE16->MaxX;
+                                DFaces[idt].shadowUVi[iv].y = vVert * Tree2SurfShadE16->MaxY;
+                            }
                         }
                     }
-                }
 
-            } else {
-                dfaces[idt]->shadowed = false;
+                } else {
+                    DFaces[idt].shadowed = false;
+                }
             }
+        }
 
-            // render face
-            switch (ptrFace[0]) {
-            case 3:
-                if ((varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f))// &&
-                {
-                    ListPtTree[0] = 3;
-                    TreePts[0].x = varrayi[idx1].x; TreePts[0].y = varrayi[idx1].y;
-                    TreePts[1].x = varrayi[idx2].x; TreePts[1].y = varrayi[idx2].y;
-                    TreePts[2].x = varrayi[idx3].x; TreePts[2].y = varrayi[idx3].y;
-                    if (!groundTextured) {
-                        Poly16(&ListPtTree, NULL, POLY16_SOLID, rendCol);
-                    } else {
-                        TreePts[0].xt = varrayUVi[idx1].x; TreePts[0].yt = varrayUVi[idx1].y;
-                        TreePts[1].xt = varrayUVi[idx2].x; TreePts[1].yt = varrayUVi[idx2].y;
-                        TreePts[2].xt = varrayUVi[idx3].x; TreePts[2].yt = varrayUVi[idx3].y;
-                        Poly16(&ListPtTree, Ground1Surf16, POLY16_TEXT_BLND, rendCol);
-                    }
-                    if (dfaces[idt]->shadowed) {
-                        TreePts[0].xt = dfaces[idt]->shadowUVi[0].x; TreePts[0].yt = dfaces[idt]->shadowUVi[0].y;
-                        TreePts[1].xt = dfaces[idt]->shadowUVi[1].x; TreePts[1].yt = dfaces[idt]->shadowUVi[1].y;
-                        TreePts[2].xt = dfaces[idt]->shadowUVi[2].x; TreePts[2].yt = dfaces[idt]->shadowUVi[2].y;
-                        RePoly16(&ListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
-                    }
-                }
+        // tree sprite rendering
+		// rotate/move according to camera position/orientation
+        DMatrix4MulDVEC4ArrayResNT(camera.GetTransform(), varrayShadE, 4, varrayTreeRes);
+        // project into camera
+        DMatrix4MulDVEC4ArrayPerspResNT(camera.GetProject(), varrayTreeRes, 4, varrayTreeProj);
+        // projection to screen
+        DMatrix4MulDVEC4ArrayResDVec2iNT(matView, varrayTreeProj, 4, varrayiTree);
+
+        ListPtTree_C3[0] = 4;
+        TreePts_C3[0].x = varrayiTree[0].x;     TreePts_C3[0].y = varrayiTree[0].y;
+        TreePts_C3[0].xt = vuviarrayShadE[0].x; TreePts_C3[0].yt = vuviarrayShadE[0].y;
+        TreePts_C3[1].x = varrayiTree[1].x;     TreePts_C3[1].y = varrayiTree[1].y;
+        TreePts_C3[1].xt = vuviarrayShadE[1].x; TreePts_C3[1].yt = vuviarrayShadE[1].y;
+        TreePts_C3[2].x = varrayiTree[2].x;     TreePts_C3[2].y = varrayiTree[2].y;
+        TreePts_C3[2].xt = vuviarrayShadE[2].x; TreePts_C3[2].yt = vuviarrayShadE[2].y;
+        TreePts_C3[3].x = varrayiTree[3].x;     TreePts_C3[3].y = varrayiTree[3].y;
+        TreePts_C3[3].xt = vuviarrayShadE[3].x; TreePts_C3[3].yt = vuviarrayShadE[3].y;
+
+        ListPtTree_C4[0] = 3;
+        TreePts_C4[0].x  = -50;    TreePts_C4[0].y  = -71;
+        TreePts_C4[0].xt =  14;    TreePts_C4[0].yt = 14;
+        TreePts_C4[1].x  =  50;    TreePts_C4[1].y  = -71; //-50;
+        TreePts_C4[1].xt =  10;    TreePts_C4[1].yt = 14;
+        TreePts_C4[2].x  =  80 /*40*/;    TreePts_C4[2].y  = 59;
+        TreePts_C4[2].xt =  10;    TreePts_C4[2].yt = 10;
+        TreePts_C4[3].x  = -45;    TreePts_C4[3].y  = 50;
+        TreePts_C4[3].xt =  14;    TreePts_C4[3].yt = 10;
+
+        // render ground and casted shadow on it
+        switch (renderCores) {
+            case 1:
+                RenderWorker1C_1(NULL, 0);
                 break;
-            case 4:
-                idx4 = ptrFace[4];
-                if (varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f && varrayRes[idx4].z > 0.1f) // &&
-                {
-                    ListPtTree[0] = 4;
-                    TreePts[0].x = varrayi[idx1].x; TreePts[0].y = varrayi[idx1].y;
-                    TreePts[1].x = varrayi[idx2].x; TreePts[1].y = varrayi[idx2].y;
-                    TreePts[2].x = varrayi[idx3].x; TreePts[2].y = varrayi[idx3].y;
-                    TreePts[3].x = varrayi[idx4].x; TreePts[3].y = varrayi[idx4].y;
-                    Poly16(&ListPtTree, NULL, POLY16_SOLID, rendCol);
-                }
+            case 2:
+                RunDWorker(renderWorker2C_2ID, false);
+                RenderWorker2C_1(NULL, 0);
+                WaitDWorker(renderWorker2C_2ID);
                 break;
-            }
         }
 
         // render shadow emitter
-
-		// rotate/move according to camera position/orientation
-        DMatrix4MulDVEC4ArrayResNT(camera.GetTransform(), varrayShadE, 4, varrayWorldRes);
-        // project into camera
-        DMatrix4MulDVEC4ArrayPerspResNT(camera.GetProject(), varrayWorldRes, 4, varrayRes);
-        // projection to screen
-        DMatrix4MulDVEC4ArrayResDVec2iNT(matView, varrayRes, 4, varrayi);
-        idx1 = 0;
-        idx2 = 1;
-        idx3 = 2;
-        idx4 = 3;
-        if (varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f && varrayRes[idx4].z > 0.1f) // &&
-        {
-            ListPtTree[0] = 4;
-            TreePts[0].x = varrayi[idx1].x; TreePts[0].y = varrayi[idx1].y;
-            TreePts[0].xt = vuviarrayShadE[idx1].x; TreePts[0].yt = vuviarrayShadE[idx1].y;
-
-            TreePts[1].x = varrayi[idx2].x; TreePts[1].y = varrayi[idx2].y;
-            TreePts[1].xt = vuviarrayShadE[idx2].x; TreePts[1].yt = vuviarrayShadE[idx2].y;
-
-            TreePts[2].x = varrayi[idx3].x; TreePts[2].y = varrayi[idx3].y;
-            TreePts[2].xt = vuviarrayShadE[idx3].x; TreePts[2].yt = vuviarrayShadE[idx3].y;
-
-            TreePts[3].x = varrayi[idx4].x; TreePts[3].y = varrayi[idx4].y;
-            TreePts[3].xt = vuviarrayShadE[idx4].x; TreePts[3].yt = vuviarrayShadE[idx4].y;
-
-            Poly16(&ListPtTree, Tree2Surf16, POLY16_MASK_TEXT | POLY16_FLAG_DBL_SIDED, RGB16(255,0,0));
+        // restore full view
+        if (highQRendering) {
+            DgSetCurSurf(srcBlurSurf16);
+        } else {
+            DgSetCurSurf(RendSurf);
         }
+
 
         // render light vector
 
@@ -814,21 +978,56 @@ void RenderWorkerFunc(void *, int ) {
                     lightToScreen[1].x-plusLight-1, lightToScreen[1].y+plusLight, 0xffff);
         }
 
+        //line16(0, CurSurf.MinY, 0, CurSurf.MaxY, 0xf00f);
+
         // smoothing and resizing to the screen size
 
         if (highQRendering) {
-            RunDWorker(smoothWorker2ID, false);
-            RunDWorker(smoothWorker3ID, false);
-            RunDWorker(smoothWorker4ID, false);
-            SmoothWorker1(NULL, 0);
-            //WaitDWorker(smoothWorker1ID);
-            WaitDWorker(smoothWorker2ID);
-            WaitDWorker(smoothWorker3ID);
-            WaitDWorker(smoothWorker4ID);
-
-            //BlurSurf16(blurSurf16,srcBlurSurf16);
-            DgSetCurSurf(RendSurf);
-            ResizeViewSurf16(blurSurf16, 0, 0);
+            switch (smoothingCores) {
+                case 1:
+                    SmoothWorker1C_1(NULL, 0);
+                    break;
+                case 2:
+                    RunDWorker(smoothWorker2C_2ID, false);
+                    SmoothWorker2C_1(NULL, 0);
+                    WaitDWorker(smoothWorker2C_2ID);
+                    break;
+                case 4:
+                    RunDWorker(smoothWorker2ID, false);
+                    RunDWorker(smoothWorker3ID, false);
+                    RunDWorker(smoothWorker4ID, false);
+                    SmoothWorker1(NULL, 0);
+                    //WaitDWorker(smoothWorker1ID);
+                    WaitDWorker(smoothWorker2ID);
+                    WaitDWorker(smoothWorker3ID);
+                    WaitDWorker(smoothWorker4ID);
+                    break;
+                case 6:
+                    RunDWorker(smoothWorker6C_2ID, false);
+                    RunDWorker(smoothWorker6C_3ID, false);
+                    RunDWorker(smoothWorker6C_4ID, false);
+                    RunDWorker(smoothWorker6C_5ID, false);
+                    RunDWorker(smoothWorker6C_6ID, false);
+                    SmoothWorker6C_1(NULL, 0);
+                    WaitDWorker(smoothWorker6C_2ID);
+                    WaitDWorker(smoothWorker6C_3ID);
+                    WaitDWorker(smoothWorker6C_4ID);
+                    WaitDWorker(smoothWorker6C_5ID);
+                    WaitDWorker(smoothWorker6C_6ID);
+                    break;
+            }
+            // resize smoothed Surf to create HQ rendering
+            //ResizeWorker1C_1(NULL, 0);
+            switch (renderCores) {
+                case 1:
+                    ResizeWorker1C_1(NULL, 0);
+                    break;
+                case 2:
+                    RunDWorker(resizeWorker2C_2ID, false);
+                    ResizeWorker2C_1(NULL, 0);
+                    WaitDWorker(resizeWorker2C_2ID);
+                    break;
+            }
         }
 
 		// restore original Screen View
@@ -836,11 +1035,14 @@ void RenderWorkerFunc(void *, int ) {
 		#define SIZE_TEXT 127
 		char text[SIZE_TEXT + 1];
 		SetTextCol(0xffff);
-		if (avgFps!=0.0 && minFps!=0.0 && maxFps!=0.0)
-			OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "MINFPS %i, MAXFPS %i, FPS %i\n", (int)(1.0/minFps),(int)(1.0/maxFps),(int)(1.0/avgFps));
-		else
-			OutText16Mode("FPS ???\n", AJ_RIGHT);
+        OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "FPS %i\n", finalCountFps);
+        //OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "Screen %ix%i\n", RendSurf->ResH, RendSurf->ResV);
 
+        if (accFps >= 1.0f) {
+            finalCountFps = accCountFps;
+            accFps -= 1.0f;
+            accCountFps = 0;
+        }
 		ClearText();
 		OutText16ModeFormat(AJ_LEFT, text, SIZE_TEXT,
                       "Ctrl+Up/Down  Move Up/Down\n"
@@ -848,20 +1050,32 @@ void RenderWorkerFunc(void *, int ) {
                       "F5      Vertical Synch: %s\n"
                       "F6      Rendering: %s\n"
                       "F7      Quality: %s\n"
+                      "F10     FullScreen: %s\n"
                       "Space   Pause: %s\n"
+                      "Tab     Smoothing cores: %i\n"
+                      "LCtrl   Render cores: %i\n"
                       "Esc     Exit\n",
                       (SynchScreen)?"ON":"OFF", (groundTextured)?"Textured":"SOLID",
-                      (highQRendering)?"High":"Low",
-                      (pauseShadow)?"ON":"OFF");
+                      (highQRendering)?"High":"Low", (fullScreen)?"Yes":"No",
+                      (pauseShadow)?"ON":"OFF", smoothingCores, renderCores);
 
-		DgUpdateWindow();
 		UnlockDMutex(renderMutex);
+
+		refreshWindow = true;
+        // wait until last frame displayed or an exit requested
+        while(refreshWindow && !exitApp && !requestRenderMutex) {
+            if (SynchScreen) {
+                DelayMs(1);
+            }
+        }
+
 		if (requestRenderMutex) {
             requestRenderMutex = false;
             DelayMs(10); // wait for 10 ms to allow the renderMutex to be token by another thread or DWorker
 		}
 		frames++;
 	}
+	exitApp = false;
 }
 
 // ground uv mapping
@@ -876,14 +1090,57 @@ void MapGroundVertices() {
     }
 }
 
+void ShadowWinPreResize(int w, int h) {
+}
+
+void ShadowWinResize(int w, int h) {
+    if (RendSurf == NULL)
+        return;
+
+    SetOrgSurf(RendSurf, RendSurf->ResH/2, RendSurf->ResV/2);
+
+    DestroySurf(blurSurf16);
+    DestroySurf(srcBlurSurf16);
+
+    DgWindowResized = 0;
+    ScrResH = RendSurf->ResH;
+    ScrResV = RendSurf->ResV;
+    if (CreateSurf(&blurSurf16, (int)(ScrResH*smoothSurfRatio)&0xfffffffe, (int)(ScrResV*smoothSurfRatio)&0xfffffffe, 16)==0) {
+        printf("no mem\n"); exit(-1);
+    }
+    SetOrgSurf(blurSurf16,blurSurf16->ResH/2,blurSurf16->ResV/2);
+
+    if (CreateSurf(&srcBlurSurf16, (int)(ScrResH*smoothSurfRatio)&0xfffffffe, (int)(ScrResV*smoothSurfRatio)&0xfffffffe, 16)==0) {
+        printf("no mem\n"); exit(-1);
+    }
+    SetOrgSurf(srcBlurSurf16,srcBlurSurf16->ResH/2,srcBlurSurf16->ResV/2);
+}
+
 // high quality rendering smooth funcs
 
+// 1 core
+
+void SmoothWorker1C_1(void *, int wid) {
+    Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, 0, srcBlurSurf16->ResV-1);
+}
+
+// 2 cores
+
+void SmoothWorker2C_1(void *, int wid) {
+    Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, 0, srcBlurSurf16->ResV/2);
+}
+
+void SmoothWorker2C_2(void *, int wid) {
+    Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, srcBlurSurf16->ResV/2+1, srcBlurSurf16->ResV-1);
+}
+
+// 4 cores - orig
 void SmoothWorker1(void *, int wid) {
     Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, 0, srcBlurSurf16->ResV/4);
 }
 
 void SmoothWorker2(void *, int wid) {
-    Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, srcBlurSurf16->ResV/4, srcBlurSurf16->ResV/2);
+    Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, srcBlurSurf16->ResV/4+1, srcBlurSurf16->ResV/2);
 }
 
 void SmoothWorker3(void *, int wid) {
@@ -892,4 +1149,337 @@ void SmoothWorker3(void *, int wid) {
 
 void SmoothWorker4(void *, int wid) {
     Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, srcBlurSurf16->ResV*3/4+1, srcBlurSurf16->ResV-1);
+}
+
+// 6 cores
+void SmoothWorker6C_1(void *, int wid) {
+    Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, 0, srcBlurSurf16->ResV/6);
+}
+
+void SmoothWorker6C_2(void *, int wid) {
+    Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, srcBlurSurf16->ResV/6+1, srcBlurSurf16->ResV*2/6);
+}
+
+void SmoothWorker6C_3(void *, int wid) {
+    Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, srcBlurSurf16->ResV*2/6+1, srcBlurSurf16->ResV*3/6);
+}
+
+void SmoothWorker6C_4(void *, int wid) {
+    Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, srcBlurSurf16->ResV*3/6+1, srcBlurSurf16->ResV*4/6);
+}
+
+void SmoothWorker6C_5(void *, int wid) {
+    Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, srcBlurSurf16->ResV*4/6+1, srcBlurSurf16->ResV*5/6);
+}
+
+void SmoothWorker6C_6(void *, int wid) {
+    Blur16((void*)blurSurf16->rlfb, (void*)srcBlurSurf16->rlfb, srcBlurSurf16->ResH, srcBlurSurf16->ResV, srcBlurSurf16->ResV*5/6+1, srcBlurSurf16->ResV-1);
+}
+
+// multi-core (workers) render functions ////////////
+
+// full view
+void RenderWorker1C_1(void *, int wid) {
+    DgView curView;
+    int *ptrFace = nullptr;
+    int idx1 = 0;
+    int idx2 = 0;
+    int idx3 = 0;
+    int idx4 = 0;
+
+    if (highQRendering) {
+        DgSetCurSurf(srcBlurSurf16);
+    } else {
+        DgSetCurSurf(RendSurf);
+    }
+
+    // clear all the Surf
+    DgClear16(0x1e|0x380);
+
+    // render ground and casted shadow on it
+    for (int idt = 0; idt < countDFaces; idt++) {
+        ptrFace = dfaces[idt]->vface;
+        if (ptrFace == nullptr || dfaces[idt]->countVertices == 0)
+            continue;
+        idx1 = ptrFace[1];
+        idx2 = ptrFace[2];
+        idx3 = ptrFace[3];
+
+        // render face
+        switch (ptrFace[0]) {
+        case 3:
+            if ((varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f))// &&
+            {
+                ListPtTree[0] = 3;
+                TreePts[0].x = varrayi[idx1].x; TreePts[0].y = varrayi[idx1].y;
+                TreePts[1].x = varrayi[idx2].x; TreePts[1].y = varrayi[idx2].y;
+                TreePts[2].x = varrayi[idx3].x; TreePts[2].y = varrayi[idx3].y;
+                if (!groundTextured) {
+                    //Poly16(&ListPtTree, NULL, POLY16_SOLID_BLND, dfaces[idt]->rendCol|(15<<24));
+                    Poly16(&ListPtTree, NULL, POLY16_SOLID, faceCol);
+                    TreePts[0].xt = vLightUPos[idx1];
+                    TreePts[0].yt = 0;
+                    TreePts[1].xt = vLightUPos[idx2];
+                    TreePts[1].yt = 0;
+                    TreePts[2].xt = vLightUPos[idx3];
+                    TreePts[2].yt = 0;
+                    RePoly16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                } else {
+                    /*TreePts[0].xt = varrayUVi[idx1].x; TreePts[0].yt = varrayUVi[idx1].y;
+                    TreePts[1].xt = varrayUVi[idx2].x; TreePts[1].yt = varrayUVi[idx2].y;
+                    TreePts[2].xt = varrayUVi[idx3].x; TreePts[2].yt = varrayUVi[idx3].y;
+                    Poly16(&ListPtTree, Ground1Surf16, POLY16_TEXT_BLND, dfaces[idt]->rendCol);*/
+                    TreePts[0].xt = varrayUVi[idx1].x; TreePts[0].yt = varrayUVi[idx1].y;
+                    TreePts[1].xt = varrayUVi[idx2].x; TreePts[1].yt = varrayUVi[idx2].y;
+                    TreePts[2].xt = varrayUVi[idx3].x; TreePts[2].yt = varrayUVi[idx3].y;
+                    Poly16(&ListPtTree, Ground1Surf16, POLY16_TEXT, dfaces[idt]->rendCol);
+                    TreePts[0].xt = vLightUPos[idx1];
+                    TreePts[0].yt = 0;
+                    TreePts[1].xt = vLightUPos[idx2];
+                    TreePts[1].yt = 0;
+                    TreePts[2].xt = vLightUPos[idx3];
+                    TreePts[2].yt = 0;
+                    RePoly16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                }
+                if (dfaces[idt]->shadowed) {
+                    TreePts[0].xt = dfaces[idt]->shadowUVi[0].x; TreePts[0].yt = dfaces[idt]->shadowUVi[0].y;
+                    TreePts[1].xt = dfaces[idt]->shadowUVi[1].x; TreePts[1].yt = dfaces[idt]->shadowUVi[1].y;
+                    TreePts[2].xt = dfaces[idt]->shadowUVi[2].x; TreePts[2].yt = dfaces[idt]->shadowUVi[2].y;
+                    RePoly16(&ListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
+                }
+            }
+            break;
+        case 4:
+            idx4 = ptrFace[4];
+            if (varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f && varrayRes[idx4].z > 0.1f) // &&
+            {
+                ListPtTree[0] = 4;
+                TreePts[0].x = varrayi[idx1].x; TreePts[0].y = varrayi[idx1].y;
+                TreePts[1].x = varrayi[idx2].x; TreePts[1].y = varrayi[idx2].y;
+                TreePts[2].x = varrayi[idx3].x; TreePts[2].y = varrayi[idx3].y;
+                TreePts[3].x = varrayi[idx4].x; TreePts[3].y = varrayi[idx4].y;
+                Poly16(&ListPtTree, NULL, POLY16_SOLID, dfaces[idt]->rendCol);
+            }
+            break;
+        }
+    }
+
+    if (varrayTreeProj[0].z > 0.1f) // &&
+    {
+        //Poly16(&ListPtTree_C3, Tree2Surf16, POLY16_MASK_TEXT_BLND | POLY16_FLAG_DBL_SIDED, RGB16(0,0,0) | (15 << 24));
+        Poly16(&ListPtTree_C3, Tree2Surf16, POLY16_MASK_TEXT | POLY16_FLAG_DBL_SIDED, 0);
+    }
+    //ResizeViewSurf16(gouroudLightSurf, 1, 0);
+    //PutSurf16(gouroudLightSurf,0,0,0);
+}
+
+// left, right
+void RenderWorker2C_1(void *, int wid) {
+    DgView curView;
+    int *ptrFace = nullptr;
+    int idx1 = 0;
+    int idx2 = 0;
+    int idx3 = 0;
+    int idx4 = 0;
+
+    if (highQRendering) {
+        DgSetCurSurf(srcBlurSurf16);
+    } else {
+        DgSetCurSurf(RendSurf);
+    }
+    GetSurfView(&CurSurf, &curView);
+    curView.MaxX = 0;
+    SetSurfView(&CurSurf, &curView);
+
+    // clear all the Surf
+    ClearSurf16(0x1e|0x380);
+
+    // render ground and casted shadow on it
+    for (int idt = 0; idt < countDFaces; idt++) {
+        ptrFace = dfaces[idt]->vface;
+        if (ptrFace == nullptr || dfaces[idt]->countVertices == 0)
+            continue;
+        idx1 = ptrFace[1];
+        idx2 = ptrFace[2];
+        idx3 = ptrFace[3];
+
+        // render face
+        switch (ptrFace[0]) {
+        case 3:
+            if ((varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f))// &&
+            {
+                ListPtTree[0] = 3;
+                TreePts[0].x = varrayi[idx1].x; TreePts[0].y = varrayi[idx1].y;
+                TreePts[1].x = varrayi[idx2].x; TreePts[1].y = varrayi[idx2].y;
+                TreePts[2].x = varrayi[idx3].x; TreePts[2].y = varrayi[idx3].y;
+                if (!groundTextured) {
+                    //Poly16(&ListPtTree, NULL, POLY16_SOLID, dfaces[idt]->rendCol);
+                    Poly16(&ListPtTree, NULL, POLY16_SOLID, faceCol);
+                    TreePts[0].xt = vLightUPos[idx1];
+                    TreePts[0].yt = 0;
+                    TreePts[1].xt = vLightUPos[idx2];
+                    TreePts[1].yt = 0;
+                    TreePts[2].xt = vLightUPos[idx3];
+                    TreePts[2].yt = 0;
+                    RePoly16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                } else {
+                    /*TreePts[0].xt = varrayUVi[idx1].x; TreePts[0].yt = varrayUVi[idx1].y;
+                    TreePts[1].xt = varrayUVi[idx2].x; TreePts[1].yt = varrayUVi[idx2].y;
+                    TreePts[2].xt = varrayUVi[idx3].x; TreePts[2].yt = varrayUVi[idx3].y;
+                    Poly16(&ListPtTree, Ground1Surf16, POLY16_TEXT_BLND, dfaces[idt]->rendCol);*/
+                    TreePts[0].xt = varrayUVi[idx1].x; TreePts[0].yt = varrayUVi[idx1].y;
+                    TreePts[1].xt = varrayUVi[idx2].x; TreePts[1].yt = varrayUVi[idx2].y;
+                    TreePts[2].xt = varrayUVi[idx3].x; TreePts[2].yt = varrayUVi[idx3].y;
+                    Poly16(&ListPtTree, Ground1Surf16, POLY16_TEXT, dfaces[idt]->rendCol);
+                    TreePts[0].xt = vLightUPos[idx1];
+                    TreePts[0].yt = 0;
+                    TreePts[1].xt = vLightUPos[idx2];
+                    TreePts[1].yt = 0;
+                    TreePts[2].xt = vLightUPos[idx3];
+                    TreePts[2].yt = 0;
+                    RePoly16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                }
+                if (dfaces[idt]->shadowed) {
+                    TreePts[0].xt = dfaces[idt]->shadowUVi[0].x; TreePts[0].yt = dfaces[idt]->shadowUVi[0].y;
+                    TreePts[1].xt = dfaces[idt]->shadowUVi[1].x; TreePts[1].yt = dfaces[idt]->shadowUVi[1].y;
+                    TreePts[2].xt = dfaces[idt]->shadowUVi[2].x; TreePts[2].yt = dfaces[idt]->shadowUVi[2].y;
+                    RePoly16(&ListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
+                }
+            }
+            break;
+        case 4:
+            idx4 = ptrFace[4];
+            if (varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f && varrayRes[idx4].z > 0.1f) // &&
+            {
+                ListPtTree[0] = 4;
+                TreePts[0].x = varrayi[idx1].x; TreePts[0].y = varrayi[idx1].y;
+                TreePts[1].x = varrayi[idx2].x; TreePts[1].y = varrayi[idx2].y;
+                TreePts[2].x = varrayi[idx3].x; TreePts[2].y = varrayi[idx3].y;
+                TreePts[3].x = varrayi[idx4].x; TreePts[3].y = varrayi[idx4].y;
+                Poly16(&ListPtTree, NULL, POLY16_SOLID, dfaces[idt]->rendCol);
+            }
+            break;
+        }
+    }
+    if (varrayTreeProj[0].z > 0.1f && varrayTreeProj[1].z > 0.1f && varrayTreeProj[2].z > 0.1f && varrayTreeProj[3].z > 0.1f) // &&
+    {
+        Poly16(&ListPtTree_C3, Tree2Surf16, POLY16_MASK_TEXT | POLY16_FLAG_DBL_SIDED, RGB16(255,0,0));
+    }
+}
+
+void RenderWorker2C_2(void *, int wid) {
+    DgView curView;
+    int *ptrFace = nullptr;
+    int idx1 = 0;
+    int idx2 = 0;
+    int idx3 = 0;
+    int idx4 = 0;
+
+    if (highQRendering) {
+        DgSetCurSurf_C2(srcBlurSurf16);
+    } else {
+        DgSetCurSurf_C2(RendSurf);
+    }
+    GetSurfView(&CurSurf_C2, &curView);
+    curView.MinX = 1;
+    SetSurfView(&CurSurf_C2, &curView);
+
+    // clear all the Surf
+    ClearSurf16_C2(0x1e|0x380);
+
+    // render ground and casted shadow on it
+    for (int idt = 0; idt < countDFaces; idt++) {
+        ptrFace = dfaces[idt]->vface;
+        if (ptrFace == nullptr || dfaces[idt]->countVertices == 0)
+            continue;
+        idx1 = ptrFace[1];
+        idx2 = ptrFace[2];
+        idx3 = ptrFace[3];
+
+        // render face
+        switch (ptrFace[0]) {
+        case 3:
+            if ((varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f))// &&
+            {
+                ListPtTree_C2[0] = 3;
+                TreePts_C2[0].x = varrayi[idx1].x; TreePts_C2[0].y = varrayi[idx1].y;
+                TreePts_C2[1].x = varrayi[idx2].x; TreePts_C2[1].y = varrayi[idx2].y;
+                TreePts_C2[2].x = varrayi[idx3].x; TreePts_C2[2].y = varrayi[idx3].y;
+                if (!groundTextured) {
+//                    Poly16_C2(&ListPtTree_C2, NULL, POLY16_SOLID, dfaces[idt]->rendCol);
+                    Poly16_C2(&ListPtTree_C2, NULL, POLY16_SOLID, faceCol);
+                    TreePts_C2[0].xt = vLightUPos[idx1];
+                    TreePts_C2[0].yt = 0;
+                    TreePts_C2[1].xt = vLightUPos[idx2];
+                    TreePts_C2[1].yt = 0;
+                    TreePts_C2[2].xt = vLightUPos[idx3];
+                    TreePts_C2[2].yt = 0;
+                    RePoly16_C2(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                } else {
+                    /*TreePts_C2[0].xt = varrayUVi[idx1].x; TreePts_C2[0].yt = varrayUVi[idx1].y;
+                    TreePts_C2[1].xt = varrayUVi[idx2].x; TreePts_C2[1].yt = varrayUVi[idx2].y;
+                    TreePts_C2[2].xt = varrayUVi[idx3].x; TreePts_C2[2].yt = varrayUVi[idx3].y;
+                    Poly16_C2(&ListPtTree_C2, Ground1Surf16, POLY16_TEXT_BLND, dfaces[idt]->rendCol);*/
+                    TreePts_C2[0].xt = varrayUVi[idx1].x; TreePts_C2[0].yt = varrayUVi[idx1].y;
+                    TreePts_C2[1].xt = varrayUVi[idx2].x; TreePts_C2[1].yt = varrayUVi[idx2].y;
+                    TreePts_C2[2].xt = varrayUVi[idx3].x; TreePts_C2[2].yt = varrayUVi[idx3].y;
+                    Poly16_C2(&ListPtTree_C2, Ground1Surf16, POLY16_TEXT, dfaces[idt]->rendCol);
+                    TreePts_C2[0].xt = vLightUPos[idx1];
+                    TreePts_C2[0].yt = 0;
+                    TreePts_C2[1].xt = vLightUPos[idx2];
+                    TreePts_C2[1].yt = 0;
+                    TreePts_C2[2].xt = vLightUPos[idx3];
+                    TreePts_C2[2].yt = 0;
+                    RePoly16_C2(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                }
+                if (dfaces[idt]->shadowed) {
+                    TreePts_C2[0].xt = dfaces[idt]->shadowUVi[0].x; TreePts_C2[0].yt = dfaces[idt]->shadowUVi[0].y;
+                    TreePts_C2[1].xt = dfaces[idt]->shadowUVi[1].x; TreePts_C2[1].yt = dfaces[idt]->shadowUVi[1].y;
+                    TreePts_C2[2].xt = dfaces[idt]->shadowUVi[2].x; TreePts_C2[2].yt = dfaces[idt]->shadowUVi[2].y;
+                    RePoly16_C2(&ListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
+                }
+            }
+            break;
+        case 4:
+            idx4 = ptrFace[4];
+            if (varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f && varrayRes[idx4].z > 0.1f) // &&
+            {
+                ListPtTree_C2[0] = 4;
+                TreePts_C2[0].x = varrayi[idx1].x; TreePts_C2[0].y = varrayi[idx1].y;
+                TreePts_C2[1].x = varrayi[idx2].x; TreePts_C2[1].y = varrayi[idx2].y;
+                TreePts_C2[2].x = varrayi[idx3].x; TreePts_C2[2].y = varrayi[idx3].y;
+                TreePts_C2[3].x = varrayi[idx4].x; TreePts_C2[3].y = varrayi[idx4].y;
+                Poly16_C2(&ListPtTree_C2, NULL, POLY16_SOLID, dfaces[idt]->rendCol);
+            }
+            break;
+        }
+    }
+    if (varrayTreeProj[0].z > 0.1f && varrayTreeProj[1].z > 0.1f && varrayTreeProj[2].z > 0.1f && varrayTreeProj[3].z > 0.1f) // &&
+    {
+        Poly16_C2(&ListPtTree_C3, Tree2Surf16, POLY16_MASK_TEXT | POLY16_FLAG_DBL_SIDED, RGB16(255,0,0));
+    }
+}
+
+// resize worker smooth to screen (HQ rendering)
+
+void ResizeWorker1C_1(void *, int wid) {
+    DgSetCurSurf(RendSurf);
+    ResizeViewSurf16(blurSurf16, 0, 0);
+}
+
+// top, bottom
+void ResizeWorker2C_1(void *, int wid) {
+    DgSetCurSurf(RendSurf);
+    CurSurf.MinY = 1;
+    DgSetSrcSurf(blurSurf16);
+    SrcSurf.MinY = 1;
+    ResizeViewSurf16(NULL, 0, 0);
+}
+
+void ResizeWorker2C_2(void *, int wid) {
+    DgSetCurSurf_C2(RendSurf);
+    CurSurf_C2.MaxY = 0;
+    DgSetSrcSurf_C2(blurSurf16);
+    SrcSurf_C2.MaxY = 0;
+    ResizeViewSurf16_C2(NULL, 0, 0);
 }
