@@ -6,6 +6,7 @@
 /*  19 april 2022 : first release */
 /*  6 February 2023 : Few upgrades, first Debian version */
 /*  2 March 2023: Detect/handle window close request */
+/*  6 Aout 2023: Rework event handling and rendering loop and DWorker */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,6 +110,7 @@ bool ExitApp = false;
 bool PauseMove = false;
 bool takeScreenShot=false;
 bool requestRenderMutex=false;
+bool refreshWindow=false;
 // synch buffers
 char EventsLoopSynchBuff[SIZE_SYNCH_BUFF];
 char RenderSynchBuff[SIZE_SYNCH_BUFF];
@@ -228,7 +230,7 @@ int main (int argc, char ** argv) {
     }
 
     // init video mode
-    if (!DgInitMainWindowX("Forest", ScrResH, ScrResV, 16, -1, -1, false, false, false)) {
+    if (!DgInitMainWindowX("Forest", ScrResH, ScrResV, 16, -1, -1, false, false, true)) {
         DgQuit();
         exit(-1);
     }
@@ -250,7 +252,7 @@ int main (int argc, char ** argv) {
     ForestInit();
 
     // init synchro
-    InitSynch(EventsLoopSynchBuff, NULL, 250);
+    InitSynch(EventsLoopSynchBuff, NULL, 500);
     InitSynch(RenderSynchBuff, NULL, 60);
     // lunch rendering loop
     RunDWorker(renderWorkerID, false);
@@ -260,60 +262,73 @@ int main (int argc, char ** argv) {
     // main loop
     for (int j=0;; j++) {
         // synchronise event loop
-        WaitSynch(EventsLoopSynchBuff, NULL);
+        if (Synch(EventsLoopSynchBuff, NULL) != 0) {
 
-        if (DgTime != LastDgTime) {
-            accTime += (float)(DgTime-LastDgTime)*revTimerFreq; //SynchAverageTime(EventsLoopSynchBuff);
-            LastDgTime = DgTime;
-            ForestProgress();
-        }
-
-        // get key
-        unsigned char keyCode;
-        unsigned int keyFLAG;
-
-        GetKey(&keyCode, &keyFLAG);
-        switch (keyCode) {
-        case KB_KEY_F5: // F5 vertical synch e/d
-            SynchScreen=!SynchScreen;
-            break;
-        case KB_KEY_F6: // F6 blur
-            SmoothDisplay=!SmoothDisplay;
-            break;
-        case KB_KEY_F7 : // F7 fog
-            EnableFog=!EnableFog;
-            break;
-        case KB_KEY_SPACE : // F7 fog
-            PauseMove=!PauseMove;
-            break;
-        case KB_KEY_ESC:
-            ExitApp = true;
-            break;
-        case KB_KEY_TAB: // ctrl + shift + TAB = screenshot
-            takeScreenShot = ((keyFLAG&(KB_SHIFT_PR|KB_CTRL_PR)) > 0);
-            break;
-        }
-
-        // detect close Request
-        if (DgWindowRequestClose == 1) {
-            // Set ExitApp to true to allow render DWorker to exit and finish
-            ExitApp = true;
-        }
-        // esc exit
-        if (ExitApp) break;
-        if (takeScreenShot) {
-            // first try to lock renderMutex,
-            // if fail, wait until rendering DWorker set requestRenderMutex to false, and execute a DelayMs(10) to free the renderMutex
-            if(!TryLockDMutex(renderMutex)) {
-                for (requestRenderMutex = true; requestRenderMutex;) DelayMs(1);
-                LockDMutex(renderMutex);
+            accTime = SynchLastTime(EventsLoopSynchBuff);
+            if (accTime>0.0f) {
+                ForestProgress();
             }
-            SaveBMP16(RendSurf,(char*)"forest.bmp");
-            takeScreenShot = false;
-            UnlockDMutex(renderMutex);
+
+            // get key
+            unsigned char keyCode;
+            unsigned int keyFLAG;
+
+            GetKey(&keyCode, &keyFLAG);
+            switch (keyCode) {
+            case KB_KEY_F5: // F5 vertical synch e/d
+                SynchScreen=!SynchScreen;
+                break;
+            case KB_KEY_F6: // F6 blur
+                SmoothDisplay=!SmoothDisplay;
+                break;
+            case KB_KEY_F7 : // F7 fog
+                EnableFog=!EnableFog;
+                break;
+            case KB_KEY_SPACE : // F7 fog
+                PauseMove=!PauseMove;
+                break;
+            case KB_KEY_ESC:
+                ExitApp = true;
+                break;
+            case KB_KEY_TAB: // ctrl + shift + TAB = screenshot
+                takeScreenShot = ((keyFLAG&(KB_SHIFT_PR|KB_CTRL_PR)) > 0);
+                break;
+            }
+
+            // detect close Request
+            if (DgWindowRequestClose == 1) {
+                // Set ExitApp to true to allow render DWorker to exit and finish
+                ExitApp = true;
+            }
+            // esc exit
+            if (ExitApp) break;
+            if (takeScreenShot) {
+                // first try to lock renderMutex,
+                // if fail, wait until rendering DWorker set requestRenderMutex to false, and execute a DelayMs(10) to free the renderMutex
+                if(!TryLockDMutex(renderMutex)) {
+                    for (requestRenderMutex = true; requestRenderMutex;) DelayMs(1);
+                    LockDMutex(renderMutex);
+                }
+                SaveBMP16(RendSurf,(char*)"forest.bmp");
+                takeScreenShot = false;
+                UnlockDMutex(renderMutex);
+            }
+
+            DgCheckEvents();
+        } else if (!refreshWindow && SynchScreen) {
+            DelayMs(1);
         }
 
-        DgCheckEvents();
+		if (refreshWindow) {
+            // synchronise
+            if (SynchScreen)
+                WaitSynch(RenderSynchBuff, NULL);
+            else
+                Synch(RenderSynchBuff,NULL);
+
+            DgUpdateWindow();
+            refreshWindow = false;
+		}
     }
 
     DestroyDWorker(renderWorkerID);
@@ -649,11 +664,6 @@ void RenderWorkerFunc(void *, int ) {
     bool FullView = false;
 
     for(; !ExitApp;) {
-        // synchronise
-        if (SynchScreen)
-            WaitSynch(RenderSynchBuff, NULL);
-        else
-            Synch(RenderSynchBuff,NULL);
 
         // synch screen display
         avgFps=SynchAverageTime(RenderSynchBuff);
@@ -790,13 +800,21 @@ void RenderWorkerFunc(void *, int ) {
         ClearText();
         OutText16ModeFormat(AJ_LEFT,text,100,"Esc   Exit\nF5    Vertical Synch: %s\nF6    Smooth: %s\nF7    Fog: %s\nSpace Pause: %s\n", (SynchScreen)?"ON":"OFF", (SmoothDisplay)?"ON":"OFF", (EnableFog)? "ON":"OFF", (PauseMove)? "ON":"OFF");
 
-        DgUpdateWindow();
 
         UnlockDMutex(renderMutex); // render unlock
+		refreshWindow = true;
+
+        // wait until last frame displayed or an exit requested
+        while(refreshWindow && !ExitApp && !requestRenderMutex) {
+            if (SynchScreen) {
+                DelayMs(1);
+            }
+        }
+
         if (requestRenderMutex) {
             requestRenderMutex = false;
             DelayMs(10); // wait for 10 ms to allow the renderMutex to be token by another thread or DWorker
         }
     }
-
+    ExitApp = false;
 }
