@@ -22,6 +22,7 @@ public:
 	~DCamera3D();
 	DMatrix4 *GetTransform() { return m_matTransform; };
 	DMatrix4 *GetProject() { return m_matProject; };
+	DVEC4 *GetPosition() { return m_eyePosition; };
 	void SetFrustum(float fov, float aspect, float znear, float zfar);
 	void GetFrustum(float &fov, float &aspect, float &znear, float &zfar);
 	void SetPosition(float x, float y, float z);
