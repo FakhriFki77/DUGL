@@ -4,6 +4,7 @@
 /*  23 march 2022 : first release */
 /*  6 February 2023 : Few upgrades, first Debian version */
 /*  2 March 2023: Detect/handle window close request */
+/*  6 Aout 2023: Rework event handling and rendering loop and DWorker */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,8 +12,8 @@
 #include <DUGL.h>
 
 // screen resolution
-//int ScrResH=640,ScrResV=480;
-int ScrResH=800,ScrResV=600;
+int ScrResH=640,ScrResV=480;
+//int ScrResH=800,ScrResV=600;
 //int ScrResH=1024,ScrResV=768;
 //int ScrResH=1280,ScrResV=1024;
 
@@ -25,6 +26,7 @@ bool pauseHello=false;
 bool exitApp=false;
 bool takeScreenShot=false;
 bool requestRenderMutex=false;
+bool refreshWindow=false;
 // synch buffers
 char EventsLoopSynchBuff[SIZE_SYNCH_BUFF];
 char RenderSynchBuff[SIZE_SYNCH_BUFF];
@@ -40,7 +42,6 @@ const char *sHelloWorld = "Hello World!";
 DgSurf *HelloWorldSurf16;
 DgView RendSurfOrgView, HelloWorldView, RendSurfCurView;
 bool directionGrowth = true;
-
 
 int main (int argc, char ** argv)
 {
@@ -111,71 +112,86 @@ int main (int argc, char ** argv)
     // init resize view of Hello world
 	RendSurfCurView = HelloWorldView;
     // init synchro
-    InitSynch(EventsLoopSynchBuff, NULL, 250); // speed of events scan per second, this will be too the max fps detectable
+    InitSynch(EventsLoopSynchBuff, NULL, 500); // speed of events scan per second
     InitSynch(RenderSynchBuff, NULL, 60); // screen frequency
 	// lunch render DWorker
 	RunDWorker(renderWorkerID, false);
 
 	// main loop
 	for (int j=0;;j++) {
-		// synchronise event loop
-		// WaitSynch should be used as Synch will cause scan events by milions or bilions time per sec !
-		WaitSynch(EventsLoopSynchBuff, NULL);
+        if (Synch(EventsLoopSynchBuff, NULL) != 0) {
 
-		// time synching ignored for simplicity
-		//accTime += SynchAverageTime(EventsLoopSynchBuff);
+            // time synching ignored for simplicity
+            //accTime += SynchAverageTime(EventsLoopSynchBuff);
 
-		// get key
-		unsigned char keyCode;
-		unsigned int keyFLAG;
+            // get key
+            unsigned char keyCode;
+            unsigned int keyFLAG;
 
-		GetKey(&keyCode, &keyFLAG);
-		switch (keyCode) {
-			case KB_KEY_ESC: // F5 vertical synch e/d
-				exitApp = true;
-				break;
-			case KB_KEY_F5: // F5 vertical synch e/d
-				SynchScreen=!SynchScreen;
-				break;
-			case KB_KEY_SPACE: // Space to pause
-				pauseHello=!pauseHello;
-				break;
-			case KB_KEY_F6: // F6 Todo
-				break;
-			case KB_KEY_F7 : // F7 Todo
-				break;
-			case KB_KEY_TAB: // ctrl + shift + TAB = screenshot
-				takeScreenShot = ((keyFLAG&(KB_SHIFT_PR|KB_CTRL_PR)) > 0);
-				break;
-		}
-
-        // detect close Request
-        if (DgWindowRequestClose == 1) {
-            // Set ExitApp to true to allow render DWorker to exit and finish
-            exitApp = true;
-        }
-
-		// esc exit
-        if (exitApp) {
-			break;
-        }
-		// need screen shot
-		if (takeScreenShot) {
-            // first try to lock renderMutex,
-            // if fail, wait until rendering DWorker set requestRenderMutex to false, and execute a DelayMs(10) to free the renderMutex
-            if(!TryLockDMutex(renderMutex)) {
-                for (requestRenderMutex = true;requestRenderMutex;) DelayMs(1);
-                LockDMutex(renderMutex);
+            GetKey(&keyCode, &keyFLAG);
+            switch (keyCode) {
+                case KB_KEY_ESC: // F5 vertical synch e/d
+                    exitApp = true;
+                    break;
+                case KB_KEY_F5: // F5 vertical synch e/d
+                    SynchScreen=!SynchScreen;
+                    break;
+                case KB_KEY_SPACE: // Space to pause
+                    pauseHello=!pauseHello;
+                    break;
+                case KB_KEY_F6: // F6 Todo
+                    break;
+                case KB_KEY_F7 : // F7 Todo
+                    break;
+                case KB_KEY_TAB: // ctrl + shift + TAB = screenshot
+                    takeScreenShot = ((keyFLAG&(KB_SHIFT_PR|KB_CTRL_PR)) > 0);
+                    break;
             }
-			SaveBMP16(RendSurf,(char*)"HelloWorld.bmp");
-			takeScreenShot = false;
-			UnlockDMutex(renderMutex);
-		}
 
-		DgCheckEvents();
+            // detect close Request
+            if (DgWindowRequestClose == 1) {
+                // Set ExitApp to true to allow render DWorker to exit and finish
+                exitApp = true;
+            }
+
+            // esc exit
+            if (exitApp) {
+                break;
+            }
+            // need screen shot
+            if (takeScreenShot) {
+                // first try to lock renderMutex,
+                // if fail, wait until rendering DWorker set requestRenderMutex to false, and execute a DelayMs(10) to free the renderMutex
+                if(!TryLockDMutex(renderMutex)) {
+                    for (requestRenderMutex = true;requestRenderMutex;) DelayMs(1);
+                    LockDMutex(renderMutex);
+                }
+                SaveBMP16(RendSurf,(char*)"HelloWorld.bmp");
+                takeScreenShot = false;
+                UnlockDMutex(renderMutex);
+            }
+
+            DgCheckEvents();
+        } else if (!refreshWindow && SynchScreen) {
+            DelayMs(1);
+        }
+
+		if (refreshWindow) {
+            // synchronise
+            if (SynchScreen)
+                WaitSynch(RenderSynchBuff, NULL);
+            else
+                Synch(RenderSynchBuff,NULL);
+
+            DgUpdateWindow();
+            refreshWindow = false;
+		}
 	}
 
-	//WaitDWorker(renderWorkerID); // wait render DWorker finish before exiting
+	// wait render DWorker finish before exiting
+	while(exitApp) {
+        DelayMs(1);
+	}
 	DestroyDWorker(renderWorkerID);
 	renderWorkerID = 0;
     DestroyDMutex(renderMutex);
@@ -194,12 +210,6 @@ void RenderWorkerFunc(void *, int ) {
 	unsigned int frames = 0;
 
 	for(;!exitApp;) {
-
-		// synchronise
-		if (SynchScreen)
-			WaitSynch(RenderSynchBuff, NULL);
-		else
-			Synch(RenderSynchBuff,NULL);
 
 		// synch screen display
 		avgFps=SynchAverageTime(RenderSynchBuff);
@@ -232,11 +242,11 @@ void RenderWorkerFunc(void *, int ) {
 		// restore original Screen View
 		SetSurfViewBounds(&CurSurf, &RendSurfOrgView);
 		ClearText();
-		#define SIZE_TEXT 127
+		#define SIZE_TEXT 512
 		char text[SIZE_TEXT + 1];
 		SetTextCol(0xffff);
 		if (avgFps!=0.0 && minFps!=0.0 && maxFps!=0.0)
-			OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "MINFPS %i, MAXFPS %i, FPS %i\n", (int)(1.0/minFps),(int)(1.0/maxFps),(int)(1.0/avgFps));
+			OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "DgTime %i, MAXFPS %i, FPS %i\n", DgTime,(int)(1.0/maxFps),(int)(1.0/avgFps));
 		else
 			OutText16Mode("FPS ???\n", AJ_RIGHT);
 
@@ -277,13 +287,22 @@ void RenderWorkerFunc(void *, int ) {
 				}
 			}
 		}
-
-		DgUpdateWindow();
 		UnlockDMutex(renderMutex);
+
+
+		refreshWindow = true;
+        // wait until last frame displayed or an exit requested
+        while(refreshWindow && !exitApp && !requestRenderMutex) {
+            if (SynchScreen) {
+                DelayMs(1);
+            }
+        }
+
 		if (requestRenderMutex) {
             requestRenderMutex = false;
             DelayMs(10); // wait for 10 ms to allow the renderMutex to be token by another thread or DWorker
 		}
 		frames++;
 	}
+	exitApp = false;
 }
