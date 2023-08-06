@@ -457,84 +457,58 @@ void UpdateMouseButtonsState() {
 // Timer //////////////////////////////
 
 
-SDL_TimerID sdl_timer_id = 0;
 
 unsigned int DgTime = 0;
-unsigned int DgTimerInterval = 0;
 int DgTimerFreq = 0;
-Uint64 lastPerformanceCounterValue = 0;
-Uint64 lastPerformanceCounterRest = 0;
-Uint64 DgPerformanceCounterFreq = 0;
-Uint64 newPerfCounter = 0;
-Uint64 deltaPerfCounter = 0;
 
-const int MinTimerFreq = 20;
-const int MaxTimerFreq = 1000;
-const int DefaultTimerFreq = 200;
-const int TimeFreqsCount = 10;
-
-const int TimeFreqs[10] = { 20, 25, 40, 50, 100, 125, 200, 250, 500, 1000};
-
-Uint32 DgTimeHandler(Uint32 interval, void *param);
+unsigned int dgTimeWorkerID = 0;
+unsigned int DgInitTimeTick = 0;
+unsigned int dgWDelay = 0;
+void DgTimeWorkerFunc(void *, int );
+bool DgKillTimer = false;
 
 void DgInstallTimer(int Freq) {
     int nIdx = 0;
-    //SDL_Log("Installing Timer: requested frequency %i\n\n", Freq);
-    //printf("Installing Timer: requested frequency %i\n\n", Freq);
-    if (sdl_timer_id != 0) {
-        SDL_RemoveTimer(sdl_timer_id);
-        sdl_timer_id = 0;
+    if (DgTimerFreq > 0 || Freq <= 0) {
+        return; // already installed
+    }
+    dgTimeWorkerID = CreateDWorker(DgTimeWorkerFunc, NULL);
+    if (dgTimeWorkerID == 0) {
+        return; // failed to create Time DWorker
+    }
+    DgKillTimer = false;
+    if (Freq <= 500) {
+        DgTimerFreq = 500;
+        dgWDelay = 2;
+    } else {
+        DgTimerFreq = 1000;
+        dgWDelay = 1;
     }
 
-    // verify validity
-    if (Freq < MinTimerFreq || Freq > MaxTimerFreq) {
-        DgInstallTimer(DefaultTimerFreq);
-        return;
-    }
-    // reset Time Values
     DgTime = 0;
-    DgTimerFreq = 0;
-    // search equal or highest bound
-    for (nIdx = 0; nIdx < TimeFreqsCount; nIdx++) {
-        if (TimeFreqs[nIdx] == Freq)
-            break;
-        else if (TimeFreqs[nIdx] > Freq) // choose always the higher bound
-            break;
-    }
-    // fail ?
-    if (nIdx >= TimeFreqsCount)
-        return;
-    // install new timer
-    DgTimerInterval = 1000/TimeFreqs[nIdx];
-    DgTime = 0;
-    DgPerformanceCounterFreq = SDL_GetPerformanceFrequency();
-    lastPerformanceCounterValue = SDL_GetPerformanceCounter();
-    lastPerformanceCounterRest = 0;
-    DgTimerFreq = TimeFreqs[nIdx];
-    sdl_timer_id = SDL_AddTimer(DgTimerInterval, DgTimeHandler, NULL);
-    if (sdl_timer_id == 0) // failed ?
-        DgTimerFreq = 0;
+    RunDWorker(dgTimeWorkerID, false);
 }
 
-Uint32 DgTimeHandler(Uint32 interval, void *param) {
-    if (DgTimerFreq>0) {
-        newPerfCounter = SDL_GetPerformanceCounter();
-        deltaPerfCounter = (newPerfCounter - lastPerformanceCounterValue + lastPerformanceCounterRest) * (Uint64)(DgTimerFreq);
-        lastPerformanceCounterRest = (deltaPerfCounter % DgPerformanceCounterFreq)/(Uint64)(DgTimerFreq);
-        DgTime += (unsigned int)(deltaPerfCounter / DgPerformanceCounterFreq);
-
-        lastPerformanceCounterValue = newPerfCounter;
+void DgTimeWorkerFunc(void *data, int WID) {
+    DgInitTimeTick = SDL_GetTicks();
+    SetDWorkerPriority(0);
+    while(!DgKillTimer) {
+        DgTime = (dgWDelay == 1) ? (SDL_GetTicks() - DgInitTimeTick) : (SDL_GetTicks() - DgInitTimeTick) >> 1;
+        DelayMs(dgWDelay);
     }
-    return interval;
+    DgKillTimer = false;
 }
 
 void DgUninstallTimer() {
-    if (sdl_timer_id != 0) {
-        SDL_RemoveTimer(sdl_timer_id);
-        sdl_timer_id = 0;
+    if (DgTimerFreq > 0 && dgTimeWorkerID != 0) {
+        DgKillTimer = true;
+        while (DgKillTimer) {
+            DelayMs(1);
+        }
+        DestroyDWorker(dgTimeWorkerID);
+        dgTimeWorkerID = 0;
         DgTime = 0;
         DgTimerFreq = 0;
-        DgTimerInterval = 0;
     }
 }
 
@@ -559,14 +533,11 @@ void InsertTime(SynchTime *ST, unsigned int TimeValue) {
         ST->hstNbItems++;
     } else {
         // time table full
-        ST->hstIdxDeb =(ST->hstIdxDeb+1)&(SYNCH_HST_SIZE-1);
-        ST->hstIdxFin = (ST->hstIdxDeb+SYNCH_HST_SIZE-1)&(SYNCH_HST_SIZE-1);
+        ST->hstIdxDeb = (ST->hstIdxDeb+1)&(SYNCH_HST_SIZE-1);
+        ST->hstIdxFin = (ST->hstIdxFin+1)&(SYNCH_HST_SIZE-1);
     }
     ST->TimeHst[ST->hstIdxFin] = ST->LastTimeValue;
-    if(ST->hstIdxFin == 0) {
-        ST->LastNbNullSynch = ST->NbNullSynch;
-        ST->NbNullSynch = 0;
-    }
+    ST->NullHitsCount[ST->hstIdxFin] = 0; // reset zero hits count to zero
 }
 
 int  Synch(void *SynchBuff,int *Pos) {
@@ -577,15 +548,13 @@ int  Synch(void *SynchBuff,int *Pos) {
 
     if (DgTimerFreq==0 || SynchBuff==NULL) return 0;
     ST=((SynchTime*)(SynchBuff));
-    ST->LastSynchNull=0;
     lastTimeInserted = ST->LastTimeValue;
 
     // continu only if time changed
     if (lastTimeInserted == timeToHandle) {
         if (Pos!=NULL)
             *Pos = ST->LastPos;
-        ST->NbNullSynch++;
-        ST->LastSynchNull=1;
+        ST->NullHitsCount[ST->hstIdxFin]++; // increase null hits count
         return 0; // delta Synch 0
     }
     // Time counter reached max value
@@ -612,13 +581,11 @@ void StartSynch(void *SynchBuff,int *Pos) {
     ST->FirstTimeValue = DgTime;
     ST->LastTimeValue = ST->FirstTimeValue;
     SDL_memset4(&ST->TimeHst[0], 0, SYNCH_HST_SIZE);
+    SDL_memset4(&ST->NullHitsCount[0], 0, SYNCH_HST_SIZE);
     ST->TimeHst[0] = ST->FirstTimeValue;
     ST->hstIdxDeb = 0;
-    ST->hstIdxFin = 1;
-    ST->hstNbItems = 1;
-    ST->LastSynchNull = 0;
-    ST->NbNullSynch = 0;
-    ST->LastNbNullSynch = 0;
+    ST->hstIdxFin = 0;
+    ST->hstNbItems = 0;
 
     if (Pos!=NULL)
         *Pos=0;
@@ -637,31 +604,31 @@ float SynchAverageTime(void *SynchBuff) {
     SynchTime *ST;
     unsigned int i, idxDeb, idxFin;
     unsigned int SumSyncTime=0;
+    unsigned int SumNullHits=0;
 
     ST=((SynchTime*)(SynchBuff));
     if (DgTimerFreq == 0 || ST == NULL || ST->hstNbItems < 2)
         return 0.0;
+    idxDeb = (ST->hstIdxDeb);
+    idxFin = (ST->hstIdxDeb+1)&(SYNCH_HST_SIZE-1);
     for (i=0; i < ST->hstNbItems-1; i++) {
-        idxDeb = (ST->hstIdxDeb+i)&(SYNCH_HST_SIZE-1);
-        idxFin = (ST->hstIdxDeb+i+1)&(SYNCH_HST_SIZE-1);
-        SumSyncTime+=(ST->TimeHst[idxFin]-ST->TimeHst[idxDeb]);
+
+        SumSyncTime += (ST->TimeHst[idxFin]-ST->TimeHst[idxDeb]);
+        SumNullHits += ST->NullHitsCount[idxDeb];
+        idxDeb = idxFin;
+        idxFin = (idxFin+1)&(SYNCH_HST_SIZE-1);
     }
-    return (float)(SumSyncTime)/(float)((ST->hstNbItems-1+((ST->LastNbNullSynch)))*DgTimerFreq);
+    SumNullHits += ST->NullHitsCount[idxDeb]; // last nullHitsCount
+    return (float)(SumSyncTime)/(float)((ST->hstNbItems-1+((SumNullHits)))*DgTimerFreq);
 }
 
 float SynchLastTime(void *SynchBuff) {
-    SynchTime *ST;
-    unsigned int idxDeb, idxAFin;
-    unsigned int SumSyncTime;
+    SynchTime *ST = ((SynchTime*)(SynchBuff));
 
-    ST=((SynchTime*)(SynchBuff));
-    if (DgTimerFreq == 0 || ST == NULL || ST->hstNbItems < 2 || ST->LastSynchNull)
+    if (DgTimerFreq == 0 || ST == NULL || ST->hstNbItems < 2)
         return 0.0;
-    idxDeb = (ST->hstIdxDeb+ST->hstNbItems-2)&(SYNCH_HST_SIZE-1);
-    idxAFin = (ST->hstIdxDeb+ST->hstNbItems-1)&(SYNCH_HST_SIZE-1);
-    SumSyncTime = ST->TimeHst[idxAFin]-ST->TimeHst[idxDeb];
 
-    return (float)(SumSyncTime)/(float)(DgTimerFreq);
+    return (float)(ST->LastTimeValue-ST->TimeHst[(ST->hstIdxFin-1)&(SYNCH_HST_SIZE-1)])/(float)(DgTimerFreq);
 }
 
 int  WaitSynch(void *SynchBuff,int *Pos) {
@@ -670,6 +637,7 @@ int  WaitSynch(void *SynchBuff,int *Pos) {
     int lastIPos = 0;
     float lastPos = 0.0f;
     unsigned int timeToHandle = 0;
+    unsigned int initLastTime = 0;
 
     ST=((SynchTime*)(SynchBuff));
 
@@ -677,20 +645,21 @@ int  WaitSynch(void *SynchBuff,int *Pos) {
 
     curIPos = (int)ST->LastPos;
     lastIPos = (int)ST->LastPos;
+    initLastTime = ST->LastTimeValue;
     for (;;) {
         timeToHandle = DgTime;
         if (timeToHandle == ST->LastTimeValue) {
-            SDL_Delay(1);
+            DelayMs(1);
             continue;
         }
-        lastPos = ST->LastPos + ((float)(timeToHandle - ST->LastTimeValue) / (float) DgTimerFreq) * ST->Freq;
+        lastPos = ST->LastPos + ((float)(timeToHandle - initLastTime) / (float) DgTimerFreq) * ST->Freq;
         lastIPos = (int)(lastPos);
         if (lastIPos > curIPos) {
             InsertTime(ST, timeToHandle);
             ST->LastPos = lastPos;
             break;
         }
-        SDL_Delay(1);
+        DelayMs(1);
     }
     if (Pos != NULL)
         *Pos = ST->LastPos;

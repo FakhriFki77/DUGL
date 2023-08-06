@@ -28,10 +28,10 @@ extern "C" {
 typedef struct
 {
     unsigned int TimeHst[SYNCH_HST_SIZE];
+    unsigned int NullHitsCount[SYNCH_HST_SIZE];
     float Freq,  // freq / per sec
         LastPos;
     unsigned int FirstTimeValue, LastTimeValue;
-    unsigned int NbNullSynch, LastSynchNull, LastNbNullSynch;
     unsigned int hstNbItems, hstIdxDeb, hstIdxFin;
 } SynchTime;
 

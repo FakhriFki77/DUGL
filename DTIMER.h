@@ -29,7 +29,8 @@ void DgUninstallTimer();
 
 // Timer Synch<ronisation>
 
-#define SIZE_SYNCH_BUFF 168
+//#define SIZE_SYNCH_BUFF 168
+#define SIZE_SYNCH_BUFF 284
 
 extern unsigned int DgTime;
 extern int DgTimerFreq;
@@ -42,7 +43,6 @@ float SynchAverageTime(void *SynchBuff); // average time "in sec" between Synch 
 float SynchLastTime(void *SynchBuff); // last non zero time "in sec" between Synch calls
 int  WaitSynch(void *SynchBuff,int *Pos);
 void DelayMs(unsigned int delayInMs); // wait DelayInMs
-
 
 #ifdef __cplusplus
         }  // extern "C" {
