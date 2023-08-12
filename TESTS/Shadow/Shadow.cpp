@@ -5,7 +5,9 @@
 /*  10 April 2023 : first release */
 /*  6 Aout 2023: Rework event/rendering loop and synching + implement gouroud shading + implement dual core rendering (left|right) view  */
 /*                implement full screen toggling + resize handling + several tweaks and performance increase ... */
-/* 12 Aout 2023: Add true VSync, try to fix hang whenexiting directly from full screen under linux, enable double-buffering to reduce possible flicker under linux */  
+/* 12 Aout 2023: Add true VSync, try to fix hang when exiting directly from full screen under linux, enable double-buffering to reduce possible flicker under linux */
+/*               + Add fps limiter with DgWaitVSync as it reduce flicker but dot not sync with screen freq */
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -666,11 +668,11 @@ int main (int argc, char ** argv)
 		if (refreshWindow) {
             // synchronise
             if (SynchScreen) {
-                //WaitSynch(RenderSynchBuff,NULL); // limit fps
+                WaitSynch(RenderSynchBuff,NULL); // limit fps
                 DgWaitVSync(); // wait VSync
-            } //else {
+            } else {
                 Synch(RenderSynchBuff,NULL);
-            //}
+            }
 
             DgUpdateWindow();
             refreshWindow = false;
