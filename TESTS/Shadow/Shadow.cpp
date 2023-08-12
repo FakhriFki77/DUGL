@@ -3,8 +3,9 @@
 /*  Simple/unoptimized 3d engine, with z-sorting polygones, moving camera, shadow casting on ground, 3d obj loader .. */
 /*  History : */
 /*  10 April 2023 : first release */
-/*  6 Aout 2023 : Rework event/rendering loop and synching + implement gouroud shading + implement dual core rendering (left|right) view  */
+/*  6 Aout 2023: Rework event/rendering loop and synching + implement gouroud shading + implement dual core rendering (left|right) view  */
 /*                implement full screen toggling + resize handling + several tweaks and performance increase ... */
+/* 12 Aout 2023: Add true VSync, try to fix hang whenexiting directly from full screen under linux, enable double-buffering to reduce possible flicker under linux */  
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -505,7 +506,9 @@ int main (int argc, char ** argv)
     }
 
 	// set screen rendering Surf origin on the middle of the screen
+	DgSetEnabledDoubleBuff(true);
 	SetOrgSurf(RendSurf, RendSurf->ResH/2, RendSurf->ResV/2);
+	SetOrgSurf(RendFrontSurf, RendFrontSurf->ResH/2, RendFrontSurf->ResV/2);
 
 
 	// RenderSurf should be cleared to avoid any garbage at start-up
@@ -662,10 +665,12 @@ int main (int argc, char ** argv)
 
 		if (refreshWindow) {
             // synchronise
-            if (SynchScreen)
-                WaitSynch(RenderSynchBuff, NULL);
-            else
+            if (SynchScreen) {
+                //WaitSynch(RenderSynchBuff,NULL); // limit fps
+                DgWaitVSync(); // wait VSync
+            } //else {
                 Synch(RenderSynchBuff,NULL);
+            //}
 
             DgUpdateWindow();
             refreshWindow = false;
@@ -674,6 +679,11 @@ int main (int argc, char ** argv)
 
 	// wait render DWorker finish before exiting
 	while(exitApp) {
+        // revert to desktop display mode
+        if (DgIsFullScreen()) {
+            DgToggleFullScreen(false);
+        }
+        DgCheckEvents();
         DelayMs(1);
 	}
 
@@ -1032,7 +1042,7 @@ void RenderWorkerFunc(void *, int ) {
 
 		// restore original Screen View
 		ClearText();
-		#define SIZE_TEXT 127
+		#define SIZE_TEXT 511
 		char text[SIZE_TEXT + 1];
 		SetTextCol(0xffff);
         OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "FPS %i\n", finalCountFps);
@@ -1098,6 +1108,7 @@ void ShadowWinResize(int w, int h) {
         return;
 
     SetOrgSurf(RendSurf, RendSurf->ResH/2, RendSurf->ResV/2);
+    SetOrgSurf(RendFrontSurf, RendFrontSurf->ResH/2, RendFrontSurf->ResV/2);
 
     DestroySurf(blurSurf16);
     DestroySurf(srcBlurSurf16);
