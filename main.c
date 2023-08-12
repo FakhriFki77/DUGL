@@ -74,11 +74,6 @@ int DgInit() {
 }
 
 void DgQuit() {
-    // if full screen enabled - revert to original screen state
-    if (dgEnableFullScreen) {
-        DgToggleFullScreen(false);
-        DgCheckEvents();
-    }
     if (mutexEvents != NULL) {
         if (SDL_LockMutex(mutexEvents) == 0) {
             SDL_DelEventWatch(SDLEventHandler, NULL);
@@ -422,8 +417,8 @@ void DgWaitVSync() {
     if (vsyncRenderer == NULL || vsyncTexture == NULL)
         return; // failed
 
-    SDL_Rect rect; rect.h=1; rect.w=1; rect.x=0; rect.y=0;
-    SDL_RenderCopy(vsyncRenderer, vsyncTexture, NULL, &rect);
+    //SDL_Rect rect; rect.h=1; rect.w=1; rect.x=0; rect.y=0;
+    //SDL_RenderCopy(vsyncRenderer, vsyncTexture, NULL, &rect);
     SDL_RenderPresent(vsyncRenderer);
 }
 
