@@ -33,6 +33,8 @@ SDL_Surface *surfaceW = NULL;
 SDL_mutex *mutexEvents = NULL;
 SDL_Surface *surf16bpp = NULL;
 SDL_Surface *surfFront16bpp = NULL;
+SDL_Renderer *vsyncRenderer = NULL;
+SDL_Texture *vsyncTexture = NULL;
 SDL_DisplayMode orgDispMode;
 SDL_DisplayMode wantedFullDispMode;
 SDL_DisplayMode setFullDispMode;
@@ -72,6 +74,11 @@ int DgInit() {
 }
 
 void DgQuit() {
+    // if full screen enabled - revert to original screen state
+    if (dgEnableFullScreen) {
+        DgToggleFullScreen(false);
+        DgCheckEvents();
+    }
     if (mutexEvents != NULL) {
         if (SDL_LockMutex(mutexEvents) == 0) {
             SDL_DelEventWatch(SDLEventHandler, NULL);
@@ -84,11 +91,15 @@ void DgQuit() {
     if (DgTimerFreq > 0) {
         DgUninstallTimer();
     }
-    // if full screen enabled - revert to original screen state
-    if (dgEnableFullScreen) {
-        DgToggleFullScreen(false);
-    }
     DestroyDWorkers();
+    if (vsyncTexture != NULL) {
+        SDL_DestroyTexture(vsyncTexture);
+        vsyncTexture = NULL;
+    }
+    if (vsyncRenderer != NULL) {
+        SDL_DestroyRenderer(vsyncRenderer);
+        vsyncRenderer = NULL;
+    }
     if (DgWindow != NULL) {
         SDL_DestroyWindow(DgWindow);
         DgWindow = NULL;
@@ -237,6 +248,17 @@ int DgInitMainWindowX(const char *title, int ResHz, int ResVt, char BitsPixel, i
         return 0;
     }
 
+    // VSync
+    vsyncRenderer = SDL_CreateSoftwareRenderer(surfaceW);
+    if (vsyncRenderer != NULL) {
+        SDL_RenderSetVSync(vsyncRenderer, 1);
+        vsyncTexture = SDL_CreateTexture(vsyncRenderer, surfaceW->format->format, SDL_TEXTUREACCESS_STREAMING, 1, 1);
+        if (vsyncTexture == NULL) {
+            SDL_DestroyRenderer(vsyncRenderer);
+            vsyncRenderer = NULL;
+        }
+    }
+
     if (!CreateSurf(&RendSurf, ResHz, ResVt, 16))
         return 0;
 
@@ -351,6 +373,7 @@ int DgNFSWidth = 0, DgNFSHeight = 0;
 void DgToggleFullScreen(bool fullScreen) {
     if (!DgWindow || RendSurf == NULL)
         return;
+    bool RecreateVSyncTexture = false;
 
     if (fullScreen && !dgEnableFullScreen) {
         wantedFullDispMode.w = (DgPreferredFullSwidth > 0) ? DgPreferredFullSwidth : RendSurf->ResH;
@@ -366,12 +389,42 @@ void DgToggleFullScreen(bool fullScreen) {
         SDL_SetWindowDisplayMode(DgWindow, &setFullDispMode);
         SDL_SetWindowFullscreen(DgWindow, SDL_WINDOW_FULLSCREEN);
         dgEnableFullScreen = true;
+        RecreateVSyncTexture = true;
     } else if (!fullScreen && dgEnableFullScreen) {
         SDL_SetWindowDisplayMode(DgWindow, &orgDispMode);
         SDL_SetWindowSize(DgWindow, DgNFSWidth, DgNFSHeight);
         SDL_SetWindowFullscreen(DgWindow, 0);
         dgEnableFullScreen = false;
+        RecreateVSyncTexture = true;
     }
+    if (RecreateVSyncTexture && vsyncRenderer != NULL && vsyncTexture != NULL) {
+        // destroy the old renderer/texture
+        SDL_DestroyTexture(vsyncTexture);
+        SDL_DestroyRenderer(vsyncRenderer);
+        vsyncTexture = NULL;
+        vsyncRenderer = NULL;
+        // get the new surface
+        surfaceW = SDL_GetWindowSurface(DgWindow);
+        // create the new texture
+        vsyncRenderer = SDL_CreateSoftwareRenderer(surfaceW);
+        if (vsyncRenderer != NULL) {
+            SDL_RenderSetVSync(vsyncRenderer, SDL_TRUE);
+            vsyncTexture = SDL_CreateTexture(vsyncRenderer, surfaceW->format->format, SDL_TEXTUREACCESS_STREAMING, 1, 1);
+            if (vsyncTexture == NULL) {
+                SDL_DestroyRenderer(vsyncRenderer);
+                vsyncRenderer = NULL;
+            }
+        }
+    }
+}
+
+void DgWaitVSync() {
+    if (vsyncRenderer == NULL || vsyncTexture == NULL)
+        return; // failed
+
+    SDL_Rect rect; rect.h=1; rect.w=1; rect.x=0; rect.y=0;
+    SDL_RenderCopy(vsyncRenderer, vsyncTexture, NULL, &rect);
+    SDL_RenderPresent(vsyncRenderer);
 }
 
 bool DgIsFullScreen() {

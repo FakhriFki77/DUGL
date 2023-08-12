@@ -101,6 +101,8 @@ DgWindowResizeCallBack GetMainWindowResizeCallBack();
 void DgUpdateWindow();
 // toggle full screen
 void DgToggleFullScreen(bool fullScreen);
+// Wait vertical Sync
+void DgWaitVSync();
 // Full screen Enabled
 bool DgIsFullScreen();
 // Set/Get Preferred full screen resolution, refresh rate, set 0 DgWindow res, and current display refresh
