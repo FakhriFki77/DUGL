@@ -53,7 +53,8 @@ extern DgSurf   *RendFrontSurf; // currently displayed if double buffer enabled
 
 extern DgSurf   CurSurf; // The Surf that graphic functions will render to as DgClear16, Line16, Poly16 ...
 extern DgSurf   SrcSurf; // The source Surf used by graphic functions as Poly16, PutSurf16, ResizeViewSurf16 ..
-extern char LastPolyStatus; // Last Rendered Poly Status: ='N' not rendered, ='C' clipped, ='I' In rendererd
+extern char LastPolyStatus; // Warning ReadOnly! used internally by Poly16xxx, RePoly16xxx
+                            // Last Rendered Poly Status: ='N' not rendered, ='C' clipped, ='I' In rendererd
 
 extern unsigned char DgWindowFocused; // set to 1 if MainWindow get Focused, 0 else
 extern unsigned char DgWindowFocusLost; // set to 1 if MainWindow lose Focus, 0 else
@@ -235,7 +236,8 @@ void Poly16(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 // Redo the last rendered Poly16: *ListPt and DBL_SIDED FLAG are ignored in this call,
 // user can update *SS, TypePoly, ColPoly and texture coordinates[U,V] using the same Point List pointers the Poly16 was called with
 void RePoly16(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
-
+// REPOLY16 provided for convenience as RePoly16 handle only drawn polygones with status 'C' or 'I' to avoid useless calls
+#define REPOLY16(ListPt, SS, TypePoly, ColPoly) if (LastPolyStatus!='N') RePoly16(ListPt, SS, TypePoly, ColPoly);
 
 // thread safe functions /////////////////////////////////////////////////////////////////////
 

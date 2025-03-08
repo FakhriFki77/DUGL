@@ -90,9 +90,6 @@ DVEC4 *NormalizeDVEC4(DVEC4 *vec4);
 DVEC4 *NormalizeDVEC4Res(DVEC4 *vec4, DVEC4 *nvres);
 DVEC4 *CrossDVEC4(DVEC4 *v1, DVEC4 *v2, DVEC4 *vcrossRes);
 DVEC4 *CrossNormalizeDVEC4(DVEC4 *v1, DVEC4 *v2, DVEC4 *vcrossRes);
-// build plane equation from (v1, v2, v3) giving the equation a.x+b.y+c.y+d = 0 in vPlaneRes
-// CrossNormalize(v3-v2, v2-v1, vPlaneNorm) then compute  d = - ((vPlaneNorm.x*v1.x) + (vPlaneNorm.y*v1.y) + (vPlaneNorm.z*v1.z))
-DVEC4 *GetPlaneDVEC4(DVEC4 *v1, DVEC4 *v2, DVEC4 *v3, DVEC4 *vPlaneRes);
 // vRes = v1 + ((v2 - v1) * alpha)
 DVEC4 *LerpDVEC4Res(float alpha, DVEC4 *v1, DVEC4 *v2, DVEC4 *vlerpRes);
 DVEC4 *MulValDVEC4(DVEC4 *vec4, float val);
@@ -144,6 +141,9 @@ bool IntersectRayPlane(DVEC4 *plane, DVEC4 *raypos, DVEC4 *raydir);
 bool IntersectRayPlaneRes(DVEC4 *plane, DVEC4 *raypos, DVEC4 *raydir, DVEC4 *intrscPos);
 /* project Ray ([rpos], [rdir]) vResProj = rdir * t + rpos */
 DVEC4 *RayProjectDVEC4Res(float t, DVEC4 *rpos, DVEC4 *rdir, DVEC4 *vResProj);
+// build plane equation from (v1, v2, v3) giving the equation (a*x)+(b*y)+(c*z)+d = 0 in vPlaneRes
+// CrossNormalize(v3-v2, v2-v1, vPlaneNorm) then compute  d = - ((vPlaneNorm.x*v1.x) + (vPlaneNorm.y*v1.y) + (vPlaneNorm.z*v1.z))
+DVEC4 *GetPlaneDVEC4(DVEC4 *v1, DVEC4 *v2, DVEC4 *v3, DVEC4 *vPlaneRes);
 // culling / collision / clipping //////////////////////////////////////
 bool DVEC4InAAMinBBox(DVEC4 *vec4Pos, DAAMinBBox *aaMinBbox);
 #define DVEC4_IN_MASK_X 0x0001

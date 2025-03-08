@@ -159,6 +159,8 @@ void PutMaskSurfTrans16_C2(DgSurf *S,int X,int Y,int PType,int trans);
 // all TEXTURE Functions uses a simple affine texture interpolation mapping (not perspective corrected)
 void Poly16_C2(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 void RePoly16_C2(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
+// REPOLY16_C2 provided for convenience as RePoly16_C2 handle only drawn polygones with status 'C' or 'I' to avoid useless calls
+#define REPOLY16_C2(ListPt, SS, TypePoly, ColPoly) if (LastPolyStatus_C2!='N') RePoly16_C2(ListPt, SS, TypePoly, ColPoly);
 
 // DUGL CORE 3 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -230,6 +232,8 @@ void PutMaskSurfTrans16_C3(DgSurf *S,int X,int Y,int PType,int trans);
 // all TEXTURE Functions uses a simple affine texture interpolation mapping (not perspective corrected)
 void Poly16_C3(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 void RePoly16_C3(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
+// REPOLY16_C3 provided for convenience as RePoly16_C3 handle only drawn polygones with status 'C' or 'I' to avoid useless calls
+#define REPOLY16_C3(ListPt, SS, TypePoly, ColPoly) if (LastPolyStatus_C3!='N') RePoly16_C3(ListPt, SS, TypePoly, ColPoly);
 
 // DUGL CORE 4 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -301,6 +305,8 @@ void PutMaskSurfTrans16_C4(DgSurf *S,int X,int Y,int PType,int trans);
 // all TEXTURE Functions uses a simple affine texture interpolation mapping (not perspective corrected)
 void Poly16_C4(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 void RePoly16_C4(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
+// REPOLY16_C4 provided for convenience as RePoly16_C4 handle only drawn polygones with status 'C' or 'I' to avoid useless calls
+#define REPOLY16_C4(ListPt, SS, TypePoly, ColPoly) if (LastPolyStatus_C4!='N') RePoly16_C4(ListPt, SS, TypePoly, ColPoly);
 
 #ifdef __cplusplus
         }  // extern "C" {
