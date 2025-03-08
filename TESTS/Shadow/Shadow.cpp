@@ -1236,7 +1236,7 @@ void RenderWorker1C_1(void *, int wid) {
                     TreePts[1].yt = 0;
                     TreePts[2].xt = vLightUPos[idx3];
                     TreePts[2].yt = 0;
-                    RePoly16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                    REPOLY16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
                 } else {
                     /*TreePts[0].xt = varrayUVi[idx1].x; TreePts[0].yt = varrayUVi[idx1].y;
                     TreePts[1].xt = varrayUVi[idx2].x; TreePts[1].yt = varrayUVi[idx2].y;
@@ -1252,13 +1252,13 @@ void RenderWorker1C_1(void *, int wid) {
                     TreePts[1].yt = 0;
                     TreePts[2].xt = vLightUPos[idx3];
                     TreePts[2].yt = 0;
-                    RePoly16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                    REPOLY16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
                 }
                 if (dfaces[idt]->shadowed) {
                     TreePts[0].xt = dfaces[idt]->shadowUVi[0].x; TreePts[0].yt = dfaces[idt]->shadowUVi[0].y;
                     TreePts[1].xt = dfaces[idt]->shadowUVi[1].x; TreePts[1].yt = dfaces[idt]->shadowUVi[1].y;
                     TreePts[2].xt = dfaces[idt]->shadowUVi[2].x; TreePts[2].yt = dfaces[idt]->shadowUVi[2].y;
-                    RePoly16(&ListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
+                    REPOLY16(&ListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
                 }
             }
             break;
@@ -1334,7 +1334,7 @@ void RenderWorker2C_1(void *, int wid) {
                     TreePts[1].yt = 0;
                     TreePts[2].xt = vLightUPos[idx3];
                     TreePts[2].yt = 0;
-                    RePoly16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                    REPOLY16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
                 } else {
                     /*TreePts[0].xt = varrayUVi[idx1].x; TreePts[0].yt = varrayUVi[idx1].y;
                     TreePts[1].xt = varrayUVi[idx2].x; TreePts[1].yt = varrayUVi[idx2].y;
@@ -1350,13 +1350,13 @@ void RenderWorker2C_1(void *, int wid) {
                     TreePts[1].yt = 0;
                     TreePts[2].xt = vLightUPos[idx3];
                     TreePts[2].yt = 0;
-                    RePoly16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                    REPOLY16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
                 }
                 if (dfaces[idt]->shadowed) {
                     TreePts[0].xt = dfaces[idt]->shadowUVi[0].x; TreePts[0].yt = dfaces[idt]->shadowUVi[0].y;
                     TreePts[1].xt = dfaces[idt]->shadowUVi[1].x; TreePts[1].yt = dfaces[idt]->shadowUVi[1].y;
                     TreePts[2].xt = dfaces[idt]->shadowUVi[2].x; TreePts[2].yt = dfaces[idt]->shadowUVi[2].y;
-                    RePoly16(&ListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
+                    REPOLY16(&ListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
                 }
             }
             break;
@@ -1397,7 +1397,7 @@ void RenderWorker2C_2(void *, int wid) {
     curView.MinX = 1;
     SetSurfView(&CurSurf_C2, &curView);
 
-    // clear all the Surf
+    // clear all the view of the current worker
     ClearSurf16_C2(0x1e|0x380);
 
     // render ground and casted shadow on it
@@ -1427,7 +1427,7 @@ void RenderWorker2C_2(void *, int wid) {
                     TreePts_C2[1].yt = 0;
                     TreePts_C2[2].xt = vLightUPos[idx3];
                     TreePts_C2[2].yt = 0;
-                    RePoly16_C2(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                    REPOLY16_C2(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
                 } else {
                     /*TreePts_C2[0].xt = varrayUVi[idx1].x; TreePts_C2[0].yt = varrayUVi[idx1].y;
                     TreePts_C2[1].xt = varrayUVi[idx2].x; TreePts_C2[1].yt = varrayUVi[idx2].y;
@@ -1443,13 +1443,13 @@ void RenderWorker2C_2(void *, int wid) {
                     TreePts_C2[1].yt = 0;
                     TreePts_C2[2].xt = vLightUPos[idx3];
                     TreePts_C2[2].yt = 0;
-                    RePoly16_C2(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                    REPOLY16_C2(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
                 }
                 if (dfaces[idt]->shadowed) {
                     TreePts_C2[0].xt = dfaces[idt]->shadowUVi[0].x; TreePts_C2[0].yt = dfaces[idt]->shadowUVi[0].y;
                     TreePts_C2[1].xt = dfaces[idt]->shadowUVi[1].x; TreePts_C2[1].yt = dfaces[idt]->shadowUVi[1].y;
                     TreePts_C2[2].xt = dfaces[idt]->shadowUVi[2].x; TreePts_C2[2].yt = dfaces[idt]->shadowUVi[2].y;
-                    RePoly16_C2(&ListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
+                    REPOLY16_C2(&ListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
                 }
             }
             break;
