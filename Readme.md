@@ -105,7 +105,8 @@ DUGL CHR font format editor.
 **Shadow**
 
 Sample unoptimized 3D engine, with Sprite shadow casting on ground.
-Screenshot: high vs low quality rendering
+
+(Screenshot: high vs low quality rendering)
 
 ![Shadow](https://github.com/FakhriFki77/DUGL/blob/main/Screenshots/Shadow.png)
 
