@@ -20,13 +20,13 @@ On 2020, I decided to port it to be over **SDL** to allow it to go cross-platfor
 **DUGL** has some of the fastest graphic rendering routines around. Written entirely in x86 assembly, some of the routines (as Poly16) has crossed over 200 optimization cycles that allowed them to use most of the available memory bandwidth for rendering. Additionally, the use of 16bpp instead of 32bits RGBA allow at least a boost of 100% in number of pixels rendered per second and half the CPU cache requirement for the rendered screen.
 
 * **Primary render functions**: 
-  1. Polygones (Solid, Textured, Masked Textured, Textured Colour Blended, Masked Textured Colour Blended, Transparent Textured, Masked Transparent Textured..).
-  2. RePoly function to re-render last rendered Polygone but with another texture mapping, color, transparency .., much faster than regular Poly and could be used for character clothes/marker, shadow casting, mixing textures for same polygone ...
+  1. Polygones Support Solid, Textured, Masked Textured, Textured Colour Blended, Masked Textured Colour Blended, Transparent Textured, Masked Transparent Textured with 16 levels of transparency.
+  2. RePoly function to re-render last rendered Polygone but with another texture/texture mapping, color, transparency .., much faster than regular Poly and could be used for character clothes/marker, shadow casting, mixing textures for same polygone ...
   3. Lines (Solid, mapped, Transparent, Transparent mapped).
-  4. Sprites/Images blitting (without resize, but capability to reverse horizontally and vertically, could be Masked, Colour Blended or Transparent)
+  4. Sprites/Images blitting: without resize, but capability to reverse horizontally and vertically, could be Masked, Colour Blended, Masked Colour Blended, Transparent or Masked Transparent with 16 levels of transparency.
   5. Images Resize blitting (same as sprites, allow reversing horizontally or vertically but resize source View to Destination View to avoid clipping handling and get the best performance)
   6. Blur filter adapted to 16bpp to reduce the darkening or getting greener over blurring cycles
-  7. Proprietary simple Font format ...
+  7. Proprietary simple Font format with GUI editor...
 * **Render Cores**: 
 As DUGL uses global vars to enhance rendering performance, the only Multi-cores rendering possibility is to duplicate rendering functions. Four rendering cores are then available, the last 3 cores uses suffix in functions names (_C2, _C3 and _C4). As only assembly was used for each core, the weight of each core is less than 250kb in memory and less than 200kb in binary size. Finally, to ease cores handling, DUGL provide DGCORE struct with pointers to all rendering functions and important global vars.
 * **View System**:
@@ -46,7 +46,7 @@ Requirement:
 
 - **CodeBlocks IDE** (https://www.codeblocks.org)
 - **MinGW** Recommended version 8.1+  (currently using http://winlibs.com - gcc-9.4.0-mingw-w64-9.0.0-r2 32bits standalone)
-- **Nasm** Recommended the latest stable 2.16.01 (https://nasm.us/)
+- **Nasm** Recommended the latest stable 2.16.03 (https://nasm.us/)
 - **LibSDL** use the latest SDL2-devel-xxx-mingw.tar.gz from website (https://libsdl.org)
 - **LibJpeg**, **LibPNG** and **ZLib** better download sources of each lib and compile with your current **MinGW** distribution for best compatibility.
 
@@ -105,6 +105,7 @@ DUGL CHR font format editor.
 **Shadow**
 
 Sample unoptimized 3D engine, with Sprite shadow casting on ground.
+Screenshot: high vs low quality rendering
 
 ![Shadow](https://github.com/FakhriFki77/DUGL/blob/main/Screenshots/Shadow.png)
 
