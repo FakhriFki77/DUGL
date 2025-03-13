@@ -36,7 +36,7 @@ GLOBAL  SurfMaskCopyBlnd16, SurfMaskCopyTrans16
 
 ; GLOBAL Variables
 GLOBAL  CurSurf, SrcSurf
-GLOBAL  TPolyAdDeb, TPolyAdFin, TexXDeb, TexXFin, TexYDeb, TexYFin, PColDeb, PColFin, DebYPoly, FinYPoly, LastPolyStatus;
+GLOBAL  TPolyAdDeb, TPolyAdFin, TexXDeb, TexXFin, TexYDeb, TexYFin, PColDeb, PColFin, DebYPoly, FinYPoly, LastPolyStatus
 
 GLOBAL  vlfb,rlfb,ResH,ResV, MaxX, MaxY, MinX, MinY, OrgY, OrgX, SizeSurf,OffVMem
 GLOBAL  BitsPixel, ScanLine,Mask,NegScanLine
@@ -1247,10 +1247,10 @@ Poly16:
             PMAXSD      xmm2,xmm0
             JNZ         .PBoucMnMxXY
 .NoBcMnMxXY:
-            PEXTRD      EBX,xmm2,1 ; maxy
-            PEXTRD      EDX,xmm1,1 ; miny
-            MOVD        EAX,xmm2 ; maxx
-            MOVD        ECX,xmm1 ; minx
+            PEXTRD      EBX,xmm2,1 ; PolyMaxY
+            PEXTRD      EDX,xmm1,1 ; PolyMinY
+            MOVD        EAX,xmm2 ; PolyMaxX
+            MOVD        ECX,xmm1 ; PolyMinX
             CMP         EBX,EDX  ; ignore single hline polygones
             MOVD        mm6,ESI
             JE          .PasDrawPoly
@@ -1298,24 +1298,26 @@ Poly16:
             JG          .PasDrawPoly
             CMP         EDX,[MaxY]
             JG          .PasDrawPoly
-; Drop too big poly
-    ; drop too BIG poly
-            SUB         ECX,EAX  ; deltaY
-            SUB         EDX,EBX  ; deltaX
-            CMP         ECX,MaxDeltaDim
-            JGE         .PasDrawPoly
-            CMP         EDX,MaxDeltaDim
-            JGE         .PasDrawPoly
-            ADD         EDX,EBX ; restor MaxX
 
-; trace Poly Clipper  ******************************************************
-            MOV         EAX,[MaxY] ; determine DebYPoly, FinYPoly
+; Drop too big poly
+            SUB         EAX,ECX  ; deltaX
+            SUB         EBX,EDX  ; deltaY
+            CMP         EAX,MaxDeltaDim
+            JGE         .PasDrawPoly
+            CMP         EBX,MaxDeltaDim
+            JGE         .PasDrawPoly
+            ADD         EBX,EDX ; restor MaxY
+
+; render clipped Poly  ******************************************************
+            MOV         ESI,[MaxY] ; compute DebYPoly, FinYPoly
             MOV         ECX,[MinY]
-            CMP         EBX,EAX
-            MOV         EBP,[OrgY]   ; Ajuste [DebYPoly],[FinYPoly]
-            CMOVG       EBX,EAX
-            CMP         EDX,ECX
-            CMOVL       EDX,ECX
+            CMP         EBX,ESI    ; CMP PolyMaxY, MaxY
+            MOV         EBP,[OrgY]   ; Adjust [DebYPoly],[FinYPoly]
+            CMOVG       EBX,ESI    ; EBX = (PolyMaxY> MaxY) ? MaxY : PolyMaxY // clipping againt view
+            CMP         EDX,ECX    ; CMP PolyMinY, MinY
+            CMOVL       EDX,ECX    ; ECX = (PolyMinY < MinY) ? MinY : PolyMinY // clipping againt view
+            MOV         [PolyMaxY],EBX
+            MOV         [PolyMinY],EDX
             ADD         EBX,EBP
             ADD         EDX,EBP
             MOV         [FinYPoly],EBX
@@ -1324,6 +1326,64 @@ Poly16:
             MOVD        mm5,EDI
             @ClipComputeHLines16
 
+            ; optimize/reduce [Deb/FinY]Poly bounds or reject completely the poly if out *****
+            MOV         EBP,[MinX]
+            MOV         EBX,[DebYPoly]
+            LEA         ESI,[EBX*4]
+            SUB         EBX,[FinYPoly]
+            NEG         EBX
+            XOR         ECX,ECX ; delta FinYPoly/PolyMaxY
+            ; endian optimization loop
+.BcOptimizeClipEnd:
+            MOV         EDI,[TPolyAdDeb+ESI+EBX*4]
+            MOV         EDX,[TPolyAdFin+ESI+EBX*4]
+            CMP         EDX,EDI
+            JG          .NoSwapAdEnd
+            XCHG        EDI,EDX
+.NoSwapAdEnd:
+            CMP         EDX,EBP        ; [EndX] < [MinX]
+            JL          SHORT .OptimizeClipEnd
+            CMP         EDI,[MaxX]     ; [StartX] > [MaxX]
+            JG          SHORT .OptimizeClipEnd
+            JMP         SHORT .EndOptimizeClipEnd
+.OptimizeClipEnd:
+            DEC         EBX
+            LEA         ECX,[ECX+1]
+            JNS         SHORT .BcOptimizeClipEnd
+            ; reached end of the loop ? => all hlines are outside rendering view, poly completely rejected
+            JS          SHORT .PasDrawPoly
+.EndOptimizeClipEnd:
+            ; update new bound if needed
+            JECXZ       .NoPolyMaxYUpdate
+            SUB         [FinYPoly],ECX
+            SUB         [PolyMaxY],ECX
+.NoPolyMaxYUpdate:
+            ; DebYPoly/PolyMinY optimization loop
+            XOR         EAX,EAX ; index couter from the start
+            XOR         ECX,ECX ; delta DebYPoly/PolyMinY
+.BcOptimizeClipDeb:
+            MOV         EDI,[TPolyAdDeb+ESI+EAX*4]
+            MOV         EDX,[TPolyAdFin+ESI+EAX*4]
+            CMP         EDX,EDI
+            JG          SHORT .NoSwapAdDeb
+            XCHG        EDI,EDX
+.NoSwapAdDeb:
+            CMP         EDX,EBP        ; [EndX] < [MinX]
+            JL          SHORT .OptimizeClipDeb
+            CMP         EDI,[MaxX]     ; [StartX] > [MaxX]
+            JG          SHORT .OptimizeClipDeb
+            JMP         SHORT .EndOptimizeClipDeb
+.OptimizeClipDeb:
+            INC         EAX
+            DEC         EBX
+            LEA         ECX,[ECX+1]
+            JNS         SHORT .BcOptimizeClipDeb
+.EndOptimizeClipDeb:
+            JECXZ       .NoPolyMinYUpdate
+            ADD         [DebYPoly],ECX
+            ADD         [PolyMinY],ECX
+.NoPolyMinYUpdate:
+            ; render optimized poly ******************
             MOV         EAX,[PType]
             MOV         [LastPolyStatus], BYTE 'C' ; Clip render
             JMP         [ClFillPolyProc16+EAX*4]
@@ -1467,7 +1527,8 @@ YP2               RESD  1
 XP3               RESD  1
 YP3               RESD  1
 Plus              RESD  1
-LastPolyStatus    RESD  1;-----------------------
+LastPolyStatus    RESB  1
+PolyCheckCorners  RESB  3;-----------------------
 XT1               RESD  1
 YT1               RESD  1
 XT2               RESD  1
@@ -1506,9 +1567,9 @@ QMulSrcBlend      RESD  4
 QMulDstBlend      RESD  4;--------------
 WBGR16Blend       RESD  4
 clr               RESD  1
-Temp              RESD  1
-PlusCol           RESD  1
-PtrTbDegCol       RESD  1 ;-----------
+PolyMaxY          RESD  1
+PolyMinY          RESD  1
+TempD             RESD  1 ;-----------
 QBlue16Blend      RESD  4
 QGreen16Blend     RESD  4
 QRed16Blend       RESD  4

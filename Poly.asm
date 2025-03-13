@@ -48,7 +48,7 @@
                 MOV             ESI,TPolyAdDeb ; revert to start/left
                 XCHG            ECX,EBP
                 XCHG            EAX,EDI
-; ---- End/Right computing clipping --------------
+; ---- End/Right computing clipping ----or Start/Left if %%HLeft not jumped !------
 %%HRightCompute:
                 ; DX Zero case
                 SUB             EAX,EDI ; DX = X1-X2
@@ -120,8 +120,6 @@
                 MOVQ            xmm2,[EAX] ; new X2|Y2
 
                 JMP             %%ClipLoopHLines
-
-
 %%endClipHLines:
 %endmacro
 ; In Compute HLines (U,V) or (XT, YT) ************************************************
@@ -236,14 +234,14 @@
 %%HRightCompute:
                 SUB             EAX,EDI ; DX = XT1-XT2
                 ; check completely out line
-                CMP             ECX,[MinY]
+                CMP             ECX,[PolyMinY]
                 JL              %%EndHLine
-                CMP             EBP,[MaxY]
+                CMP             EBP,[PolyMaxY]
                 JG              %%EndHLine
                 ; check clipped
-                CMP             ECX,[MaxY]
+                CMP             ECX,[PolyMaxY]
                 JG              %%Clip
-                CMP             EBP,[MinY]
+                CMP             EBP,[PolyMinY]
                 JL              %%Clip
 %%InRight:       ; in line --------------------
                 SHL             EAX,Prec
@@ -263,16 +261,16 @@
                 MOVD            mm0,ECX
                 ; clip Y2
                 MOV             EDX,EBP ; save Y2
-                SUB             EBP,[MinY]
+                SUB             EBP,[PolyMinY]
                 JGE             %%NoClipY2
                 NEG             EBP
-                MOV             EDX,[MinY] ; new Y2
+                MOV             EDX,[PolyMinY] ; new Y2
                 MOVD            mm1,EBP ; steps
 %%NoClipY2:
                 ; clip Y1
-                CMP             ESI,[MaxY]
+                CMP             ESI,[PolyMaxY]
                 MOV             EBP,EDX  ; new Y2 if any
-                CMOVG           ESI,[MaxY]
+                CMOVG           ESI,[PolyMaxY]
                 SUB             ESI,EBP ; new DY
                 MOV             ECX,ESI ; new delta
                 OR              EAX,EAX ; sign of PntX

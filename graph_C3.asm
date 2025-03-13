@@ -72,7 +72,10 @@
 %define PColFin                     PColFin_C3
 %define DebYPoly                    DebYPoly_C3
 %define FinYPoly                    FinYPoly_C3
+%define PolyMaxY                    PolyMaxY_C3
+%define PolyMinY                    PolyMinY_C3
 %define LastPolyStatus              LastPolyStatus_C3
+%define PolyCheckCorners            PolyCheckCorners_C3
 
 %define vlfb                        vlfb_C3
 %define rlfb                        rlfb_C3
