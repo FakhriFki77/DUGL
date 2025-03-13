@@ -462,13 +462,13 @@ unsigned int DgTime = 0;
 int DgTimerFreq = 0;
 
 unsigned int dgTimeWorkerID = 0;
-unsigned int DgInitTimeTick = 0;
-unsigned int dgWDelay = 0;
+Uint64 DgInitPerfCounter = 0;
+Uint64 DgPerfFrequency = 0;
+Uint64 dgWDelay = 0;
 void DgTimeWorkerFunc(void *, int );
 bool DgKillTimer = false;
 
 void DgInstallTimer(int Freq) {
-    int nIdx = 0;
     if (DgTimerFreq > 0 || Freq <= 0) {
         return; // already installed
     }
@@ -490,10 +490,13 @@ void DgInstallTimer(int Freq) {
 }
 
 void DgTimeWorkerFunc(void *data, int WID) {
-    DgInitTimeTick = SDL_GetTicks();
+    Uint64 deltaPerfCounterMs = 0;
+    DgInitPerfCounter = SDL_GetPerformanceCounter();
+    DgPerfFrequency = SDL_GetPerformanceFrequency();
     SetDWorkerPriority(0);
     while(!DgKillTimer) {
-        DgTime = (dgWDelay == 1) ? (SDL_GetTicks() - DgInitTimeTick) : (SDL_GetTicks() - DgInitTimeTick) >> 1;
+        deltaPerfCounterMs = ((SDL_GetPerformanceCounter() - DgInitPerfCounter) * 1000) / DgPerfFrequency;
+        DgTime = (dgWDelay == 1) ? (deltaPerfCounterMs) : (deltaPerfCounterMs / 2);
         DelayMs(dgWDelay);
     }
     DgKillTimer = false;
@@ -509,6 +512,8 @@ void DgUninstallTimer() {
         dgTimeWorkerID = 0;
         DgTime = 0;
         DgTimerFreq = 0;
+        DgInitPerfCounter = 0;
+        DgPerfFrequency = 0;
     }
 }
 
@@ -668,14 +673,24 @@ int  WaitSynch(void *SynchBuff,int *Pos) {
 
 void DelayMs(unsigned int delayInMs) {
 #define bigDelay 10
-    const Uint64 timeout = SDL_GetTicks() + delayInMs;
-    Uint64 curTick64 = 0;
-    while ((curTick64 = SDL_GetTicks()) < timeout) {
-        if (curTick64 + bigDelay <= timeout) {
-            SDL_Delay(bigDelay);
-        } else {
-            SDL_Delay(1);
+    if (DgTimerFreq > 0) {
+        Uint64 timeout = SDL_GetPerformanceCounter() + (Uint64) ((double)(DgPerfFrequency) * ((double)(delayInMs)/1000.0));
+        Uint64 bigDelayDiff = (Uint64)((double)(DgPerfFrequency) * ((double)(bigDelay)/1000.0));
+        //Uint64 minDelayDiff	= bigDelayDiff / bigDelay;
+
+        Uint64 curTick64 = 0;
+        while ((curTick64 = SDL_GetPerformanceCounter()) < timeout) {
+            if (curTick64 + bigDelayDiff <= timeout) {
+                SDL_Delay(bigDelay);
+            } else /*if (curTick64 + minDelayDiff < timeout)*/ { // high precision but will increase highly power consumption :(
+                SDL_Delay(1);
+            } /*else {
+                SDL_Delay(0);
+            }*/
         }
+    } else {
+        // no timer installed, SDL take over completely
+        SDL_Delay(delayInMs);
     }
 }
 

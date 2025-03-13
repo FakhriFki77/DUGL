@@ -31,7 +31,8 @@ unsigned int CreateDWorker(dworkerFunctionPointer workerFunction, void *workerDa
 void RunDWorker(unsigned int dworkerID, bool WaitIfBusy);
 void SetDWorkerDataPtr(unsigned int dworkerID, void *dataPtr);
 void SetDWorkerFunction(unsigned int dworkerID, dworkerFunctionPointer workerFunction);
-void SetDWorkerPriority(int priority); // 0 highest - 3 lowest
+// Set DWorker thread priority: 0 highest - 3 lowest
+void SetDWorkerPriority(int priority);
 bool IsBusyDWorker(unsigned int dworkerID);
 void WaitDWorker(unsigned int dworkerID);
 bool WaitTimeOutDWorker(unsigned int dworkerID, unsigned int timeOut);
