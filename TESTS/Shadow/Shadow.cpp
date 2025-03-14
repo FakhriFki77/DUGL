@@ -74,6 +74,60 @@ DVEC4 *varrayTreeRes = NULL;
 DVEC4 *varrayTreeProj = NULL;
 DVEC2i *varrayiTree = NULL;
 
+DGCORE dgCores[4];
+
+// Poly16 data
+
+// Poly16 point structure
+typedef struct {
+  int x,y,z;  // screen pos
+  int xt,yt;  // texture position
+  //int lightRGB; // lightening, RGBA color ... no need in this demo
+} PolyPt;
+
+#define MAX_POLY_PTS 4
+// tree point
+PolyPt TreePts[4] =
+   { { 0, 0, 0, 0, 0 },   { 0, 0, 0, 0, 50 },
+	 { 0, 0, 0, 50, 50 },   { 0, 0, 0, 50, 0 } };
+
+int ListPtTree[] =
+   { 4, (int)&TreePts[0], (int)&TreePts[1],
+		(int)&TreePts[2], (int)&TreePts[3] };
+
+PolyPt TreePts_C2[4] =
+   { { 0, 0, 0, 0, 0 },   { 0, 0, 0, 0, 50 },
+	 { 0, 0, 0, 50, 50 },   { 0, 0, 0, 50, 0 } };
+
+int ListPtTree_C2[] =
+   { 4, (int)&TreePts_C2[0], (int)&TreePts_C2[1],
+		(int)&TreePts_C2[2], (int)&TreePts_C2[3] };
+
+PolyPt TreePts_C3[4] =
+   { { 0, 0, 0, 0, 0 },   { 0, 0, 0, 0, 50 },
+	 { 0, 0, 0, 50, 50 },   { 0, 0, 0, 50, 0 } };
+
+int ListPtTree_C3[] =
+   { 4, (int)&TreePts_C3[0], (int)&TreePts_C3[1],
+		(int)&TreePts_C3[2], (int)&TreePts_C3[3] };
+
+PolyPt TreePts_C4[4] =
+   { { 0, 0, 0, 0, 0 },   { 0, 0, 0, 0, 50 },
+	 { 0, 0, 0, 50, 50 },   { 0, 0, 0, 50, 0 } };
+
+int ListPtTree_C4[] =
+   { 4, (int)&TreePts_C4[0], (int)&TreePts_C4[1],
+		(int)&TreePts_C4[2], (int)&TreePts_C4[3] };
+
+PolyPt TreePts_C5[4] =
+   { { 0, 0, 0, 0, 0 },   { 0, 0, 0, 0, 50 },
+	 { 0, 0, 0, 50, 50 },   { 0, 0, 0, 50, 0 } };
+
+int ListPtTree_C5[] =
+   { 4, (int)&TreePts_C5[0], (int)&TreePts_C5[1],
+		(int)&TreePts_C5[2], (int)&TreePts_C5[3] };
+
+
 // multi-core (workers) smooth functions ///////////////////
 void SmoothWorker1C_1(void *, int wid);
 
@@ -94,11 +148,18 @@ void SmoothWorker6C_6(void *, int wid);
 
 // multi-core (workers) render functions ////////////
 
+// common function
+void RenderViewCore(DGCORE *curCore, int *curListPtTree, PolyPt *curTreePts);
 // full view
 void RenderWorker1C_1(void *, int wid);
 // left, right
 void RenderWorker2C_1(void *, int wid);
 void RenderWorker2C_2(void *, int wid);
+// top, bottom (left, right)
+void RenderWorker4C_1(void *, int wid);
+void RenderWorker4C_2(void *, int wid);
+void RenderWorker4C_3(void *, int wid);
+void RenderWorker4C_4(void *, int wid);
 
 // resize worker smooth to screen (HQ rendering)
 void ResizeWorker1C_1(void *, int wid);
@@ -153,6 +214,10 @@ unsigned int renderCores  = 1;
 
 unsigned int renderWorker2C_2ID = 0;
 
+unsigned int renderWorker4C_2ID = 0;
+unsigned int renderWorker4C_3ID = 0;
+unsigned int renderWorker4C_4ID = 0;
+
 unsigned int resizeWorker2C_2ID = 0;
 
 // ressources
@@ -167,49 +232,6 @@ DVEC2i *vuviarrayShadE = nullptr;
 DVEC4 *varrayShadEB = nullptr;
 DVEC2i *vuviarrayShadEB = nullptr;
 DFace shadowFace;
-
-// Poly16 data
-
-// Poly16 point structure
-typedef struct {
-  int x,y,z;  // screen pos
-  int xt,yt;  // texture position
-  //int lightRGB; // lightening, RGBA color ... no need in this demo
-} PolyPt;
-
-#define MAX_POLY_PTS 4
-// tree point
-PolyPt TreePts[4] =
-   { { 0, 0, 0, 0, 0 },   { 0, 0, 0, 0, 50 },
-	 { 0, 0, 0, 50, 50 },   { 0, 0, 0, 50, 0 } };
-
-int ListPtTree[] =
-   { 4, (int)&TreePts[0], (int)&TreePts[1],
-		(int)&TreePts[2], (int)&TreePts[3] };
-
-PolyPt TreePts_C2[4] =
-   { { 0, 0, 0, 0, 0 },   { 0, 0, 0, 0, 50 },
-	 { 0, 0, 0, 50, 50 },   { 0, 0, 0, 50, 0 } };
-
-int ListPtTree_C2[] =
-   { 4, (int)&TreePts_C2[0], (int)&TreePts_C2[1],
-		(int)&TreePts_C2[2], (int)&TreePts_C2[3] };
-
-PolyPt TreePts_C3[4] =
-   { { 0, 0, 0, 0, 0 },   { 0, 0, 0, 0, 50 },
-	 { 0, 0, 0, 50, 50 },   { 0, 0, 0, 50, 0 } };
-
-int ListPtTree_C3[] =
-   { 4, (int)&TreePts_C3[0], (int)&TreePts_C3[1],
-		(int)&TreePts_C3[2], (int)&TreePts_C3[3] };
-
-PolyPt TreePts_C4[4] =
-   { { 0, 0, 0, 0, 0 },   { 0, 0, 0, 0, 50 },
-	 { 0, 0, 0, 50, 50 },   { 0, 0, 0, 50, 0 } };
-
-int ListPtTree_C4[] =
-   { 4, (int)&TreePts_C4[0], (int)&TreePts_C4[1],
-		(int)&TreePts_C4[2], (int)&TreePts_C4[3] };
 
 //******************
 // FONT
@@ -249,6 +271,11 @@ int main (int argc, char ** argv)
     // create rendering DWorker
     renderWorkerID = CreateDWorker(RenderWorkerFunc, nullptr);
     renderMutex = CreateDMutex();
+    // get all DgCores
+    GetDGCORE(&dgCores[0], 0);
+    GetDGCORE(&dgCores[1], 1);
+    GetDGCORE(&dgCores[2], 2);
+    GetDGCORE(&dgCores[3], 3);
     // create smoothing DWorkers
     smoothWorker2C_2ID = CreateDWorker(SmoothWorker2C_2, nullptr);
 
@@ -264,6 +291,11 @@ int main (int argc, char ** argv)
 
     // create render(ground/shadow) DWorkers
     renderWorker2C_2ID = CreateDWorker(RenderWorker2C_2, nullptr);
+
+    renderWorker4C_2ID = CreateDWorker(RenderWorker4C_2, nullptr);
+    renderWorker4C_3ID = CreateDWorker(RenderWorker4C_3, nullptr);
+    renderWorker4C_4ID = CreateDWorker(RenderWorker4C_4, nullptr);
+
     // resize DWorkers
     resizeWorker2C_2ID = CreateDWorker(ResizeWorker2C_2, nullptr);
 
@@ -570,6 +602,8 @@ int main (int argc, char ** argv)
                     if (renderCores == 1)
                         renderCores = 2;
                     else if (renderCores == 2)
+                        renderCores = 4;
+                    else if (renderCores == 4)
                         renderCores = 1;
                     break;
                 case KB_KEY_F7 : // F7 High quality rendering
@@ -918,25 +952,16 @@ void RenderWorkerFunc(void *, int ) {
         // projection to screen
         DMatrix4MulDVEC4ArrayResDVec2iNT(matView, varrayTreeProj, 4, varrayiTree);
 
-        ListPtTree_C3[0] = 4;
-        TreePts_C3[0].x = varrayiTree[0].x;     TreePts_C3[0].y = varrayiTree[0].y;
-        TreePts_C3[0].xt = vuviarrayShadE[0].x; TreePts_C3[0].yt = vuviarrayShadE[0].y;
-        TreePts_C3[1].x = varrayiTree[1].x;     TreePts_C3[1].y = varrayiTree[1].y;
-        TreePts_C3[1].xt = vuviarrayShadE[1].x; TreePts_C3[1].yt = vuviarrayShadE[1].y;
-        TreePts_C3[2].x = varrayiTree[2].x;     TreePts_C3[2].y = varrayiTree[2].y;
-        TreePts_C3[2].xt = vuviarrayShadE[2].x; TreePts_C3[2].yt = vuviarrayShadE[2].y;
-        TreePts_C3[3].x = varrayiTree[3].x;     TreePts_C3[3].y = varrayiTree[3].y;
-        TreePts_C3[3].xt = vuviarrayShadE[3].x; TreePts_C3[3].yt = vuviarrayShadE[3].y;
+        ListPtTree_C5[0] = 4;
+        TreePts_C5[0].x = varrayiTree[0].x;     TreePts_C5[0].y = varrayiTree[0].y;
+        TreePts_C5[0].xt = vuviarrayShadE[0].x; TreePts_C5[0].yt = vuviarrayShadE[0].y;
+        TreePts_C5[1].x = varrayiTree[1].x;     TreePts_C5[1].y = varrayiTree[1].y;
+        TreePts_C5[1].xt = vuviarrayShadE[1].x; TreePts_C5[1].yt = vuviarrayShadE[1].y;
+        TreePts_C5[2].x = varrayiTree[2].x;     TreePts_C5[2].y = varrayiTree[2].y;
+        TreePts_C5[2].xt = vuviarrayShadE[2].x; TreePts_C5[2].yt = vuviarrayShadE[2].y;
+        TreePts_C5[3].x = varrayiTree[3].x;     TreePts_C5[3].y = varrayiTree[3].y;
+        TreePts_C5[3].xt = vuviarrayShadE[3].x; TreePts_C5[3].yt = vuviarrayShadE[3].y;
 
-        ListPtTree_C4[0] = 3;
-        TreePts_C4[0].x  = -50;    TreePts_C4[0].y  = -71;
-        TreePts_C4[0].xt =  14;    TreePts_C4[0].yt = 14;
-        TreePts_C4[1].x  =  50;    TreePts_C4[1].y  = -71; //-50;
-        TreePts_C4[1].xt =  10;    TreePts_C4[1].yt = 14;
-        TreePts_C4[2].x  =  80 /*40*/;    TreePts_C4[2].y  = 59;
-        TreePts_C4[2].xt =  10;    TreePts_C4[2].yt = 10;
-        TreePts_C4[3].x  = -45;    TreePts_C4[3].y  = 50;
-        TreePts_C4[3].xt =  14;    TreePts_C4[3].yt = 10;
 
         // render ground and casted shadow on it
         switch (renderCores) {
@@ -947,6 +972,15 @@ void RenderWorkerFunc(void *, int ) {
                 RunDWorker(renderWorker2C_2ID, false);
                 RenderWorker2C_1(NULL, 0);
                 WaitDWorker(renderWorker2C_2ID);
+                break;
+            case 4:
+                RunDWorker(renderWorker4C_2ID, false);
+                RunDWorker(renderWorker4C_3ID, false);
+                RunDWorker(renderWorker4C_4ID, false);
+                RenderWorker4C_1(NULL, 0);
+                WaitDWorker(renderWorker4C_2ID);
+                WaitDWorker(renderWorker4C_3ID);
+                WaitDWorker(renderWorker4C_4ID);
                 break;
         }
 
@@ -1035,6 +1069,7 @@ void RenderWorkerFunc(void *, int ) {
                     ResizeWorker1C_1(NULL, 0);
                     break;
                 case 2:
+                case 4:
                     RunDWorker(resizeWorker2C_2ID, false);
                     ResizeWorker2C_1(NULL, 0);
                     WaitDWorker(resizeWorker2C_2ID);
@@ -1206,94 +1241,12 @@ void RenderWorker1C_1(void *, int wid) {
         DgSetCurSurf(RendSurf);
     }
 
-    // clear all the Surf
-    DgClear16(0x1e|0x380);
-
-    // render ground and casted shadow on it
-    for (int idt = 0; idt < countDFaces; idt++) {
-        ptrFace = dfaces[idt]->vface;
-        if (ptrFace == nullptr || dfaces[idt]->countVertices == 0)
-            continue;
-        idx1 = ptrFace[1];
-        idx2 = ptrFace[2];
-        idx3 = ptrFace[3];
-
-        // render face
-        switch (ptrFace[0]) {
-        case 3:
-            if ((varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f))// &&
-            {
-                ListPtTree[0] = 3;
-                TreePts[0].x = varrayi[idx1].x; TreePts[0].y = varrayi[idx1].y;
-                TreePts[1].x = varrayi[idx2].x; TreePts[1].y = varrayi[idx2].y;
-                TreePts[2].x = varrayi[idx3].x; TreePts[2].y = varrayi[idx3].y;
-                if (!groundTextured) {
-                    //Poly16(&ListPtTree, NULL, POLY16_SOLID_BLND, dfaces[idt]->rendCol|(15<<24));
-                    Poly16(&ListPtTree, NULL, POLY16_SOLID, faceCol);
-                    TreePts[0].xt = vLightUPos[idx1];
-                    TreePts[0].yt = 0;
-                    TreePts[1].xt = vLightUPos[idx2];
-                    TreePts[1].yt = 0;
-                    TreePts[2].xt = vLightUPos[idx3];
-                    TreePts[2].yt = 0;
-                    REPOLY16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
-                } else {
-                    /*TreePts[0].xt = varrayUVi[idx1].x; TreePts[0].yt = varrayUVi[idx1].y;
-                    TreePts[1].xt = varrayUVi[idx2].x; TreePts[1].yt = varrayUVi[idx2].y;
-                    TreePts[2].xt = varrayUVi[idx3].x; TreePts[2].yt = varrayUVi[idx3].y;
-                    Poly16(&ListPtTree, Ground1Surf16, POLY16_TEXT_BLND, dfaces[idt]->rendCol);*/
-                    TreePts[0].xt = varrayUVi[idx1].x; TreePts[0].yt = varrayUVi[idx1].y;
-                    TreePts[1].xt = varrayUVi[idx2].x; TreePts[1].yt = varrayUVi[idx2].y;
-                    TreePts[2].xt = varrayUVi[idx3].x; TreePts[2].yt = varrayUVi[idx3].y;
-                    Poly16(&ListPtTree, Ground1Surf16, POLY16_TEXT, dfaces[idt]->rendCol);
-                    TreePts[0].xt = vLightUPos[idx1];
-                    TreePts[0].yt = 0;
-                    TreePts[1].xt = vLightUPos[idx2];
-                    TreePts[1].yt = 0;
-                    TreePts[2].xt = vLightUPos[idx3];
-                    TreePts[2].yt = 0;
-                    REPOLY16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
-                }
-                if (dfaces[idt]->shadowed) {
-                    TreePts[0].xt = dfaces[idt]->shadowUVi[0].x; TreePts[0].yt = dfaces[idt]->shadowUVi[0].y;
-                    TreePts[1].xt = dfaces[idt]->shadowUVi[1].x; TreePts[1].yt = dfaces[idt]->shadowUVi[1].y;
-                    TreePts[2].xt = dfaces[idt]->shadowUVi[2].x; TreePts[2].yt = dfaces[idt]->shadowUVi[2].y;
-                    REPOLY16(&ListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
-                }
-            }
-            break;
-        case 4:
-            idx4 = ptrFace[4];
-            if (varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f && varrayRes[idx4].z > 0.1f) // &&
-            {
-                ListPtTree[0] = 4;
-                TreePts[0].x = varrayi[idx1].x; TreePts[0].y = varrayi[idx1].y;
-                TreePts[1].x = varrayi[idx2].x; TreePts[1].y = varrayi[idx2].y;
-                TreePts[2].x = varrayi[idx3].x; TreePts[2].y = varrayi[idx3].y;
-                TreePts[3].x = varrayi[idx4].x; TreePts[3].y = varrayi[idx4].y;
-                Poly16(&ListPtTree, NULL, POLY16_SOLID, dfaces[idt]->rendCol);
-            }
-            break;
-        }
-    }
-
-    if (varrayTreeProj[0].z > 0.1f) // &&
-    {
-        //Poly16(&ListPtTree_C3, Tree2Surf16, POLY16_MASK_TEXT_BLND | POLY16_FLAG_DBL_SIDED, RGB16(0,0,0) | (15 << 24));
-        Poly16(&ListPtTree_C3, Tree2Surf16, POLY16_MASK_TEXT | POLY16_FLAG_DBL_SIDED, 0);
-    }
-    //ResizeViewSurf16(gouroudLightSurf, 1, 0);
-    //PutSurf16(gouroudLightSurf,0,0,0);
+    RenderViewCore(&dgCores[0], ListPtTree, TreePts);
 }
 
 // left, right
 void RenderWorker2C_1(void *, int wid) {
     DgView curView;
-    int *ptrFace = nullptr;
-    int idx1 = 0;
-    int idx2 = 0;
-    int idx3 = 0;
-    int idx4 = 0;
 
     if (highQRendering) {
         DgSetCurSurf(srcBlurSurf16);
@@ -1304,89 +1257,11 @@ void RenderWorker2C_1(void *, int wid) {
     curView.MaxX = 0;
     SetSurfView(&CurSurf, &curView);
 
-    // clear all the Surf
-    ClearSurf16(0x1e|0x380);
-
-    // render ground and casted shadow on it
-    for (int idt = 0; idt < countDFaces; idt++) {
-        ptrFace = dfaces[idt]->vface;
-        if (ptrFace == nullptr || dfaces[idt]->countVertices == 0)
-            continue;
-        idx1 = ptrFace[1];
-        idx2 = ptrFace[2];
-        idx3 = ptrFace[3];
-
-        // render face
-        switch (ptrFace[0]) {
-        case 3:
-            if ((varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f))// &&
-            {
-                ListPtTree[0] = 3;
-                TreePts[0].x = varrayi[idx1].x; TreePts[0].y = varrayi[idx1].y;
-                TreePts[1].x = varrayi[idx2].x; TreePts[1].y = varrayi[idx2].y;
-                TreePts[2].x = varrayi[idx3].x; TreePts[2].y = varrayi[idx3].y;
-                if (!groundTextured) {
-                    //Poly16(&ListPtTree, NULL, POLY16_SOLID, dfaces[idt]->rendCol);
-                    Poly16(&ListPtTree, NULL, POLY16_SOLID, faceCol);
-                    TreePts[0].xt = vLightUPos[idx1];
-                    TreePts[0].yt = 0;
-                    TreePts[1].xt = vLightUPos[idx2];
-                    TreePts[1].yt = 0;
-                    TreePts[2].xt = vLightUPos[idx3];
-                    TreePts[2].yt = 0;
-                    REPOLY16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
-                } else {
-                    /*TreePts[0].xt = varrayUVi[idx1].x; TreePts[0].yt = varrayUVi[idx1].y;
-                    TreePts[1].xt = varrayUVi[idx2].x; TreePts[1].yt = varrayUVi[idx2].y;
-                    TreePts[2].xt = varrayUVi[idx3].x; TreePts[2].yt = varrayUVi[idx3].y;
-                    Poly16(&ListPtTree, Ground1Surf16, POLY16_TEXT_BLND, dfaces[idt]->rendCol);*/
-                    TreePts[0].xt = varrayUVi[idx1].x; TreePts[0].yt = varrayUVi[idx1].y;
-                    TreePts[1].xt = varrayUVi[idx2].x; TreePts[1].yt = varrayUVi[idx2].y;
-                    TreePts[2].xt = varrayUVi[idx3].x; TreePts[2].yt = varrayUVi[idx3].y;
-                    Poly16(&ListPtTree, Ground1Surf16, POLY16_TEXT, dfaces[idt]->rendCol);
-                    TreePts[0].xt = vLightUPos[idx1];
-                    TreePts[0].yt = 0;
-                    TreePts[1].xt = vLightUPos[idx2];
-                    TreePts[1].yt = 0;
-                    TreePts[2].xt = vLightUPos[idx3];
-                    TreePts[2].yt = 0;
-                    REPOLY16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
-                }
-                if (dfaces[idt]->shadowed) {
-                    TreePts[0].xt = dfaces[idt]->shadowUVi[0].x; TreePts[0].yt = dfaces[idt]->shadowUVi[0].y;
-                    TreePts[1].xt = dfaces[idt]->shadowUVi[1].x; TreePts[1].yt = dfaces[idt]->shadowUVi[1].y;
-                    TreePts[2].xt = dfaces[idt]->shadowUVi[2].x; TreePts[2].yt = dfaces[idt]->shadowUVi[2].y;
-                    REPOLY16(&ListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
-                }
-            }
-            break;
-        case 4:
-            idx4 = ptrFace[4];
-            if (varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f && varrayRes[idx4].z > 0.1f) // &&
-            {
-                ListPtTree[0] = 4;
-                TreePts[0].x = varrayi[idx1].x; TreePts[0].y = varrayi[idx1].y;
-                TreePts[1].x = varrayi[idx2].x; TreePts[1].y = varrayi[idx2].y;
-                TreePts[2].x = varrayi[idx3].x; TreePts[2].y = varrayi[idx3].y;
-                TreePts[3].x = varrayi[idx4].x; TreePts[3].y = varrayi[idx4].y;
-                Poly16(&ListPtTree, NULL, POLY16_SOLID, dfaces[idt]->rendCol);
-            }
-            break;
-        }
-    }
-    if (varrayTreeProj[0].z > 0.1f && varrayTreeProj[1].z > 0.1f && varrayTreeProj[2].z > 0.1f && varrayTreeProj[3].z > 0.1f) // &&
-    {
-        Poly16(&ListPtTree_C3, Tree2Surf16, POLY16_MASK_TEXT | POLY16_FLAG_DBL_SIDED, RGB16(255,0,0));
-    }
+    RenderViewCore(&dgCores[0], ListPtTree, TreePts);
 }
 
 void RenderWorker2C_2(void *, int wid) {
     DgView curView;
-    int *ptrFace = nullptr;
-    int idx1 = 0;
-    int idx2 = 0;
-    int idx3 = 0;
-    int idx4 = 0;
 
     if (highQRendering) {
         DgSetCurSurf_C2(srcBlurSurf16);
@@ -1397,8 +1272,83 @@ void RenderWorker2C_2(void *, int wid) {
     curView.MinX = 1;
     SetSurfView(&CurSurf_C2, &curView);
 
+    RenderViewCore(&dgCores[1], ListPtTree_C2, TreePts_C2);
+}
+// top (left, right), bottom (left, right)
+void RenderWorker4C_1(void *, int wid) {
+    DgView curView;
+
+    if (highQRendering) {
+        DgSetCurSurf(srcBlurSurf16);
+    } else {
+        DgSetCurSurf(RendSurf);
+    }
+    GetSurfView(&CurSurf, &curView);
+    curView.MaxX = 0;
+    curView.MinY = 1;
+    SetSurfView(&CurSurf, &curView);
+
+    RenderViewCore(&dgCores[0], ListPtTree, TreePts);
+}
+
+void RenderWorker4C_2(void *, int wid) {
+    DgView curView;
+
+    if (highQRendering) {
+        DgSetCurSurf_C2(srcBlurSurf16);
+    } else {
+        DgSetCurSurf_C2(RendSurf);
+    }
+    GetSurfView(&CurSurf_C2, &curView);
+    curView.MinX = 1;
+    curView.MinY = 1;
+    SetSurfView(&CurSurf_C2, &curView);
+
+    RenderViewCore(&dgCores[1], ListPtTree_C2, TreePts_C2);
+}
+
+void RenderWorker4C_3(void *, int wid) {
+    DgView curView;
+
+    if (highQRendering) {
+        DgSetCurSurf_C3(srcBlurSurf16);
+    } else {
+        DgSetCurSurf_C3(RendSurf);
+    }
+    GetSurfView(&CurSurf_C3, &curView);
+    curView.MaxX = 0;
+    curView.MaxY = 0;
+    SetSurfView(&CurSurf_C3, &curView);
+
+    RenderViewCore(&dgCores[2], ListPtTree_C3, TreePts_C3);
+}
+
+void RenderWorker4C_4(void *, int wid) {
+    DgView curView;
+
+    if (highQRendering) {
+        DgSetCurSurf_C4(srcBlurSurf16);
+    } else {
+        DgSetCurSurf_C4(RendSurf);
+    }
+    GetSurfView(&CurSurf_C4, &curView);
+    curView.MinX = 1;
+    curView.MaxY = 0;
+    SetSurfView(&CurSurf_C4, &curView);
+
+    RenderViewCore(&dgCores[3], ListPtTree_C4, TreePts_C4);
+}
+
+// common Render
+void RenderViewCore(DGCORE *curCore, int *curListPtTree, PolyPt *curTreePts) {
+    int *ptrFace = nullptr;
+    int idx1 = 0;
+    int idx2 = 0;
+    int idx3 = 0;
+    int idx4 = 0;
+
     // clear all the view of the current worker
-    ClearSurf16_C2(0x1e|0x380);
+    curCore->ClearSurf16(0x1e|0x380);
 
     // render ground and casted shadow on it
     for (int idt = 0; idt < countDFaces; idt++) {
@@ -1414,42 +1364,42 @@ void RenderWorker2C_2(void *, int wid) {
         case 3:
             if ((varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f))// &&
             {
-                ListPtTree_C2[0] = 3;
-                TreePts_C2[0].x = varrayi[idx1].x; TreePts_C2[0].y = varrayi[idx1].y;
-                TreePts_C2[1].x = varrayi[idx2].x; TreePts_C2[1].y = varrayi[idx2].y;
-                TreePts_C2[2].x = varrayi[idx3].x; TreePts_C2[2].y = varrayi[idx3].y;
+                curListPtTree[0] = 3;
+                curTreePts[0].x = varrayi[idx1].x; curTreePts[0].y = varrayi[idx1].y;
+                curTreePts[1].x = varrayi[idx2].x; curTreePts[1].y = varrayi[idx2].y;
+                curTreePts[2].x = varrayi[idx3].x; curTreePts[2].y = varrayi[idx3].y;
                 if (!groundTextured) {
 //                    Poly16_C2(&ListPtTree_C2, NULL, POLY16_SOLID, dfaces[idt]->rendCol);
-                    Poly16_C2(&ListPtTree_C2, NULL, POLY16_SOLID, faceCol);
-                    TreePts_C2[0].xt = vLightUPos[idx1];
-                    TreePts_C2[0].yt = 0;
-                    TreePts_C2[1].xt = vLightUPos[idx2];
-                    TreePts_C2[1].yt = 0;
-                    TreePts_C2[2].xt = vLightUPos[idx3];
-                    TreePts_C2[2].yt = 0;
-                    REPOLY16_C2(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                    curCore->Poly16(&curListPtTree, NULL, POLY16_SOLID, faceCol);
+                    curTreePts[0].xt = vLightUPos[idx1];
+                    curTreePts[0].yt = 0;
+                    curTreePts[1].xt = vLightUPos[idx2];
+                    curTreePts[1].yt = 0;
+                    curTreePts[2].xt = vLightUPos[idx3];
+                    curTreePts[2].yt = 0;
+                    curCore->RePoly16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
                 } else {
                     /*TreePts_C2[0].xt = varrayUVi[idx1].x; TreePts_C2[0].yt = varrayUVi[idx1].y;
                     TreePts_C2[1].xt = varrayUVi[idx2].x; TreePts_C2[1].yt = varrayUVi[idx2].y;
                     TreePts_C2[2].xt = varrayUVi[idx3].x; TreePts_C2[2].yt = varrayUVi[idx3].y;
                     Poly16_C2(&ListPtTree_C2, Ground1Surf16, POLY16_TEXT_BLND, dfaces[idt]->rendCol);*/
-                    TreePts_C2[0].xt = varrayUVi[idx1].x; TreePts_C2[0].yt = varrayUVi[idx1].y;
-                    TreePts_C2[1].xt = varrayUVi[idx2].x; TreePts_C2[1].yt = varrayUVi[idx2].y;
-                    TreePts_C2[2].xt = varrayUVi[idx3].x; TreePts_C2[2].yt = varrayUVi[idx3].y;
-                    Poly16_C2(&ListPtTree_C2, Ground1Surf16, POLY16_TEXT, dfaces[idt]->rendCol);
-                    TreePts_C2[0].xt = vLightUPos[idx1];
-                    TreePts_C2[0].yt = 0;
-                    TreePts_C2[1].xt = vLightUPos[idx2];
-                    TreePts_C2[1].yt = 0;
-                    TreePts_C2[2].xt = vLightUPos[idx3];
-                    TreePts_C2[2].yt = 0;
-                    REPOLY16_C2(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                    curTreePts[0].xt = varrayUVi[idx1].x; curTreePts[0].yt = varrayUVi[idx1].y;
+                    curTreePts[1].xt = varrayUVi[idx2].x; curTreePts[1].yt = varrayUVi[idx2].y;
+                    curTreePts[2].xt = varrayUVi[idx3].x; curTreePts[2].yt = varrayUVi[idx3].y;
+                    curCore->Poly16(curListPtTree, Ground1Surf16, POLY16_TEXT, dfaces[idt]->rendCol);
+                    curTreePts[0].xt = vLightUPos[idx1];
+                    curTreePts[0].yt = 0;
+                    curTreePts[1].xt = vLightUPos[idx2];
+                    curTreePts[1].yt = 0;
+                    curTreePts[2].xt = vLightUPos[idx3];
+                    curTreePts[2].yt = 0;
+                    curCore->RePoly16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
                 }
                 if (dfaces[idt]->shadowed) {
-                    TreePts_C2[0].xt = dfaces[idt]->shadowUVi[0].x; TreePts_C2[0].yt = dfaces[idt]->shadowUVi[0].y;
-                    TreePts_C2[1].xt = dfaces[idt]->shadowUVi[1].x; TreePts_C2[1].yt = dfaces[idt]->shadowUVi[1].y;
-                    TreePts_C2[2].xt = dfaces[idt]->shadowUVi[2].x; TreePts_C2[2].yt = dfaces[idt]->shadowUVi[2].y;
-                    REPOLY16_C2(&ListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
+                    curTreePts[0].xt = dfaces[idt]->shadowUVi[0].x; curTreePts[0].yt = dfaces[idt]->shadowUVi[0].y;
+                    curTreePts[1].xt = dfaces[idt]->shadowUVi[1].x; curTreePts[1].yt = dfaces[idt]->shadowUVi[1].y;
+                    curTreePts[2].xt = dfaces[idt]->shadowUVi[2].x; curTreePts[2].yt = dfaces[idt]->shadowUVi[2].y;
+                    curCore->RePoly16(curListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
                 }
             }
             break;
@@ -1457,22 +1407,21 @@ void RenderWorker2C_2(void *, int wid) {
             idx4 = ptrFace[4];
             if (varrayRes[idx1].z > 0.1f && varrayRes[idx2].z > 0.1f && varrayRes[idx3].z > 0.1f && varrayRes[idx4].z > 0.1f) // &&
             {
-                ListPtTree_C2[0] = 4;
-                TreePts_C2[0].x = varrayi[idx1].x; TreePts_C2[0].y = varrayi[idx1].y;
-                TreePts_C2[1].x = varrayi[idx2].x; TreePts_C2[1].y = varrayi[idx2].y;
-                TreePts_C2[2].x = varrayi[idx3].x; TreePts_C2[2].y = varrayi[idx3].y;
-                TreePts_C2[3].x = varrayi[idx4].x; TreePts_C2[3].y = varrayi[idx4].y;
-                Poly16_C2(&ListPtTree_C2, NULL, POLY16_SOLID, dfaces[idt]->rendCol);
+                curListPtTree[0] = 4;
+                curTreePts[0].x = varrayi[idx1].x; curTreePts[0].y = varrayi[idx1].y;
+                curTreePts[1].x = varrayi[idx2].x; curTreePts[1].y = varrayi[idx2].y;
+                curTreePts[2].x = varrayi[idx3].x; curTreePts[2].y = varrayi[idx3].y;
+                curTreePts[3].x = varrayi[idx4].x; curTreePts[3].y = varrayi[idx4].y;
+                curCore->Poly16(curListPtTree, NULL, POLY16_SOLID, dfaces[idt]->rendCol);
             }
             break;
         }
     }
     if (varrayTreeProj[0].z > 0.1f && varrayTreeProj[1].z > 0.1f && varrayTreeProj[2].z > 0.1f && varrayTreeProj[3].z > 0.1f) // &&
     {
-        Poly16_C2(&ListPtTree_C3, Tree2Surf16, POLY16_MASK_TEXT | POLY16_FLAG_DBL_SIDED, RGB16(255,0,0));
+        curCore->Poly16(&ListPtTree_C5, Tree2Surf16, POLY16_MASK_TEXT | POLY16_FLAG_DBL_SIDED, RGB16(255,0,0));
     }
 }
-
 // resize worker smooth to screen (HQ rendering)
 
 void ResizeWorker1C_1(void *, int wid) {
