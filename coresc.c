@@ -24,6 +24,22 @@
 #include "DUGL.h"
 #include "intrndugl.h"
 
+void REPOLY16C1(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly) {
+    REPOLY16(ListPt, SS, TypePoly, ColPoly);
+}
+
+void REPOLY16C2(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly) {
+    REPOLY16_C2(ListPt, SS, TypePoly, ColPoly);
+}
+
+void REPOLY16C3(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly) {
+    REPOLY16_C3(ListPt, SS, TypePoly, ColPoly);
+}
+
+void REPOLY16C4(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly) {
+    REPOLY16_C4(ListPt, SS, TypePoly, ColPoly);
+}
+
 bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
     if (dgCore == NULL)
         return false;
@@ -71,7 +87,7 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->PutSurfTrans16 = PutSurfTrans16;
         dgCore->PutMaskSurfTrans16 = PutMaskSurfTrans16;
         dgCore->Poly16 = Poly16;
-        dgCore->RePoly16 = RePoly16;
+        dgCore->RePoly16 = REPOLY16C1;
 
         break;
 
@@ -117,7 +133,7 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->PutSurfTrans16 = PutSurfTrans16_C2;
         dgCore->PutMaskSurfTrans16 = PutMaskSurfTrans16_C2;
         dgCore->Poly16 = Poly16_C2;
-        dgCore->RePoly16 = RePoly16_C2;
+        dgCore->RePoly16 = REPOLY16C2;
 
         break;
 
@@ -163,7 +179,7 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->PutSurfTrans16 = PutSurfTrans16_C3;
         dgCore->PutMaskSurfTrans16 = PutMaskSurfTrans16_C3;
         dgCore->Poly16 = Poly16_C3;
-        dgCore->RePoly16 = RePoly16_C3;
+        dgCore->RePoly16 = REPOLY16C3;
 
         break;
 
@@ -209,7 +225,7 @@ bool GetDGCORE(DGCORE *dgCore, int idxDgCore) {
         dgCore->PutSurfTrans16 = PutSurfTrans16_C4;
         dgCore->PutMaskSurfTrans16 = PutMaskSurfTrans16_C4;
         dgCore->Poly16 = Poly16_C4;
-        dgCore->RePoly16 = RePoly16_C4;
+        dgCore->RePoly16 = REPOLY16C4;
 
         break;
     }
