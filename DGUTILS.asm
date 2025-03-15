@@ -40,12 +40,12 @@
 ; constants
 
 Prec                EQU 12
-MaxResV             EQU 4096
+MaxResV             EQU 8192
 BlendMask           EQU 0x1f
 CMaskB_RGB16        EQU 0x1f   ; blue bits 0->4
 CMaskG_RGB16        EQU 0x3f<<5  ; green bits 5->10
 CMaskR_RGB16        EQU 0x1f<<11 ; red bits 11->15
-MaxDeltaDim         EQU 1<< (31-Prec)
+MaxDeltaDim         EQU 1<< (32-Prec)
 
 
 ; param ESI: source Surf, EDI: Dest Surf
