@@ -166,6 +166,11 @@ void ResizeWorker1C_1(void *, int wid);
 // left, right
 void ResizeWorker2C_1(void *, int wid);
 void ResizeWorker2C_2(void *, int wid);
+// top, bottom (left, right)
+void ResizeWorker4C_1(void *, int wid);
+void ResizeWorker4C_2(void *, int wid);
+void ResizeWorker4C_3(void *, int wid);
+void ResizeWorker4C_4(void *, int wid);
 
 // ground mapping
 
@@ -189,10 +194,18 @@ DFace *DFaces = NULL;
 int countDFaces = 0;
 
 // rendering
-float smoothSurfRatio = 1.8f;
-DgSurf *blurSurf16;
-DgSurf *srcBlurSurf16;
-DgSurf *gouroudLightSurf;
+#define MIN_HQR_SURF_RATIO   1.1f
+#define MAX_HQR_SURF_RATIO   3.0f
+#define HQ_SURF_RATIO_STEP   0.05f
+
+float smoothSurfRatio = 1.6f;
+DgSurf *blurSurf16 = NULL;
+DgSurf *srcBlurSurf16 = NULL;
+DgSurf *gouroudLightSurf = NULL;
+float newSmoothSurfRatio = smoothSurfRatio;
+bool triggerReallocSmoothSurfs = false;
+
+bool AllocSmoothSurfs();
 
 // smoothing workers count / ID
 unsigned int smoothingCores  = 4;
@@ -209,16 +222,23 @@ unsigned int smoothWorker6C_4ID = 0;
 unsigned int smoothWorker6C_5ID = 0;
 unsigned int smoothWorker6C_6ID = 0;
 
+// resize workers (after rendering bigger smooth View)
+unsigned int resizeCores  = 2;
+unsigned int resizeWorker2C_2ID = 0;
+
+unsigned int resizeWorker4C_2ID = 0;
+unsigned int resizeWorker4C_3ID = 0;
+unsigned int resizeWorker4C_4ID = 0;
+
+
 // render workers count / ID
-unsigned int renderCores  = 1;
+unsigned int renderCores  = 2;
 
 unsigned int renderWorker2C_2ID = 0;
 
 unsigned int renderWorker4C_2ID = 0;
 unsigned int renderWorker4C_3ID = 0;
 unsigned int renderWorker4C_4ID = 0;
-
-unsigned int resizeWorker2C_2ID = 0;
 
 // ressources
 DgSurf *Tree2Surf16=NULL;
@@ -299,6 +319,11 @@ int main (int argc, char ** argv)
     // resize DWorkers
     resizeWorker2C_2ID = CreateDWorker(ResizeWorker2C_2, nullptr);
 
+    resizeWorker4C_2ID = CreateDWorker(ResizeWorker4C_2, nullptr);
+    resizeWorker4C_3ID = CreateDWorker(ResizeWorker4C_3, nullptr);
+    resizeWorker4C_4ID = CreateDWorker(ResizeWorker4C_4, nullptr);
+
+    // load ressources
     if (LoadGIF16(&Tree2Surf16,"../Asset/PICS/TREE2.gif")==0) {
         printf("error loading TREE2.gif\n");
         exit(-1);
@@ -310,6 +335,18 @@ int main (int argc, char ** argv)
         exit(-1);
     }
 
+    // load font
+    if (!LoadFONT(&F1,"../Asset/FONT/HELLO.chr")) {
+		printf("Error loading HELLO.chr\n"); exit(-1);
+        exit(-1);
+	}
+
+    SetFONT(&F1);
+    // allocate High Quality rendering Surfs
+    if (!AllocSmoothSurfs()) {
+		printf("No mem! failure to create HQ rendering Surfs\n"); exit(-1);
+        exit(-1);
+    }
 
 	// allocate 3D memory
     varray = (DVEC4*)CreateDVEC4Array(MAX_VERTICES_COUNT);
@@ -474,15 +511,6 @@ int main (int argc, char ** argv)
     lightPos->y = (pAAMinBBox->max.y-pAAMinBBox->min.y)*4 + pAAMinBBox->min.y;
     lightPos->z = (pAAMinBBox->min.z+pAAMinBBox->max.z)/2.0;
 
-
-    // load font
-    //if (!LoadFONT(&F1,"/home/darna/Downloads/DUGL-main/Asset/FONT/HELLOC.chr")) {
-    if (!LoadFONT(&F1,"../Asset/FONT/HELLOC.chr")) {
-		printf("Error loading HELLOC.chr\n"); exit(-1);
-	}
-
-    SetFONT(&F1);
-
     DgSetPreferredFullScreenMode(ScrResH, ScrResV, 0);
     // init video mode
     if (!DgInitMainWindowX("Shadow", ScrResH, ScrResV, 16, -1, -1, fullScreen, false, true))
@@ -495,15 +523,6 @@ int main (int argc, char ** argv)
     DgWindowResized = 0;
     ScrResH = RendSurf->ResH;
     ScrResV = RendSurf->ResV;
-    if (CreateSurf(&blurSurf16, (int)(ScrResH*smoothSurfRatio)&0xfffffffe, (int)(ScrResV*smoothSurfRatio)&0xfffffffe, 16)==0) {
-        printf("no mem\n"); exit(-1);
-    }
-    SetOrgSurf(blurSurf16,blurSurf16->ResH/2,blurSurf16->ResV/2);
-
-    if (CreateSurf(&srcBlurSurf16, (int)(ScrResH*smoothSurfRatio)&0xfffffffe, (int)(ScrResV*smoothSurfRatio)&0xfffffffe, 16)==0) {
-        printf("no mem\n"); exit(-1);
-    }
-    SetOrgSurf(srcBlurSurf16,srcBlurSurf16->ResH/2,srcBlurSurf16->ResV/2);
     // create gouroud lightening Surf
     int grdMaxCols = 64;
     //int grdStartR = 32, grdStartG = 32, grdStartB = 32;
@@ -572,7 +591,7 @@ int main (int argc, char ** argv)
 
             GetKey(&keyCode, &keyFLAG);
             switch (keyCode) {
-                case KB_KEY_ESC: // F5 vertical synch e/d
+                case KB_KEY_ESC:
                     exitApp = true;
                     break;
                 case KB_KEY_F5: // F5 vertical synch e/d
@@ -585,7 +604,7 @@ int main (int argc, char ** argv)
                 case KB_KEY_SPACE: // Space to pause
                     pauseShadow=!pauseShadow;
                     break;
-                case KB_KEY_TAB: // switch smoothing Cores count
+                case KB_KEY_F2: // switch smoothing Cores count
                     takeScreenShot = ((keyFLAG&(KB_SHIFT_PR|KB_CTRL_PR)) > 0);
                     if (!takeScreenShot) {
                         if (smoothingCores == 1)
@@ -598,7 +617,15 @@ int main (int argc, char ** argv)
                             smoothingCores = 1;
                     }
                     break;
-                case KB_KEY_LEFT_CTRL: // switch render Cores count
+                case KB_KEY_F3: // switch render Cores count
+                    if (resizeCores == 1)
+                        resizeCores = 2;
+                    else if (resizeCores == 2)
+                        resizeCores = 4;
+                    else if (resizeCores == 4)
+                        resizeCores = 1;
+                    break;
+                case KB_KEY_F4: // switch render Cores count
                     if (renderCores == 1)
                         renderCores = 2;
                     else if (renderCores == 2)
@@ -627,37 +654,61 @@ int main (int argc, char ** argv)
 
                     break;
 
+                case KB_KEY_LEFT :
+                    if ((KbFLAG&KB_SHIFT_PR) > 0) {
+                        if ((smoothSurfRatio-HQ_SURF_RATIO_STEP) > MIN_HQR_SURF_RATIO) {
+                            newSmoothSurfRatio = (smoothSurfRatio - HQ_SURF_RATIO_STEP);
+                            triggerReallocSmoothSurfs = true;
+
+                            //if (!AllocSmoothSurfs()) // success or reverse
+                            //    smoothSurfRatio += HQ_SURF_RATIO_STEP;
+                        }
+                    }
+                    break;
+                case KB_KEY_RIGHT :
+                    if ((KbFLAG&KB_SHIFT_PR) > 0) {
+                        if ((smoothSurfRatio+HQ_SURF_RATIO_STEP) < MAX_HQR_SURF_RATIO) {
+                            newSmoothSurfRatio = (smoothSurfRatio + HQ_SURF_RATIO_STEP);
+                            triggerReallocSmoothSurfs = true;
+                            //if (!AllocSmoothSurfs()) // success or reverse
+                            //    smoothSurfRatio += HQ_SURF_RATIO_STEP;
+                        }
+                    }
+                    break;
+
+
             }
 
-            if (IsKeyDown(KB_KEY_UP)) { // up
-                 /*if (move_zcam) {
-                    zcam = start_zcam - (TreesSpeed * ((float)(DgTime - start_DgTime) / (float)(DgTimerFreq)));
-                 }*/
-                if((KbFLAG & KB_CTRL_PR))
-                    camera.MoveUpDown(MoveSpeed * avgProgress);
-                else
-                    camera.MoveForwardBackward(MoveSpeed * avgProgress);
+            if ((KbFLAG&KB_SHIFT_PR) == 0) {
+                if (IsKeyDown(KB_KEY_UP)) { // up
+                     /*if (move_zcam) {
+                        zcam = start_zcam - (TreesSpeed * ((float)(DgTime - start_DgTime) / (float)(DgTimerFreq)));
+                     }*/
+                    if((KbFLAG & KB_CTRL_PR))
+                        camera.MoveUpDown(MoveSpeed * avgProgress);
+                    else
+                        camera.MoveForwardBackward(MoveSpeed * avgProgress);
 
-            }
-            if (IsKeyDown(KB_KEY_DOWN)) { // down
-                 /*if (move_zcam) {
-                    zcam = start_zcam + (TreesSpeed * ((float)(DgTime - start_DgTime) / (float)(DgTimerFreq)));
-                 }*/
-                if((KbFLAG & KB_CTRL_PR))
-                    camera.MoveUpDown(-MoveSpeed * avgProgress);
-                else
-                    camera.MoveForwardBackward(-MoveSpeed * avgProgress);
-            }
+                }
+                if (IsKeyDown(KB_KEY_DOWN)) { // down
+                     /*if (move_zcam) {
+                        zcam = start_zcam + (TreesSpeed * ((float)(DgTime - start_DgTime) / (float)(DgTimerFreq)));
+                     }*/
+                    if((KbFLAG & KB_CTRL_PR))
+                        camera.MoveUpDown(-MoveSpeed * avgProgress);
+                    else
+                        camera.MoveForwardBackward(-MoveSpeed * avgProgress);
+                }
 
-            if (IsKeyDown(KB_KEY_LEFT)) { // left
-                 //camera.RotateCamera
-                 camera.Rotate(0.0f, -RotSpeed*avgProgress, 0.0f);
-                 //if (xtargetcam > -150.0f) xtargetcam -= TreesSpeed*avgFps;
+                if (IsKeyDown(KB_KEY_LEFT)) { // left
+                     //camera.RotateCamera
+                     camera.Rotate(0.0f, -RotSpeed*avgProgress, 0.0f);
+                     //if (xtargetcam > -150.0f) xtargetcam -= TreesSpeed*avgFps;
+                }
+                if (IsKeyDown(KB_KEY_RIGHT)) {  // right
+                    camera.Rotate(0.0f, RotSpeed*avgProgress, 0.0f);
+                }
             }
-            if (IsKeyDown(KB_KEY_RIGHT)) {  // right
-                camera.Rotate(0.0f, RotSpeed*avgProgress, 0.0f);
-            }
-
             // anim light
             if (!pauseShadow) {
                 GetRotDMatrix4(matAnimLight, speedRotLightX*avgProgress, speedRotLightY*avgProgress, speedRotLightZ*avgProgress);
@@ -1064,20 +1115,29 @@ void RenderWorkerFunc(void *, int ) {
             }
             // resize smoothed Surf to create HQ rendering
             //ResizeWorker1C_1(NULL, 0);
-            switch (renderCores) {
+            switch (resizeCores) {
                 case 1:
                     ResizeWorker1C_1(NULL, 0);
                     break;
                 case 2:
-                case 4:
                     RunDWorker(resizeWorker2C_2ID, false);
                     ResizeWorker2C_1(NULL, 0);
                     WaitDWorker(resizeWorker2C_2ID);
+                    break;
+                case 4:
+                    RunDWorker(resizeWorker4C_2ID, false);
+                    RunDWorker(resizeWorker4C_3ID, false);
+                    RunDWorker(resizeWorker4C_4ID, false);
+                    ResizeWorker4C_1(NULL, 0);
+                    WaitDWorker(resizeWorker4C_2ID);
+                    WaitDWorker(resizeWorker4C_3ID);
+                    WaitDWorker(resizeWorker4C_4ID);
                     break;
             }
         }
 
 		// restore original Screen View
+		DgSetCurSurf(RendSurf);
 		ClearText();
 		#define SIZE_TEXT 511
 		char text[SIZE_TEXT + 1];
@@ -1094,17 +1154,21 @@ void RenderWorkerFunc(void *, int ) {
 		OutText16ModeFormat(AJ_LEFT, text, SIZE_TEXT,
                       "Ctrl+Up/Down  Move Up/Down\n"
                       "Arrows  Move\n"
+                      "F2      Smoothing cores: %i\n"
+                      "Shift+Left/Right  HQ Ratio %0.2f\n"
+                      "F3      Resize cores: %i\n"
+                      "F4      Render cores: %i\n"
                       "F5      Vertical Synch: %s\n"
                       "F6      Rendering: %s\n"
                       "F7      Quality: %s\n"
                       "F10     FullScreen: %s\n"
                       "Space   Pause: %s\n"
-                      "Tab     Smoothing cores: %i\n"
-                      "LCtrl   Render cores: %i\n"
                       "Esc     Exit\n",
+                      smoothingCores, smoothSurfRatio,
+                      resizeCores, renderCores,
                       (SynchScreen)?"ON":"OFF", (groundTextured)?"Textured":"SOLID",
                       (highQRendering)?"High":"Low", (fullScreen)?"Yes":"No",
-                      (pauseShadow)?"ON":"OFF", smoothingCores, renderCores);
+                      (pauseShadow)?"ON":"OFF");
 
 		UnlockDMutex(renderMutex);
 
@@ -1115,7 +1179,15 @@ void RenderWorkerFunc(void *, int ) {
                 DelayMs(1);
             }
         }
-
+        if (triggerReallocSmoothSurfs) {
+            float saveRatio = smoothSurfRatio;
+            smoothSurfRatio = newSmoothSurfRatio;
+            // if failure revert old value
+            if (!AllocSmoothSurfs()) {
+                smoothSurfRatio = saveRatio;
+            }
+            triggerReallocSmoothSurfs = false;
+        }
 		if (requestRenderMutex) {
             requestRenderMutex = false;
             DelayMs(10); // wait for 10 ms to allow the renderMutex to be token by another thread or DWorker
@@ -1444,4 +1516,69 @@ void ResizeWorker2C_2(void *, int wid) {
     DgSetSrcSurf_C2(blurSurf16);
     SrcSurf_C2.MaxY = 0;
     ResizeViewSurf16_C2(NULL, 0, 0);
+}
+
+// top, bottom (left, right)
+void ResizeWorker4C_1(void *, int wid) {
+    DgSetCurSurf(RendSurf);
+    CurSurf.MinY = 1;
+    CurSurf.MaxX = 0;
+    DgSetSrcSurf(blurSurf16);
+    SrcSurf.MinY = 1;
+    SrcSurf.MaxX = 0;
+    ResizeViewSurf16(NULL, 0, 0);
+}
+
+void ResizeWorker4C_2(void *, int wid) {
+    DgSetCurSurf_C2(RendSurf);
+    CurSurf_C2.MaxY = 0;
+    CurSurf_C2.MaxX = 0;
+    DgSetSrcSurf_C2(blurSurf16);
+    SrcSurf_C2.MaxY = 0;
+    SrcSurf_C2.MaxX = 0;
+    ResizeViewSurf16_C2(NULL, 0, 0);
+}
+
+void ResizeWorker4C_3(void *, int wid) {
+    DgSetCurSurf_C3(RendSurf);
+    CurSurf_C3.MinY = 1;
+    CurSurf_C3.MinX = 1;
+    DgSetSrcSurf_C3(blurSurf16);
+    SrcSurf_C3.MinY = 1;
+    SrcSurf_C3.MinX = 1;
+    ResizeViewSurf16_C3(NULL, 0, 0);
+}
+
+void ResizeWorker4C_4(void *, int wid) {
+    DgSetCurSurf_C4(RendSurf);
+    CurSurf_C4.MaxY = 0;
+    CurSurf_C4.MinX = 1;
+    DgSetSrcSurf_C4(blurSurf16);
+    SrcSurf_C4.MaxY = 0;
+    SrcSurf_C4.MinX = 1;
+    ResizeViewSurf16_C4(NULL, 0, 0);
+}
+
+// alloc smooth DgSurf(s)
+bool AllocSmoothSurfs() {
+    DgSurf *newBlurSurf16 = NULL;
+    DgSurf *newSrcBlurSurf16 = NULL;
+    if (CreateSurf(&newBlurSurf16, (int)(ScrResH*smoothSurfRatio)&0xfffffffe, (int)(ScrResV*smoothSurfRatio)&0xfffffffe, 16)==0) {
+        return false; // no mem
+    }
+    SetOrgSurf(newBlurSurf16,newBlurSurf16->ResH/2,newBlurSurf16->ResV/2);
+
+    if (CreateSurf(&newSrcBlurSurf16, (int)(ScrResH*smoothSurfRatio)&0xfffffffe, (int)(ScrResV*smoothSurfRatio)&0xfffffffe, 16)==0) {
+        DestroySurf(newBlurSurf16);
+        return false; // no mem
+    }
+    SetOrgSurf(newSrcBlurSurf16,newSrcBlurSurf16->ResH/2,newSrcBlurSurf16->ResV/2);
+    // destroy old Surfs and set new ones
+    if (blurSurf16 != NULL)
+        DestroySurf(blurSurf16);
+    if (srcBlurSurf16 != NULL)
+        DestroySurf(srcBlurSurf16);
+    blurSurf16=newBlurSurf16;
+    srcBlurSurf16=newSrcBlurSurf16;
+    return true;
 }
