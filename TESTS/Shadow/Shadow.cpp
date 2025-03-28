@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <DUGL.h>
 #include "D3DLoader.h"
 #include "DCamera3D.h"
@@ -127,8 +128,34 @@ int ListPtTree_C5[] =
    { 4, (int)&TreePts_C5[0], (int)&TreePts_C5[1],
 		(int)&TreePts_C5[2], (int)&TreePts_C5[3] };
 
+// backgroun/sky rendering////////////////////////////
+/////////////////////////////////////////////////////
+
+// split background/sky img into cylinder of polygones
+
+const double skyCylinderHeight      = 4000000.0;
+const double skyCylinderRay         = 3000000.0;
+const double skyCylinderYStart      = -2000000.0;
+const int skyCylinderYSplits        = 2;
+const int skyCylinderCircleSplits   = 16;
+const int skyCylinderPolyQuadCount  = skyCylinderYSplits * skyCylinderCircleSplits;
+const int skyCylinderLevelVertCount = skyCylinderCircleSplits + 1;
+const int skyCylinderVertCount      = (skyCylinderYSplits+1) * skyCylinderLevelVertCount;
+
+DVEC4 varraySkyCylinder[skyCylinderVertCount] __attribute__ ((aligned (16)));
+
+DVEC4 varraySkyCylinderRes[skyCylinderVertCount] __attribute__ ((aligned (16)));
+DVEC4 varraySkyCylinderProj[skyCylinderVertCount] __attribute__ ((aligned (16)));
+DVEC2i varrayiSkyCylinder[skyCylinderVertCount] __attribute__ ((aligned (16)));
+
+PolyPt ListSkyCylinderPts[skyCylinderVertCount];
+// series of (count=4, &ListSkyCylinderPts[n*4], &ListSkyCylinderPts[n*4+1], &ListSkyCylinderPts[n*4+2], &ListSkyCylinderPts[n*4+3]
+// where n is the quad count
+int ListPtSkyCylinder[skyCylinderPolyQuadCount * 5];
+void GenSkyCylinderGeometry();
 
 // multi-core (workers) smooth functions ///////////////////
+///////////////////////////////////////////////////////////
 void SmoothWorker1C_1(void *, int wid);
 
 void SmoothWorker2C_1(void *, int wid);
@@ -181,7 +208,7 @@ void MapGroundVertices();
 typedef struct {
     int *vface; // face vertices [count] then vertices indexes (in DVEC4 *varray)
     int *nface; // face normals [count] then normal indexes (in DVEC4 *vnarray)
-    int *uvface; // face u,v [count] then normal indexes (in DVEC2 *vuvarray)
+    int *uvface; // face u,v [count] then u,v indexes (in DVEC2 *vuvarray)
     int countVertices;
     int rendCol;
     int idx;
@@ -223,7 +250,7 @@ unsigned int smoothWorker6C_5ID = 0;
 unsigned int smoothWorker6C_6ID = 0;
 
 // resize workers (after rendering bigger smooth View)
-unsigned int resizeCores  = 2;
+unsigned int resizeCores  = 1;
 unsigned int resizeWorker2C_2ID = 0;
 
 unsigned int resizeWorker4C_2ID = 0;
@@ -241,8 +268,9 @@ unsigned int renderWorker4C_3ID = 0;
 unsigned int renderWorker4C_4ID = 0;
 
 // ressources
-DgSurf *Tree2Surf16=NULL;
-DgSurf *Ground1Surf16=NULL;
+DgSurf *Tree2Surf16 = NULL;
+DgSurf *Ground1Surf16 = NULL;
+DgSurf *BackSky16 = NULL;
 
 // Shadow Emitter
 DgSurf *Tree2SurfShadE16=NULL;
@@ -263,6 +291,7 @@ bool groundTextured=true;
 bool highQRendering=false;
 bool fullScreen=false;
 bool exitApp=false;
+bool skyBack=true;
 bool takeScreenShot=false;
 bool refreshWindow=false;
 bool refreshLightening = false;
@@ -329,11 +358,15 @@ int main (int argc, char ** argv)
         exit(-1);
     }
     if (LoadPNG16(&Ground1Surf16,"../Asset/PICS/groundhd.png")==0) {
-    //if (LoadJPG16(&Ground1Surf16,"../Asset/PICS/EarthMap.jpg")==0) {
-    //if (LoadPNG16(&Ground1Surf16,"../Asset/PICS/asphalt1.png")==0) {
         printf("error loading groundhd.gif\n");
         exit(-1);
     }
+    if (LoadPNG16(&BackSky16, "../Asset/PICS/Background2.png") == 0) {
+        printf("error loading Background.png\n");
+        exit(-1);
+    }
+    // generate sky cylinder geometry (uv or (xt, yt)) PolyPt and ListPtPoly
+    GenSkyCylinderGeometry();
 
     // load font
     if (!LoadFONT(&F1,"../Asset/FONT/HELLO.chr")) {
@@ -642,6 +675,9 @@ int main (int argc, char ** argv)
                     highQRendering=!highQRendering;
                     UnlockDMutex(renderMutex);
                     break;
+                case KB_KEY_F8 :
+                    skyBack = !skyBack;
+                    break;
                 case KB_KEY_F10 : // toggle full screen
                     if(!TryLockDMutex(renderMutex)) {
                         for (requestRenderMutex = true;requestRenderMutex;) DelayMs(1);
@@ -861,14 +897,13 @@ void RenderWorkerFunc(void *, int ) {
         GetViewDMatrix4(matView, &curView, 0.0f, 1.0f, 0.0f, 1.0f);
         //camera.SetFrustum(60, (float)(CurSurf.ResH)/(float)(CurSurf.ResV), 1.0f, 1000.0f);
 
-
 		// transform
 		// rotate/move according to camera position/orientation
-        DMatrix4MulDVEC4ArrayResNT(camera.GetTransform(), varray, countVertices, varrayWorldRes);
+        DMatrix4MulDVEC4ArrayRes(camera.GetTransform(), varray, countVertices, varrayWorldRes);
         // project into camera
-        DMatrix4MulDVEC4ArrayPerspResNT(camera.GetProject(), varrayWorldRes, countVertices, varrayRes);
+        DMatrix4MulDVEC4ArrayPerspRes(camera.GetProject(), varrayWorldRes, countVertices, varrayRes);
         // projection to screen
-        DMatrix4MulDVEC4ArrayResDVec2iNT(matView, varrayRes, countVertices, varrayi);
+        DMatrix4MulDVEC4ArrayResDVec2i(matView, varrayRes, countVertices, varrayi);
 
         // sort DFaces
         qsort (dfaces, countDFaces, sizeof(DFace*), compareDFace);
@@ -995,13 +1030,27 @@ void RenderWorkerFunc(void *, int ) {
             }
         }
 
+        // sky rendering
+
+		// rotate/move according to camera position/orientation
+        DMatrix4MulDVEC4ArrayRes(camera.GetTransform(), varraySkyCylinder, skyCylinderVertCount, varraySkyCylinderRes);
+        // project into camera
+        DMatrix4MulDVEC4ArrayPerspRes(camera.GetProject(), varraySkyCylinderRes, skyCylinderVertCount, varraySkyCylinderProj);
+        // projection to screen
+        DMatrix4MulDVEC4ArrayResDVec2i(matView, varraySkyCylinderProj, skyCylinderVertCount, varrayiSkyCylinder);
+
+        // copy result screen coordinates
+        for (int skI = 0; skI<skyCylinderVertCount ; skI++) {
+            ListSkyCylinderPts[skI].x = varrayiSkyCylinder[skI].x;
+            ListSkyCylinderPts[skI].y = varrayiSkyCylinder[skI].y;
+        }
         // tree sprite rendering
 		// rotate/move according to camera position/orientation
-        DMatrix4MulDVEC4ArrayResNT(camera.GetTransform(), varrayShadE, 4, varrayTreeRes);
+        DMatrix4MulDVEC4ArrayRes(camera.GetTransform(), varrayShadE, 4, varrayTreeRes);
         // project into camera
-        DMatrix4MulDVEC4ArrayPerspResNT(camera.GetProject(), varrayTreeRes, 4, varrayTreeProj);
+        DMatrix4MulDVEC4ArrayPerspRes(camera.GetProject(), varrayTreeRes, 4, varrayTreeProj);
         // projection to screen
-        DMatrix4MulDVEC4ArrayResDVec2iNT(matView, varrayTreeProj, 4, varrayiTree);
+        DMatrix4MulDVEC4ArrayResDVec2i(matView, varrayTreeProj, 4, varrayiTree);
 
         ListPtTree_C5[0] = 4;
         TreePts_C5[0].x = varrayiTree[0].x;     TreePts_C5[0].y = varrayiTree[0].y;
@@ -1013,6 +1062,9 @@ void RenderWorkerFunc(void *, int ) {
         TreePts_C5[3].x = varrayiTree[3].x;     TreePts_C5[3].y = varrayiTree[3].y;
         TreePts_C5[3].xt = vuviarrayShadE[3].x; TreePts_C5[3].yt = vuviarrayShadE[3].y;
 
+        // clear the entire view if no backgroud sky enabled
+        if (!skyBack)
+            DgClear16(0x1e|0x380);
 
         // render ground and casted shadow on it
         switch (renderCores) {
@@ -1161,13 +1213,14 @@ void RenderWorkerFunc(void *, int ) {
                       "F5      Vertical Synch: %s\n"
                       "F6      Rendering: %s\n"
                       "F7      Quality: %s\n"
+                      "F8      Sky background: %s\n"
                       "F10     FullScreen: %s\n"
                       "Space   Pause: %s\n"
                       "Esc     Exit\n",
                       smoothingCores, smoothSurfRatio,
                       resizeCores, renderCores,
                       (SynchScreen)?"ON":"OFF", (groundTextured)?"Textured":"SOLID",
-                      (highQRendering)?"High":"Low", (fullScreen)?"Yes":"No",
+                      (highQRendering)?"High":"Low", (skyBack)?"Yes":"No", (fullScreen)?"Yes":"No",
                       (pauseShadow)?"ON":"OFF");
 
 		UnlockDMutex(renderMutex);
@@ -1414,13 +1467,30 @@ void RenderWorker4C_4(void *, int wid) {
 // common Render
 void RenderViewCore(DGCORE *curCore, int *curListPtTree, PolyPt *curTreePts) {
     int *ptrFace = nullptr;
-    int idx1 = 0;
-    int idx2 = 0;
-    int idx3 = 0;
-    int idx4 = 0;
+    int idx1 = 0, idx2 = 0, idx3 = 0, idx4 = 0;
+    int i = 0, j = 0, quadCount = 0, iniIdx = 0;
 
-    // clear all the view of the current worker
-    curCore->ClearSurf16(0x1e|0x380);
+    // render background sky if enabled
+    if (skyBack) {
+        curCore->DgSetSrcSurf(BackSky16);
+        for (i = 0; i < skyCylinderYSplits; i++) {
+            iniIdx = i * skyCylinderLevelVertCount;
+            for (j = 0; j < skyCylinderCircleSplits; j++,quadCount++) {
+                idx1 = iniIdx+j;
+                idx2 = iniIdx+j+1;
+                idx3 = iniIdx+j+1+skyCylinderLevelVertCount;
+                idx4 = iniIdx+j+skyCylinderLevelVertCount;
+                if (varraySkyCylinderProj[idx1].z > 0.1f && varraySkyCylinderProj[idx2].z > 0.1f && varraySkyCylinderProj[idx3].z > 0.1f && varraySkyCylinderProj[idx4].z > 0.1f) {
+                    curCore->Poly16(&ListPtSkyCylinder[quadCount*5], NULL, POLY16_TEXT | POLY16_FLAG_DBL_SIDED, 0);
+//  debug
+//                    curCore->Line16(&varrayiSkyCylinder[idx1], &varrayiSkyCylinder[idx2], 0);
+//                    curCore->Line16(&varrayiSkyCylinder[idx2], &varrayiSkyCylinder[idx3], 0);
+//                    curCore->Line16(&varrayiSkyCylinder[idx3], &varrayiSkyCylinder[idx4], 0);
+//                    curCore->Line16(&varrayiSkyCylinder[idx1], &varrayiSkyCylinder[idx4], 0);
+                }
+            }
+        }
+    }
 
     // render ground and casted shadow on it
     for (int idt = 0; idt < countDFaces; idt++) {
@@ -1441,8 +1511,7 @@ void RenderViewCore(DGCORE *curCore, int *curListPtTree, PolyPt *curTreePts) {
                 curTreePts[1].x = varrayi[idx2].x; curTreePts[1].y = varrayi[idx2].y;
                 curTreePts[2].x = varrayi[idx3].x; curTreePts[2].y = varrayi[idx3].y;
                 if (!groundTextured) {
-//                    Poly16_C2(&ListPtTree_C2, NULL, POLY16_SOLID, dfaces[idt]->rendCol);
-                    curCore->Poly16(&curListPtTree, NULL, POLY16_SOLID, faceCol);
+                    curCore->Poly16(curListPtTree, NULL, POLY16_SOLID, faceCol);
                     curTreePts[0].xt = vLightUPos[idx1];
                     curTreePts[0].yt = 0;
                     curTreePts[1].xt = vLightUPos[idx2];
@@ -1451,10 +1520,6 @@ void RenderViewCore(DGCORE *curCore, int *curListPtTree, PolyPt *curTreePts) {
                     curTreePts[2].yt = 0;
                     curCore->RePoly16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
                 } else {
-                    /*TreePts_C2[0].xt = varrayUVi[idx1].x; TreePts_C2[0].yt = varrayUVi[idx1].y;
-                    TreePts_C2[1].xt = varrayUVi[idx2].x; TreePts_C2[1].yt = varrayUVi[idx2].y;
-                    TreePts_C2[2].xt = varrayUVi[idx3].x; TreePts_C2[2].yt = varrayUVi[idx3].y;
-                    Poly16_C2(&ListPtTree_C2, Ground1Surf16, POLY16_TEXT_BLND, dfaces[idt]->rendCol);*/
                     curTreePts[0].xt = varrayUVi[idx1].x; curTreePts[0].yt = varrayUVi[idx1].y;
                     curTreePts[1].xt = varrayUVi[idx2].x; curTreePts[1].yt = varrayUVi[idx2].y;
                     curTreePts[2].xt = varrayUVi[idx3].x; curTreePts[2].yt = varrayUVi[idx3].y;
@@ -1489,6 +1554,7 @@ void RenderViewCore(DGCORE *curCore, int *curListPtTree, PolyPt *curTreePts) {
             break;
         }
     }
+    // render Tree quad if not behind camera
     if (varrayTreeProj[0].z > 0.1f && varrayTreeProj[1].z > 0.1f && varrayTreeProj[2].z > 0.1f && varrayTreeProj[3].z > 0.1f) // &&
     {
         curCore->Poly16(&ListPtTree_C5, Tree2Surf16, POLY16_MASK_TEXT | POLY16_FLAG_DBL_SIDED, RGB16(255,0,0));
@@ -1581,4 +1647,80 @@ bool AllocSmoothSurfs() {
     blurSurf16=newBlurSurf16;
     srcBlurSurf16=newSrcBlurSurf16;
     return true;
+}
+
+// sky cylinder geometry generation
+
+/*const double skyCylinderHeight      = 6000000.0;
+const double skyCylinderRay         = 3000000.0;
+const double skyCylinderYStart      = -3000000.0;
+const int skyCylinderYSplits        = 2;
+const int skyCylinderCircleSplits   = 6;
+const int skyCylinderPolyQuadCount  = skyCylinderYSplits * skyCylinderCircleSplits;
+const int skyCylinderLevelVertCount = skyCylinderCircleSplits * 2;
+const int skyCylinderVertCount      = (skyCylinderYSplits+1) * skyCylinderLevelVertCount;
+
+DVEC4 varraySkyCylinder[skyCylinderVertCount] __attribute__ ((aligned (16)));
+
+DVEC4 varraySkyCylinderRes[skyCylinderVertCount] __attribute__ ((aligned (16)));
+DVEC4 varraySkyCylinderProj[skyCylinderVertCount] __attribute__ ((aligned (16)));
+DVEC2i varrayiSkyCylinder[skyCylinderVertCount] __attribute__ ((aligned (16)));
+
+PolyPt ListSkyCylinderPts[skyCylinderVertCount];
+// series of (count=4, &ListSkyCylinderPts[n*4], &ListSkyCylinderPts[n*4+1], &ListSkyCylinderPts[n*4+2], &ListSkyCylinderPts[n*4+3]
+// where n is the quad count
+int ListPtSkyCylinder[skyCylinderPolyQuadCount * 5];*/
+
+void GenSkyCylinderGeometry() {
+    int i = 0, j = 0, iniIdx = 0;
+    int wStep = 0, hStep = 0;
+    int levelYT = 0;
+    int quadCount = 0;
+
+    // loaded BackSky DgSurf is PREREQUISITE
+    if (BackSky16 == NULL || skyCylinderCircleSplits < 1) {
+        return;
+    }
+
+    // init cylinder geometry
+    double radStep = (2.0 * M_PI) / (double) (skyCylinderCircleSplits);
+    double radStart = 0.0;
+    double YStep = skyCylinderHeight / (double) (skyCylinderYSplits);
+    double YStart = skyCylinderYStart;
+
+    for (i = 0; i < skyCylinderYSplits+1; i++) {
+        radStart = 0.0;
+        iniIdx = i * skyCylinderLevelVertCount;
+        for (j = 0; j <skyCylinderCircleSplits+1; j++, radStart += radStep) {
+            varraySkyCylinder[iniIdx + j].x = cos(radStart) * skyCylinderRay;
+            varraySkyCylinder[iniIdx + j].y = YStart;
+            varraySkyCylinder[iniIdx + j].z = sin(radStart) * skyCylinderRay;
+        }
+        YStart += YStep;
+    }
+
+    // init PolyPt array with xt,yt (or UV) inside BackSky16
+    wStep = BackSky16->ResH / skyCylinderCircleSplits;
+    hStep = BackSky16->ResV / skyCylinderYSplits;
+    for (i = 0; i < skyCylinderYSplits+1; i++) {
+        iniIdx = i * skyCylinderLevelVertCount;
+        levelYT = (i < skyCylinderYSplits ) ? (hStep * i) : (BackSky16->ResV - 1);
+        for (j = 0; j <skyCylinderCircleSplits+1; j++) {
+            ListSkyCylinderPts[iniIdx + j].xt = ( j < skyCylinderCircleSplits) ? (j * wStep) : (BackSky16->ResH - 1);
+            ListSkyCylinderPts[iniIdx + j].yt = levelYT;
+        }
+    }
+
+    // init ListPts (Poly16 input)
+    for (i = 0; i < skyCylinderYSplits; i++) {
+        iniIdx = i * skyCylinderLevelVertCount;
+        for (j = 0; j < skyCylinderCircleSplits; j++,quadCount++) {
+            ListPtSkyCylinder[quadCount*5] = 4; // quad with 4 points
+            ListPtSkyCylinder[quadCount*5+1] = (int)(&ListSkyCylinderPts[iniIdx+j]);
+            ListPtSkyCylinder[quadCount*5+2] = (int)(&ListSkyCylinderPts[iniIdx+j+1]);
+            ListPtSkyCylinder[quadCount*5+3] = (int)(&ListSkyCylinderPts[iniIdx+j+1+skyCylinderLevelVertCount]);
+            ListPtSkyCylinder[quadCount*5+4] = (int)(&ListSkyCylinderPts[iniIdx+j+skyCylinderLevelVertCount]);
+        }
+    }
+
 }
