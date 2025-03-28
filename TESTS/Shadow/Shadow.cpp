@@ -1,4 +1,4 @@
-/*  Dust Ultimate Game Library (DUGL) - (C) 2023 Fakhri Feki */
+/*  Dust Ultimate Game Library (DUGL) - (C) 2025 Fakhri Feki */
 /*  Shadow Sample*/
 /*  Simple/unoptimized 3d engine, with z-sorting polygones, moving camera, shadow casting on ground, 3d obj loader .. */
 /*  History : */
@@ -7,6 +7,8 @@
 /*                implement full screen toggling + resize handling + several tweaks and performance increase ... */
 /* 12 Aout 2023: Add true VSync, try to fix hang when exiting directly from full screen under linux, enable double-buffering to reduce possible flicker under linux */
 /*               + Add fps limiter with DgWaitVSync as it reduce flicker but dot not sync with screen freq */
+/* 29 March 2025: Add Multi-core resizing, Improve Multi-Core renderingf up to 4 cores, Add parametric High quality rendering from 1.1 to 3.0 ratio */
+/*               With capability to change in real time, add background panoramic background, better keyboard shortcuts, bug fixes, speed improvement .. */
 
 
 #include <stdio.h>
@@ -1650,26 +1652,6 @@ bool AllocSmoothSurfs() {
 }
 
 // sky cylinder geometry generation
-
-/*const double skyCylinderHeight      = 6000000.0;
-const double skyCylinderRay         = 3000000.0;
-const double skyCylinderYStart      = -3000000.0;
-const int skyCylinderYSplits        = 2;
-const int skyCylinderCircleSplits   = 6;
-const int skyCylinderPolyQuadCount  = skyCylinderYSplits * skyCylinderCircleSplits;
-const int skyCylinderLevelVertCount = skyCylinderCircleSplits * 2;
-const int skyCylinderVertCount      = (skyCylinderYSplits+1) * skyCylinderLevelVertCount;
-
-DVEC4 varraySkyCylinder[skyCylinderVertCount] __attribute__ ((aligned (16)));
-
-DVEC4 varraySkyCylinderRes[skyCylinderVertCount] __attribute__ ((aligned (16)));
-DVEC4 varraySkyCylinderProj[skyCylinderVertCount] __attribute__ ((aligned (16)));
-DVEC2i varrayiSkyCylinder[skyCylinderVertCount] __attribute__ ((aligned (16)));
-
-PolyPt ListSkyCylinderPts[skyCylinderVertCount];
-// series of (count=4, &ListSkyCylinderPts[n*4], &ListSkyCylinderPts[n*4+1], &ListSkyCylinderPts[n*4+2], &ListSkyCylinderPts[n*4+3]
-// where n is the quad count
-int ListPtSkyCylinder[skyCylinderPolyQuadCount * 5];*/
 
 void GenSkyCylinderGeometry() {
     int i = 0, j = 0, iniIdx = 0;
