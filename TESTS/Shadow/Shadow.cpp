@@ -7,8 +7,9 @@
 /*                implement full screen toggling + resize handling + several tweaks and performance increase ... */
 /* 12 Aout 2023: Add true VSync, try to fix hang when exiting directly from full screen under linux, enable double-buffering to reduce possible flicker under linux */
 /*               + Add fps limiter with DgWaitVSync as it reduce flicker but dot not sync with screen freq */
-/* 29 March 2025: Add Multi-core resizing, Improve Multi-Core renderingf up to 4 cores, Add parametric High quality rendering from 1.1 to 3.0 ratio */
-/*               With capability to change in real time, add background panoramic background, better keyboard shortcuts, bug fixes, speed improvement .. */
+/* 30 March 2025: Add Multi-core resizing, Improve Multi-Core renderingf up to 4 cores, Add parametric High quality rendering from 1.1 to 3.0 ratio */
+/*               With capability to change in real time, add background panoramic sky background, better keyboard shortcuts, Enable double-buff, optimize polygones sorting */
+/*               bug fixes, speed improvement .. */
 
 
 #include <stdio.h>
@@ -21,8 +22,8 @@
 
 // screen resolution
 //int ScrResH=320,ScrResV=240;
-//int ScrResH=640,ScrResV=480;
-int ScrResH=800,ScrResV=600;
+int ScrResH=640,ScrResV=480;
+//int ScrResH=800,ScrResV=600;
 //int ScrResH=1024,ScrResV=768;
 //int ScrResH=1920,ScrResV=1080;
 
@@ -138,7 +139,7 @@ int ListPtTree_C5[] =
 const double skyCylinderHeight      = 4000000.0;
 const double skyCylinderRay         = 3000000.0;
 const double skyCylinderYStart      = -2000000.0;
-const int skyCylinderYSplits        = 2;
+const int skyCylinderYSplits        = 3;
 const int skyCylinderCircleSplits   = 16;
 const int skyCylinderPolyQuadCount  = skyCylinderYSplits * skyCylinderCircleSplits;
 const int skyCylinderLevelVertCount = skyCylinderCircleSplits + 1;
@@ -221,6 +222,7 @@ typedef struct {
 DFace **dfaces = NULL;
 DFace *DFaces = NULL;
 int countDFaces = 0;
+bool refreshFacesSorting = true;
 
 // rendering
 #define MIN_HQR_SURF_RATIO   1.1f
@@ -364,7 +366,7 @@ int main (int argc, char ** argv)
         exit(-1);
     }
     if (LoadPNG16(&BackSky16, "../Asset/PICS/Background2.png") == 0) {
-        printf("error loading Background.png\n");
+        printf("error loading Background2.png\n");
         exit(-1);
     }
     // generate sky cylinder geometry (uv or (xt, yt)) PolyPt and ListPtPoly
@@ -553,11 +555,8 @@ int main (int argc, char ** argv)
         DgQuit();
         exit(-1);
     }
-
-    // create High Quality rendering intermediate render Surf
-    DgWindowResized = 0;
-    ScrResH = RendSurf->ResH;
-    ScrResV = RendSurf->ResV;
+    // enable double buffer
+    DgSetEnabledDoubleBuff(true);
     // create gouroud lightening Surf
     int grdMaxCols = 64;
     //int grdStartR = 32, grdStartG = 32, grdStartB = 32;
@@ -573,8 +572,10 @@ int main (int argc, char ** argv)
         DgSurfCPutPixel16(gouroudLightSurf, grdI, 0, RGB16(int(grdStepR*grdI+grdStartR), int(grdStepG*grdI+grdStartG), int(grdStepB*grdI+grdStartB)));
     }
 
-
     // set Main window properties
+    DgWindowResized = 0;
+    ScrResH = RendSurf->ResH;
+    ScrResV = RendSurf->ResV;
     DgSetMainWindowMinSize(320, 200);
     DgSetMainWindowResizeCallBack(ShadowWinPreResize, ShadowWinResize, renderMutex, &requestRenderMutex);
 
@@ -597,7 +598,6 @@ int main (int argc, char ** argv)
 	DgSetEnabledDoubleBuff(true);
 	SetOrgSurf(RendSurf, RendSurf->ResH/2, RendSurf->ResV/2);
 	SetOrgSurf(RendFrontSurf, RendFrontSurf->ResH/2, RendFrontSurf->ResV/2);
-
 
 	// RenderSurf should be cleared to avoid any garbage at start-up
     DgSetCurSurf(RendSurf);
@@ -689,17 +689,12 @@ int main (int argc, char ** argv)
                     DgToggleFullScreen(fullScreen);
                     SetOrgSurf(RendSurf, RendSurf->ResH/2, RendSurf->ResV/2);
                     UnlockDMutex(renderMutex);
-
                     break;
-
                 case KB_KEY_LEFT :
                     if ((KbFLAG&KB_SHIFT_PR) > 0) {
                         if ((smoothSurfRatio-HQ_SURF_RATIO_STEP) > MIN_HQR_SURF_RATIO) {
                             newSmoothSurfRatio = (smoothSurfRatio - HQ_SURF_RATIO_STEP);
                             triggerReallocSmoothSurfs = true;
-
-                            //if (!AllocSmoothSurfs()) // success or reverse
-                            //    smoothSurfRatio += HQ_SURF_RATIO_STEP;
                         }
                     }
                     break;
@@ -708,43 +703,35 @@ int main (int argc, char ** argv)
                         if ((smoothSurfRatio+HQ_SURF_RATIO_STEP) < MAX_HQR_SURF_RATIO) {
                             newSmoothSurfRatio = (smoothSurfRatio + HQ_SURF_RATIO_STEP);
                             triggerReallocSmoothSurfs = true;
-                            //if (!AllocSmoothSurfs()) // success or reverse
-                            //    smoothSurfRatio += HQ_SURF_RATIO_STEP;
                         }
                     }
                     break;
-
-
             }
 
             if ((KbFLAG&KB_SHIFT_PR) == 0) {
                 if (IsKeyDown(KB_KEY_UP)) { // up
-                     /*if (move_zcam) {
-                        zcam = start_zcam - (TreesSpeed * ((float)(DgTime - start_DgTime) / (float)(DgTimerFreq)));
-                     }*/
                     if((KbFLAG & KB_CTRL_PR))
                         camera.MoveUpDown(MoveSpeed * avgProgress);
                     else
                         camera.MoveForwardBackward(MoveSpeed * avgProgress);
-
+                    refreshFacesSorting = true;
                 }
                 if (IsKeyDown(KB_KEY_DOWN)) { // down
-                     /*if (move_zcam) {
-                        zcam = start_zcam + (TreesSpeed * ((float)(DgTime - start_DgTime) / (float)(DgTimerFreq)));
-                     }*/
                     if((KbFLAG & KB_CTRL_PR))
                         camera.MoveUpDown(-MoveSpeed * avgProgress);
                     else
                         camera.MoveForwardBackward(-MoveSpeed * avgProgress);
+                    refreshFacesSorting = true;
                 }
 
                 if (IsKeyDown(KB_KEY_LEFT)) { // left
                      //camera.RotateCamera
-                     camera.Rotate(0.0f, -RotSpeed*avgProgress, 0.0f);
-                     //if (xtargetcam > -150.0f) xtargetcam -= TreesSpeed*avgFps;
+                    camera.Rotate(0.0f, -RotSpeed*avgProgress, 0.0f);
+                    refreshFacesSorting = true;
                 }
                 if (IsKeyDown(KB_KEY_RIGHT)) {  // right
                     camera.Rotate(0.0f, RotSpeed*avgProgress, 0.0f);
+                    refreshFacesSorting = true;
                 }
             }
             // anim light
@@ -908,7 +895,10 @@ void RenderWorkerFunc(void *, int ) {
         DMatrix4MulDVEC4ArrayResDVec2i(matView, varrayRes, countVertices, varrayi);
 
         // sort DFaces
-        qsort (dfaces, countDFaces, sizeof(DFace*), compareDFace);
+        if (refreshFacesSorting) {
+            qsort (dfaces, countDFaces, sizeof(DFace*), compareDFace);
+            refreshFacesSorting = false;
+        }
 
         // render lines
         int *ptrFace = nullptr;
@@ -1040,13 +1030,14 @@ void RenderWorkerFunc(void *, int ) {
         DMatrix4MulDVEC4ArrayPerspRes(camera.GetProject(), varraySkyCylinderRes, skyCylinderVertCount, varraySkyCylinderProj);
         // projection to screen
         DMatrix4MulDVEC4ArrayResDVec2i(matView, varraySkyCylinderProj, skyCylinderVertCount, varrayiSkyCylinder);
-
         // copy result screen coordinates
         for (int skI = 0; skI<skyCylinderVertCount ; skI++) {
             ListSkyCylinderPts[skI].x = varrayiSkyCylinder[skI].x;
             ListSkyCylinderPts[skI].y = varrayiSkyCylinder[skI].y;
         }
+
         // tree sprite rendering
+
 		// rotate/move according to camera position/orientation
         DMatrix4MulDVEC4ArrayRes(camera.GetTransform(), varrayShadE, 4, varrayTreeRes);
         // project into camera
@@ -1129,8 +1120,6 @@ void RenderWorkerFunc(void *, int ) {
                     lightToScreen[1].x-plusLight-1, lightToScreen[1].y+plusLight, 0xffff);
         }
 
-        //line16(0, CurSurf.MinY, 0, CurSurf.MaxY, 0xf00f);
-
         // smoothing and resizing to the screen size
 
         if (highQRendering) {
@@ -1197,7 +1186,6 @@ void RenderWorkerFunc(void *, int ) {
 		char text[SIZE_TEXT + 1];
 		SetTextCol(0xffff);
         OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "FPS %i\n", finalCountFps);
-        //OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "Screen %ix%i\n", RendSurf->ResH, RendSurf->ResV);
 
         if (accFps >= 1.0f) {
             finalCountFps = accCountFps;
