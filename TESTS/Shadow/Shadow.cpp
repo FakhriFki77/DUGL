@@ -10,6 +10,7 @@
 /* 31 March 2025: Add Multi-core resizing, Improve Multi-Core renderingf up to 4 cores, Add parametric High quality rendering from 1.1 to 3.0 ratio */
 /*               with capability to change in real time, add background panoramic sky background, better keyboard shortcuts, Enable double-buffer, optimize polygones sorting */
 /*               Remove unecessera big memory geometry allocation, fix long standing camera concurrency between rendering/control threads, bug fixes, speed improvement ..  */
+/*               Add capability to show/hide info&help */
 
 
 #include <stdio.h>
@@ -295,6 +296,7 @@ DFace shadowFace;
 // FONT
 FONT F1;
 // functions
+bool ShowHelpInfo=true;
 bool SynchScreen=false;
 bool pauseShadow=false;
 bool groundTextured=true;
@@ -505,8 +507,10 @@ int main (int argc, char ** argv)
     int shadPlusResV = Tree2Surf16->ResV * 0.1f;
     CreateSurf(&Tree2SurfShadE16, shadEResH, shadEResV, 16);
 
+    // create a copy of Tree2Surf16 as shade emitter
+    // but with filter that change not transparent pixels to unique dark grey (16,16,16)
+    // achieved with mask blended put forcing to destination color (31)
     DgSetCurSurf(Tree2SurfShadE16);
-
     ClearSurf16(0);
     PutMaskSurfBlnd16(Tree2Surf16, shadPlusResH, 0, 0, RGB16(16,16,16) | (31<<24));
 
@@ -601,7 +605,6 @@ int main (int argc, char ** argv)
     }
 
 	// set screen rendering Surf origin on the middle of the screen
-	DgSetEnabledDoubleBuff(true);
 	SetOrgSurf(RendSurf, RendSurf->ResH/2, RendSurf->ResV/2);
 	SetOrgSurf(RendFrontSurf, RendFrontSurf->ResH/2, RendFrontSurf->ResV/2);
 
@@ -644,6 +647,9 @@ int main (int argc, char ** argv)
                     break;
                 case KB_KEY_SPACE: // Space to pause
                     pauseShadow=!pauseShadow;
+                    break;
+                case KB_KEY_F1:
+                    ShowHelpInfo=!ShowHelpInfo;
                     break;
                 case KB_KEY_F2: // switch smoothing Cores count
                     takeScreenShot = ((keyFLAG&(KB_SHIFT_PR|KB_CTRL_PR)) > 0);
@@ -1192,7 +1198,7 @@ void RenderWorkerFunc(void *, int ) {
 		// restore original Screen View
 		DgSetCurSurf(RendSurf);
 		ClearText();
-		#define SIZE_TEXT 511
+		#define SIZE_TEXT 1023
 		char text[SIZE_TEXT + 1];
 		SetTextCol(0xffff);
         OutText16ModeFormat(AJ_RIGHT, text, SIZE_TEXT, "FPS %i\n", finalCountFps);
@@ -1203,25 +1209,30 @@ void RenderWorkerFunc(void *, int ) {
             accCountFps = 0;
         }
 		ClearText();
-		OutText16ModeFormat(AJ_LEFT, text, SIZE_TEXT,
-                      "Ctrl+Up/Down  Move Up/Down\n"
-                      "Arrows  Move\n"
-                      "F2      Smoothing cores: %i\n"
-                      "Shift+Left/Right  HQ Ratio %0.2f\n"
-                      "F3      Resize cores: %i\n"
-                      "F4      Render cores: %i\n"
-                      "F5      Vertical Synch: %s\n"
-                      "F6      Rendering: %s\n"
-                      "F7      Quality: %s\n"
-                      "F8      Sky background: %s\n"
-                      "F10     FullScreen: %s\n"
-                      "Space   Pause: %s\n"
-                      "Esc     Exit\n",
-                      smoothingCores, smoothSurfRatio,
-                      resizeCores, renderCores,
-                      (SynchScreen)?"ON":"OFF", (groundTextured)?"Textured":"SOLID",
-                      (highQRendering)?"High":"Low", (skyBack)?"Yes":"No", (fullScreen)?"Yes":"No",
-                      (pauseShadow)?"ON":"OFF");
+		if (ShowHelpInfo) {
+            OutText16ModeFormat(AJ_LEFT, text, SIZE_TEXT,
+                          "F1      Hide Help&Info\n"
+                          "F2      Smoothing cores: %i\n"
+                          "Shift+Left/Right  HQ Ratio %0.2f\n"
+                          "F3      Resize cores: %i\n"
+                          "F4      Render cores: %i\n"
+                          "F5      Vertical Synch: %s\n"
+                          "F6      Rendering: %s\n"
+                          "F7      Quality: %s\n"
+                          "F8      Sky background: %s\n"
+                          "F10     FullScreen: %s\n"
+                          "Space   Pause: %s\n"
+                          "Ctrl+Up/Down  Move Up/Down\n"
+                          "Arrows  Move/Rotate\n"
+                          "Esc     Exit\n",
+                          smoothingCores, smoothSurfRatio,
+                          resizeCores, renderCores,
+                          (SynchScreen)?"ON":"OFF", (groundTextured)?"Textured":"SOLID",
+                          (highQRendering)?"High":"Low", (skyBack)?"Yes":"No", (fullScreen)?"Yes":"No",
+                          (pauseShadow)?"ON":"OFF");
+		} else {
+            OutText16ModeFormat(AJ_LEFT, text, SIZE_TEXT, "F1  Show Help&Info\n");
+		}
 
 		UnlockDMutex(renderMutex);
 
