@@ -7,9 +7,9 @@
 /*                implement full screen toggling + resize handling + several tweaks and performance increase ... */
 /* 12 Aout 2023: Add true VSync, try to fix hang when exiting directly from full screen under linux, enable double-buffering to reduce possible flicker under linux */
 /*               + Add fps limiter with DgWaitVSync as it reduce flicker but dot not sync with screen freq */
-/* 30 March 2025: Add Multi-core resizing, Improve Multi-Core renderingf up to 4 cores, Add parametric High quality rendering from 1.1 to 3.0 ratio */
-/*               With capability to change in real time, add background panoramic sky background, better keyboard shortcuts, Enable double-buff, optimize polygones sorting */
-/*               bug fixes, speed improvement .. */
+/* 31 March 2025: Add Multi-core resizing, Improve Multi-Core renderingf up to 4 cores, Add parametric High quality rendering from 1.1 to 3.0 ratio */
+/*               with capability to change in real time, add background panoramic sky background, better keyboard shortcuts, Enable double-buffer, optimize polygones sorting */
+/*               Remove unecessera big memory geometry allocation, fix long standing camera concurrency between rendering/control threads, bug fixes, speed improvement ..  */
 
 
 #include <stdio.h>
@@ -32,6 +32,12 @@ int ScrResH=640,ScrResV=480;
 DCamera3D camera;
 float RotSpeed=80.0f;
 float MoveSpeed = 100.0;
+bool triggerCameraMoveUpDown = false;
+bool triggerCameraMoveForwardBackward = false;
+bool triggerCameraRotate = false;
+float accCameraMoveUpDown = 0.0f;
+float accCameraMoveForwardBackward = 0.0f;
+float accCameraYRotate = 0.0f;
 
 DVEC4 *lightDir = nullptr;
 DVEC4 *lightPos = nullptr;
@@ -45,10 +51,10 @@ float speedRotLightZ = 0.0f;
 DAABBox *pAABBox = NULL;
 DAAMinBBox *pAAMinBBox = NULL;
 
-int MAX_VERTICES_COUNT = 5000000;
-int MAX_INDEXES_SIZE = 40000000;
+int MAX_VERTICES_COUNT = 10000;
+int MAX_INDEXES_SIZE = 60000;
 int MAX_FACE_INDEXES = 12;
-int MAX_FACES_COUNT = 2000000;
+int MAX_FACES_COUNT = 5000;
 
 int countVertices = 0;
 int countUV = 0;
@@ -235,7 +241,7 @@ DgSurf *srcBlurSurf16 = NULL;
 DgSurf *gouroudLightSurf = NULL;
 float newSmoothSurfRatio = smoothSurfRatio;
 bool triggerReallocSmoothSurfs = false;
-
+bool triggerHQRenderingSwap = false;
 bool AllocSmoothSurfs();
 
 // smoothing workers count / ID
@@ -669,13 +675,7 @@ int main (int argc, char ** argv)
                         renderCores = 1;
                     break;
                 case KB_KEY_F7 : // F7 High quality rendering
-                    // avoid enabling HQ rendering on the middle of render loop to do not create flickering
-                    if(!TryLockDMutex(renderMutex)) {
-                        for (requestRenderMutex = true;requestRenderMutex;) DelayMs(1);
-                        LockDMutex(renderMutex);
-                    }
-                    highQRendering=!highQRendering;
-                    UnlockDMutex(renderMutex);
+                    triggerHQRenderingSwap = true;
                     break;
                 case KB_KEY_F8 :
                     skyBack = !skyBack;
@@ -710,27 +710,37 @@ int main (int argc, char ** argv)
 
             if ((KbFLAG&KB_SHIFT_PR) == 0) {
                 if (IsKeyDown(KB_KEY_UP)) { // up
-                    if((KbFLAG & KB_CTRL_PR))
-                        camera.MoveUpDown(MoveSpeed * avgProgress);
-                    else
-                        camera.MoveForwardBackward(MoveSpeed * avgProgress);
+                    if((KbFLAG & KB_CTRL_PR)) {
+                        triggerCameraMoveUpDown = true;
+                        accCameraMoveUpDown += MoveSpeed * avgProgress;
+                    }
+                    else {
+                        triggerCameraMoveForwardBackward = true;
+                        accCameraMoveForwardBackward += MoveSpeed * avgProgress;
+                    }
                     refreshFacesSorting = true;
                 }
                 if (IsKeyDown(KB_KEY_DOWN)) { // down
-                    if((KbFLAG & KB_CTRL_PR))
-                        camera.MoveUpDown(-MoveSpeed * avgProgress);
-                    else
-                        camera.MoveForwardBackward(-MoveSpeed * avgProgress);
+                    if((KbFLAG & KB_CTRL_PR)) {
+                        triggerCameraMoveUpDown = true;
+                        accCameraMoveUpDown -= MoveSpeed * avgProgress;
+                    }
+                    else {
+                        triggerCameraMoveForwardBackward = true;
+                        accCameraMoveForwardBackward -= MoveSpeed * avgProgress;
+                    }
                     refreshFacesSorting = true;
                 }
 
                 if (IsKeyDown(KB_KEY_LEFT)) { // left
                      //camera.RotateCamera
-                    camera.Rotate(0.0f, -RotSpeed*avgProgress, 0.0f);
+                    triggerCameraRotate = true;
+                    accCameraYRotate -= RotSpeed*avgProgress;
                     refreshFacesSorting = true;
                 }
                 if (IsKeyDown(KB_KEY_RIGHT)) {  // right
-                    camera.Rotate(0.0f, RotSpeed*avgProgress, 0.0f);
+                    triggerCameraRotate = true;
+                    accCameraYRotate += RotSpeed*avgProgress;
                     refreshFacesSorting = true;
                 }
             }
@@ -1222,6 +1232,23 @@ void RenderWorkerFunc(void *, int ) {
                 DelayMs(1);
             }
         }
+        // camera move refresh
+        if (triggerCameraMoveUpDown) {
+            camera.MoveUpDown(accCameraMoveUpDown);
+            triggerCameraMoveUpDown = false;
+            accCameraMoveUpDown = 0.0f;
+        }
+        if (triggerCameraMoveForwardBackward) {
+            camera.MoveForwardBackward(accCameraMoveForwardBackward);
+            triggerCameraMoveForwardBackward = false;
+            accCameraMoveForwardBackward = 0.0f;
+        }
+        if (triggerCameraRotate) {
+            camera.Rotate(0.0f, accCameraYRotate, 0.0f);
+            triggerCameraRotate = false;
+            accCameraYRotate = 0.0f;
+        }
+        // HQ rendering
         if (triggerReallocSmoothSurfs) {
             float saveRatio = smoothSurfRatio;
             smoothSurfRatio = newSmoothSurfRatio;
@@ -1230,6 +1257,10 @@ void RenderWorkerFunc(void *, int ) {
                 smoothSurfRatio = saveRatio;
             }
             triggerReallocSmoothSurfs = false;
+        }
+        if (triggerHQRenderingSwap) {
+            highQRendering=!highQRendering;
+            triggerHQRenderingSwap = false;
         }
 		if (requestRenderMutex) {
             requestRenderMutex = false;
