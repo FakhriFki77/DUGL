@@ -1,5 +1,5 @@
 /*  Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2023  Fakhri Feki
+    Copyright (C) 2025  Fakhri Feki
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@
 #include "DUGL.h"
 #include "intrndugl.h"
 
+DVEC4 zeroDVEC4 __attribute__ ((aligned (16))) = { {0.0f, 0.0f, 0.0f, 0.0f } };
+
 void *CreateDVEC4() {
     return SDL_SIMDAlloc(sizeof(DVEC4));
 }
@@ -37,14 +39,14 @@ DVEC4 *CreateInitDVEC4(float x, float y, float z, float d) {
 }
 
 void *CreateDVEC4Array(int count) {
-    return (DVEC4 *)SDL_SIMDAlloc(sizeof(DVEC4)*(size_t)(count));
+    void *resDVEC4Array = SDL_SIMDAlloc(sizeof(DVEC4)*(size_t)(count));
+    if (resDVEC4Array != NULL)
+        StoreDVEC4(resDVEC4Array, &zeroDVEC4, count);
+    return resDVEC4Array;
 }
 
 DVEC4 *CreateInitDVEC4Array(DVEC4 *vec4init, int count) {
     DVEC4 *vec4array = (DVEC4 *)SDL_SIMDAlloc(sizeof(DVEC4)*count);
-    if (vec4array != NULL) {
-        StoreDVEC4(vec4array, vec4init, count);
-    }
     return vec4array;
 }
 
@@ -89,19 +91,17 @@ DMatrix4 identityDMatrix4 __attribute__ ((aligned (16))) = {
          0.0f, 0.0f, 0.0f, 1.0f}
 };
 
-DMatrix4 zeroDMatrix4 __attribute__ ((aligned (16))) = {
-    .raw = {
-       0.0f, 0.0f, 0.0f, 0.0f ,
-       0.0f, 0.0f, 0.0f, 0.0f ,
-       0.0f, 0.0f, 0.0f, 0.0f ,
-       0.0f, 0.0f, 0.0f, 0.0f }
-};
-
 DMatrix4 *CreateDMatrix4() {
-    return (DMatrix4 *)SDL_SIMDAlloc(sizeof(DMatrix4));
+    DMatrix4 *resMat4 = (DMatrix4 *)SDL_SIMDAlloc(sizeof(DMatrix4));
+    if (resMat4 != NULL)
+        StoreDVEC4(resMat4, &zeroDVEC4, 4);
+    return resMat4;
 }
 
 DMatrix4 *CreateDMatrix4Array(size_t count) {
+    DMatrix4 *resArrayMat4 = (DMatrix4 *)SDL_SIMDAlloc(sizeof(DMatrix4));
+    if (resArrayMat4 != NULL)
+        StoreDVEC4(resArrayMat4, &zeroDVEC4, count*4);
     return (DMatrix4 *)SDL_SIMDAlloc(sizeof(DMatrix4)*count);
 }
 
