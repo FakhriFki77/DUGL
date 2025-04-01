@@ -12,7 +12,7 @@ Global:
 Graphics:
 
 - Poly16: reject now single hline polygones; faster detection of (in, out or clipped); Optimization of some FILL funcs;
-  Completely rewrite UV mapping, (left,write borders) hline to be faster, more accurate (clipped/unclipped) this allowed multi-cores rendering without
+  Completely rewrite UV mapping, (left,write borders) hlines to be faster and more accurate (clipped/unclipped), this allowed multi-cores rendering without
   any visible change against single core; Reintroduce special case corners poly out detection, with vertical size reduction of clipped poly;
 - RePoly16: Bug fixes, optimization/size reduction; stop handling 'N' Status (completely out) poly, instead REPOLY16 macro added, to avoid useless call;
 - Line16,line16: size/speed optimization.
@@ -26,6 +26,13 @@ GUI:
 Timer:
 - Small rewrite in attempt to smoother/more precise synching.
 
+Samples:
+- Shadow: Add Multi-core resizing; Improve Multi-Core rendering up to 4 cores; Add parametric High quality rendering from 1.1 to 3.0 ratio;
+  Add background panoramic sky background; Improve keyboard shortcuts; Enable double-buffer; optimize polygones sorting;
+  Reduce unecessera big memory geometry allocation; Fix long standing camera concurrency between rendering/control threads, bug fixes, speed improvement;
+  Add capability to show/hide info&help.
+- Sprites: Add capability of switching/profiling any of the 6 possible Put functions (PUT, MASK PUT, COL BLND PUT, MASK COL BLND PUT, TRANSP PUT and MASK TRANSP PUT  
+- HelloWorld, Forest: Rework event handling and rendering loop and DWorker
 
 19 April 2023: DUGL 1.0
 ^^^^^^^^^^^^^^^^^^^^^^^
