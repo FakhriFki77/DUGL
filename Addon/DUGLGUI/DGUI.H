@@ -1,5 +1,5 @@
 /*	Dust Ultimate Game Library (DUGL)
-    Copyright (C) 2023	Fakhri Feki
+    Copyright (C) 2025	Fakhri Feki
     DUGLGUI - Ugly with limited widgets but simple to use and fast GUI
 
     */

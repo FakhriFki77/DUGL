@@ -29,6 +29,7 @@
 					<Add library="SDL2.dll" />
 					<Add library="png" />
 					<Add library="zlib" />
+					<Add library="jpeg" />
 					<Add directory="../../bin/Debug/" />
 				</Linker>
 			</Target>
@@ -57,6 +58,7 @@
 					<Add library="SDL2.dll" />
 					<Add library="png" />
 					<Add library="zlib" />
+					<Add library="jpeg" />
 					<Add directory="../../bin/Release/" />
 				</Linker>
 			</Target>

@@ -1,0 +1,95 @@
+1 April 2025: DUGL 1.01
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Global:
+
+- Changes CPU target support to SSE4.1 instead of SSE4.2
+- Increase Max Target DgSurf Height from 4096 to 8192 (unlimited width)
+- Changes Min Target DgSurf size to (w,h) (4,1)
+- DgQuit increased compatiblity
+- Add experimental DgWaitVSync (could reduce flickering, but not effectively reduce fps to screen refresh)
+
+Graphics:
+
+- Poly16: reject now single hline polygones; faster detection of (in, out or clipped); Optimization of some FILL funcs;
+  Completely rewrite UV mapping, (left,write borders) hline to be faster, more accurate (clipped/unclipped) this allowed multi-cores rendering without
+  any visible change against single core; Reintroduce special case corners poly out detection, with vertical size reduction of clipped poly;
+- RePoly16: Bug fixes, optimization/size reduction; stop handling 'N' Status (completely out) poly, instead REPOLY16 macro added, to avoid useless call;
+- Line16,line16: size/speed optimization.
+- Bar16, bar16: rewrite to use faster InBar16 instead of Poly16.
+- PutXXXSurfXXX16: Performance/size optimization.
+- DgSurfCPutPixel16: fix crash.
+ 
+GUI:
+- Bug fix unaligned 16bytes local DgSurf causing occasional crashes
+
+Timer:
+- Small rewrite in attempt to smoother/more precise synching.
+
+
+19 April 2023: DUGL 1.0
+^^^^^^^^^^^^^^^^^^^^^^^
+
+All assembly functions rewritten to Target SSE4.1+ x86 CPU with much higher performance than the old Pentium MMX
+Render DgSurf target could be up to 4096 pixel Height (unlimited width)
+RePoly function to rerender last rendered poly, being approx 20% faster allow to reapply effects to same poly, as clothes, terrain grass, shadow casting ...
+Render Cores with Up to 4 render cores, allowing to split Rendering Up to 4 DWorker(s) improving performance up to 300% against single threaded rendering
+Blur function (that allow to make high quality rendering) rewritten to allow multi-DWorker(s) blurring
+Sprite blitting through PutXXSurfXX function take care of both source and destination DgSurf Views
+Sound Support with mixer (based mostly on SDL)
+Thread Support throw DWorker Concept
+Math3D Library with big set of functions optimized up to SSE4.1, including suffix NT functions that pollute less CPU cache (using MOVNTDQ ...)
+Thanks to usage of LibSDL, DUGL is now X86 multi-plateforme library, binaries are available for both Windows/Linux
+and more ...
+
+What's new against last DUGL 1.0 beta 5
+
+Graphics:
+
+Increase MAX vertical size of render DgSurf to 4096 from 2048
+Add RePoly16 function with capability to rerender last Poly16 polygone, but with a different Polygone Type/color, Source DgSurf, texture U,V mapping ... benchmark show that it's about 20% faster than regular Poly16 call.
+Add BlndCol16 function to mix two RGB16 colors with 32 levels of mixing.
+Bug fixes on Poly16:POLY16_MASK_TEXT_TRANS and PutMaskSurfBlnd16
+
+Window:
+
+Add capability to detect/handle window close request event
+Add DgSetWindowIcone
+Fix bug of mouse position/cursor visiblity at application start-up
+
+Audio:
+
+Expose DSoundState struct
+Add DSoundState events callback
+Add functions ReplaceDSound, IsPlayingDSound, SetEventsDSound..
+Several improvements and bug fixes ...
+
+Image:
+
+Fix bug loading paletted/masked png file
+
+Rendering Cores:
+
+Adds 4 rendering cores
+Add GetDGCORE function which return a filled new struct DGCORE with pointer to core index functions and global vars.
+
+Container:
+
+Adds DFileBuffer functions: GetBytesDFileBuffer, FseekDFileBuffer, RewindDFileBuffer
+
+Math3d:
+
+Add functions GetPlaneDVEC4, IntersectRayPlane, IntersectRayPlaneRes, RayProjectDVEC4Res, SubNormalizeDVEC4, SubNormalizeDVEC4Res, CrossNormalizeDVEC4, DotNormalizeDVEC4, NormalizeDVEC4Res
+EqualDVEC4 now compare all the 4 components of the DVEC4.
+several function optimized using SSE41 DPPS instruction.
+several performance tweaks.
+several functions reimplemented to return pointer to result when possible.
+
+Tools:
+
+Add keybmap tool, the proprietary DUGL keyboard map(or layout) editor.
+
+Samples:
+
+Add Sprites sample: benchmark of sprites blitting using 1, 2 or 4 cores
+Add Shadow sample: a simple unpotimized "3d engine" displaying a ground with a tree that project its Shadow on the ground.

@@ -1,4 +1,4 @@
-/*  Dust Ultimate Game Library (DUGL) - (C) 2023 Fakhri Feki */
+/*  Dust Ultimate Game Library (DUGL) - (C) 2025 Fakhri Feki */
 /*  Console - graphic console like profiling of DSTRDic against std::map*/
 /*  History : */
 /*  27 march 2022 : first release */

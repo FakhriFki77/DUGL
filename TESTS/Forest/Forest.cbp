@@ -40,7 +40,6 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-march=corei7" />
-					<Add option="-fexpensive-optimizations" />
 					<Add option="-m32" />
 					<Add directory="../../" />
 				</Compiler>

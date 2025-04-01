@@ -1,4 +1,4 @@
-/*  Dust Ultimate Game Library (DUGL) - (C) 2023 Fakhri Feki */
+/*  Dust Ultimate Game Library (DUGL) - (C) 2025 Fakhri Feki */
 /*  Forest Sample*/
 /*  Description: */
 /*  Infinite progressing forest with fog effect, smoothing - ported/improved from the fog16 sample of the DOS version */

@@ -1,4 +1,4 @@
-/*  Dust Ultimate Game Library (DUGL) - (C) 2023 Fakhri Feki */
+/*  Dust Ultimate Game Library (DUGL) - (C) 2025 Fakhri Feki */
 /*  Hello World Sample*/
 /*  History : */
 /*  23 march 2022 : first release */

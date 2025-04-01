@@ -1,4 +1,4 @@
-/*  Dust Ultimate Game Library (DUGL) - (C) 2023 Fakhri Feki */
+/*  Dust Ultimate Game Library (DUGL) - (C) 2025 Fakhri Feki */
 /*  Sprites Sample */
 /*  old History : DUGL DOS/DJGPP */
 /*  3 september 2006 : first release */
@@ -226,7 +226,7 @@ int main(int argc,char *argv[]) {
                             );
 
         SetTextCol(RGB16(255,255,0));
-        OutText16Mode("Esc <Exit> | Space <Toggle Pause> | Tab <switch count render Cores> | F7 <switch render Func> ", AJ_SRC);
+        OutText16Mode("Esc<Exit> Space<Toggle Pause> Tab<switch count render Cores> F7<switch render Func>", AJ_SRC);
 
         // get key
         unsigned char keyCode;

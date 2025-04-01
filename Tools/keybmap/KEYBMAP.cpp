@@ -1,4 +1,4 @@
-/*  Dust Ultimate Game Library (DUGL) - (C) 2023 Fakhri Feki */
+/*  Dust Ultimate Game Library (DUGL) - (C) 2025 Fakhri Feki */
 /*  Editor of the proprietary DUGL keyboard map format */
 /*  History : */
 /*  first DJGPP DOS version 2000-2001 */
