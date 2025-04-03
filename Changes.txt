@@ -19,14 +19,22 @@ Graphics:
 - Bar16, bar16: rewrite to use faster InBar16 instead of Poly16.
 - PutXXXSurfXXX16: Performance/size optimization.
 - DgSurfCPutPixel16: fix crash.
- 
+
+Render Cores:
+
+- Add LastPolyStatus to cores context
+- Implement the macro REPOLY16 in separate function for each core, and redirect RePoly16 to it.
+
 GUI:
+
 - Bug fix unaligned 16bytes local DgSurf causing occasional crashes
 
 Timer:
+
 - Small rewrite in attempt to smoother/more precise synching.
 
 Samples:
+
 - Shadow: Add Multi-core resizing; Improve Multi-Core rendering up to 4 cores; Add parametric High quality rendering from 1.1 to 3.0 ratio;
   Add background panoramic sky background; Improve keyboard shortcuts; Enable double-buffer; optimize polygones sorting;
   Reduce unecessera big memory geometry allocation; Fix long standing camera concurrency between rendering/control threads, bug fixes, speed improvement;
