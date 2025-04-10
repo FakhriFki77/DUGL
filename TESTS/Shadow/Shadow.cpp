@@ -1550,7 +1550,7 @@ void RenderViewCore(DGCORE *curCore, int *curListPtTree, PolyPt *curTreePts) {
                     curTreePts[1].yt = 0;
                     curTreePts[2].xt = vLightUPos[idx3];
                     curTreePts[2].yt = 0;
-                    curCore->RePoly16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                    DGCORES_REPOLY16(curCore, NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
                 } else {
                     curTreePts[0].xt = varrayUVi[idx1].x; curTreePts[0].yt = varrayUVi[idx1].y;
                     curTreePts[1].xt = varrayUVi[idx2].x; curTreePts[1].yt = varrayUVi[idx2].y;
@@ -1562,13 +1562,13 @@ void RenderViewCore(DGCORE *curCore, int *curListPtTree, PolyPt *curTreePts) {
                     curTreePts[1].yt = 0;
                     curTreePts[2].xt = vLightUPos[idx3];
                     curTreePts[2].yt = 0;
-                    curCore->RePoly16(NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
+                    DGCORES_REPOLY16(curCore, NULL, gouroudLightSurf, POLY16_TEXT_TRANS, 13);
                 }
                 if (dfaces[idt]->shadowed) {
                     curTreePts[0].xt = dfaces[idt]->shadowUVi[0].x; curTreePts[0].yt = dfaces[idt]->shadowUVi[0].y;
                     curTreePts[1].xt = dfaces[idt]->shadowUVi[1].x; curTreePts[1].yt = dfaces[idt]->shadowUVi[1].y;
                     curTreePts[2].xt = dfaces[idt]->shadowUVi[2].x; curTreePts[2].yt = dfaces[idt]->shadowUVi[2].y;
-                    curCore->RePoly16(curListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
+                    DGCORES_REPOLY16(curCore, curListPtTree, Tree2SurfShadE16, POLY16_MASK_TEXT_TRANS, 15);
                 }
             }
             break;
