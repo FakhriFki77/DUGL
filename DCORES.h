@@ -1,3 +1,6 @@
+#ifndef HEADER_C2AA61562DDF5855
+#define HEADER_C2AA61562DDF5855
+
 /*  Dust Ultimate Game Library (DUGL)
     Copyright (C) 2025  Fakhri Feki
 
@@ -77,9 +80,13 @@ typedef struct {
     void (*PutMaskSurfTrans16)(DgSurf *S,int X,int Y,int PType,int trans);
 
     void (*Poly16)(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
+    // Should be used through DGCORES_REPOLY16 else LastPolyStatus will not be checked
     void (*RePoly16)(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 
 } DGCORE;
+
+// REPOLY16 DGCORES macro
+#define DGCORES_REPOLY16(DGCORE_PTR, ListPt, SS, TypePoly, ColPoly) if (*((DGCORE_PTR)->LastPolyStatus)!='N') (DGCORE_PTR)->RePoly16(ListPt, SS, TypePoly, ColPoly);
 
 // DGCORE Handling function
 
@@ -314,3 +321,5 @@ void RePoly16_C4(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 
 
 #endif // DCORE2_H_INCLUDED
+#endif // header guard
+

@@ -1,3 +1,6 @@
+#ifndef HEADER_87CADEAFADF94D8D
+#define HEADER_87CADEAFADF94D8D
+
 /*  Dust Ultimate Game Library (DUGL)
     Copyright (C) 2025  Fakhri Feki
 
@@ -235,6 +238,7 @@ void PutMaskSurfTrans16(DgSurf *S,int X,int Y,int PType,int trans);
 void Poly16(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 // Redo the last rendered Poly16: *ListPt and DBL_SIDED FLAG are ignored in this call,
 // user can update *SS, TypePoly, ColPoly and texture coordinates[U,V] using the same Point List pointers the Poly16 was called with
+// Should be used through REPOLY16 else LastPolyStatus will not be checked
 void RePoly16(void *ListPt, DgSurf *SS, unsigned int TypePoly, int ColPoly);
 // REPOLY16 provided for convenience as RePoly16 handle only drawn polygones with status 'C' or 'I' to avoid useless calls
 #define REPOLY16(ListPt, SS, TypePoly, ColPoly) if (LastPolyStatus!='N') RePoly16(ListPt, SS, TypePoly, ColPoly);
@@ -259,3 +263,5 @@ void SurfCopyTrans16(DgSurf *S16Dst, DgSurf *S16Src,int trans);
 #define RGB16(r,g,b) ((b>>3)|((g>>2)<<5)|((r>>3)<<11))
 
 #endif // DCORE_H_INCLUDED
+#endif // header guard 
+
